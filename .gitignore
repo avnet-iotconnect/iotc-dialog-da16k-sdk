@@ -1,7 +1,8 @@
-*
+/*
 !/.gitignore
 !/.gitmodules
 !/README.md
 !/scripts
 !/lib
+!/apps
 

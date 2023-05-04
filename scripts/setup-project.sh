@@ -15,6 +15,7 @@ popd >/dev/null
 
 echo Overlaying da16k-sdk directory with zip contents...
 cp -rn da16k-sdk-zip/* ./
+cp -rn da16k-sdk-zip/.project ./
 rm -rf da16k-sdk-zip
 
 echo Done.
