@@ -38,6 +38,8 @@
 ///
 
 #if defined ( GENERIC_SDK )
+#define __SUPPORT_IOTCONNECT_FOR_CLI__
+#define __ITCONNECT_CLIENT_SAMPLE__
 
 //
 // Mendatory pre-define for DA16600 Wi-Fi BLE Combo-module 

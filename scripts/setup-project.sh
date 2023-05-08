@@ -18,6 +18,10 @@ cp -rn da16k-sdk-zip/* ./
 cp -rn da16k-sdk-zip/.project ./
 rm -rf da16k-sdk-zip
 
+pushd tools/util >/dev/null
+sh ./set_linux_perm.sh
+popd >/dev/null
+
 echo Done.
 
 

@@ -59,13 +59,13 @@ extern void (*sample_app_dpm_unreg_cb)(void);
 
 // Network Advanced Samples
 #if defined (__HTTP_CLIENT_SAMPLE__)
-extern void iotconnect_demo_entry(void *param);
+extern void iotc_client_sample_entry(void *param);
 #endif // (__HTTP_CLIENT_SAMPLE__)
 
 /* BEGIN IOTCONNECT CHANGES */
 /* name, entry_func, stack_size, priority, net_chk_flag, dpm_flag, port_no, run_sys_mode */
 static const app_task_info_t	sample_apps_table[] = {
-    { "IOTC_DEMO_APP",			iotconnect_demo_entry,		   2560, (OS_TASK_PRIORITY_USER + 6), TRUE, FALSE,	UNDEF_PORT,				RUN_ALL_MODE },
+    { "IOTC_CLIENT",			iotc_client_sample_entry,		   2560, (OS_TASK_PRIORITY_USER + 6), TRUE, FALSE,	UNDEF_PORT,				RUN_ALL_MODE },
     /******* End of List *****************************************************/
     { NULL,	NULL,	0, 0, FALSE, FALSE, UNDEF_PORT, 0	}
 };
