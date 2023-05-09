@@ -116,6 +116,16 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>iotconnect/cJSON</name>
+			<type>2</type>
+			<location>/home/nmarkovi/eclipseWS/dialog/iotc-dialog-da16k-sdk/lib/cJSON</location>
+		</link>
+		<link>
+			<name>iotconnect/iotc-c-lib</name>
+			<type>2</type>
+			<location>/home/nmarkovi/eclipseWS/dialog/iotc-dialog-da16k-sdk/lib/iotc-c-lib</location>
+		</link>
+		<link>
 			<name>customer_app/include/apps</name>
 			<type>2</type>
 			<locationURI>SDKROOT/apps/da16600/get_started/include/apps</locationURI>

@@ -79,7 +79,6 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/libraries/3rdparty/lwip_osal/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/libraries/3rdparty/lwip/src/include/lwip/apps}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/libraries/3rdparty/crypto/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/libraries/3rdparty/json}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/libraries/3rdparty/lwrb/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/bsp/cmsis/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/core/bsp/cortexm/include}&quot;"/>
@@ -199,6 +198,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/app_common/include/util}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/app_common/include/system}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/app_common/include/app_atcommand}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/iotconnect/cJSON}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/iotconnect/iotc-c-lib/include}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.1512422710" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="true" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -290,7 +291,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="customer_app/src/apps/SDK_generic_user_apps.c|core/system/src/common/command/command_umac.c|core/system/src/common/command/command_spi_master.c|core/system/src/common/command/command_pwm.c|core/system/src/common/command/command_lmac_msg.c|core/system/src/common/command/command_i2s.c|core/system/src/common/command/command_i2c.c|core/system/src/common/command/command_host.c|core/system/src/common/command/command_adc.c|core/libraries/3rdparty/lwip/src/apps/http/fsdata.h|core/libraries/3rdparty/lwip/src/apps/http/fsdata.c|core/libraries/3rdparty/lwip/src/apps/http/makefsdata|core/libraries/3rdparty/lwip/src/apps/http/fs|core/wifistack/supplicant/src/utils/browser-wpadebug.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="core/libraries/3rdparty/json|iotconnect/cJSON/test.c|iotconnect/cJSON/library_config|iotconnect/cJSON/fuzzing|iotconnect/cJSON/tests|iotconnect/iotc-c-lib/tests/telemetry.c|iotconnect/iotc-c-lib/tests/event.c|iotconnect/iotc-c-lib/tests/discovery.c|iotconnect/cJSON/tests/unity/examples/example_1/src/ProductionCode2.c|iotconnect/cJSON/tests/unity/examples/example_1/src/ProductionCode.c|customer_app/src/apps/SDK_generic_user_apps.c|core/system/src/common/command/command_umac.c|core/system/src/common/command/command_spi_master.c|core/system/src/common/command/command_pwm.c|core/system/src/common/command/command_lmac_msg.c|core/system/src/common/command/command_i2s.c|core/system/src/common/command/command_i2c.c|core/system/src/common/command/command_host.c|core/system/src/common/command/command_adc.c|core/libraries/3rdparty/lwip/src/apps/http/fsdata.h|core/libraries/3rdparty/lwip/src/apps/http/fsdata.c|core/libraries/3rdparty/lwip/src/apps/http/makefsdata|core/libraries/3rdparty/lwip/src/apps/http/fs|core/wifistack/supplicant/src/utils/browser-wpadebug.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

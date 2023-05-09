@@ -24,6 +24,10 @@
 #include "mbedtls/ssl.h"
 #include "command_net.h"
 
+// #include "da16_time.h"
+#include "cJSON.h"
+#include "iotconnect_lib.h"
+
 #if defined (__SUPPORT_ATCMD__)
 /// Data transfer with AT-CMD interface
 typedef struct _atcmd_httpc_context {
@@ -55,7 +59,8 @@ typedef struct IOTC_CLIENT_REQUEST {
 #define IOTCONNECT_APP_TASK_NAME 	"IoTConnect Demo"
 
 static TaskHandle_t iotconnect_app_task_handle = NULL;
-IOTC_CLIENT_REQUEST iotc_client_request;
+static cJSON_Hooks hooks;
+static IOTC_CLIENT_REQUEST iotc_client_request;
 
 void iotc_client_display_usage(void)
 {
@@ -75,18 +80,77 @@ void iotc_client_display_usage(void)
     PRINTF("\t\tSet Device Uinque ID\n");
     PRINTF("\t\x1b[93m-help\x1b[0m\n");
     PRINTF("\t\tDisplay help\n");
-
-
     return ;
+}
+
+static void iotconnect_lib_test(void) {
+    IotclConfig config;
+
+    hooks.free_fn = vPortFree;
+    hooks.malloc_fn = pvPortMalloc;
+    cJSON_InitHooks(&hooks);
+    memset(&config, 0, sizeof(config));
+    config.device.cpid = "MyCpid";
+    config.device.duid = "my-device-id";
+    config.device.env = "prod";
+    config.telemetry.dtg = "5a913fef-428b-4a41-9927-6e0f4a1602ba";
+
+    iotcl_init(&config);
+
+    IotclMessageHandle msg = iotcl_telemetry_create();
+    // Initial entry will be created with system timestamp
+    // You can call AddWith*Time before making Set* calls in order to add a custom timestamp
+
+    // NOTE: Do not mix epoch and ISO timestamps
+    iotcl_telemetry_set_number(msg, "789", 123);
+    iotcl_telemetry_set_string(msg, "boo.abc.tuv", "prs");
+
+    __time64_t now;
+    da16x_time64(NULL, &now);
+    // Create a new entry with different time and values
+    iotcl_telemetry_add_with_iso_time(msg, iotcl_to_iso_timestamp(now));
+    iotcl_telemetry_set_number(msg, "boo.bar", 111);
+    iotcl_telemetry_set_string(msg, "123", "456");
+    //iotcl_telemetry_set_number(msg, "789", 123.55);
+
+    iotcl_telemetry_add_with_iso_time(msg, iotcl_iso_timestamp_now());
+    iotcl_telemetry_set_null(msg, "nulltest");
+    iotcl_telemetry_set_bool(msg, "booltest", true);
+
+    const char *str = iotcl_create_serialized_string(msg, true);
+    iotcl_telemetry_destroy(msg);
+    PRINTF("Telemetry: %s (cnt=%u)\n", str, strlen(str));
+    iotcl_destroy_serialized(str);
 }
 
 static void iotconnect_app_task(void *param) {
     DA16X_UNUSED_ARG(param);
-    PRINTF("Foo\n");
+    #define MEMORY_TEST
+    #ifdef MEMORY_TEST
+    #define TEST_BLOCK_SIZE  256
+    #define TEST_BLOCK_COUNT 100
+    static void *blocks[TEST_BLOCK_COUNT];
+    void memory_test() {
+        int i = 0;
+        for (; i < TEST_BLOCK_COUNT; i++) {
+            void *ptr = malloc(TEST_BLOCK_SIZE);
+            if (!ptr) {
+                break;
+            }
+            blocks[i] = ptr;
+        }
+        PRINTF("====Allocated %d blocks of size %d (of max %d)===\n", i, TEST_BLOCK_SIZE, TEST_BLOCK_COUNT);
+        for (int j = i-1; j >= 0; j--) {
+            free(blocks[j]);
+        }
+    }
+    memory_test();
+    memory_test();
+    iotconnect_lib_test();
+    #endif /* MEMORY_TEST */
     while (1) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-
 }
 
 static err_t iotc_client_parse_request(int argc, char *argv[], IOTC_CLIENT_REQUEST *request) {
@@ -150,11 +214,6 @@ void iotc_client_process_request(void *param) {
     if (xReturned != pdPASS) {
         PRINTF(RED_COLOR " [%s] Failed task create %s \r\n" CLEAR_COLOR, __func__, IOTCONNECT_APP_TASK_NAME);
     }
-
-    finish: while (1) {
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
-
     return;
 }
 
