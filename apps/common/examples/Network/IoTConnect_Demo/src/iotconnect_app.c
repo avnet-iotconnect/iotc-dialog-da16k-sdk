@@ -1,6 +1,6 @@
 //
 // Copyright: Avnet 2021
-// Created by Nik Markovic <nikola.markovic@avnet.com> on 4/19/21.
+// Created by Nik Markovic <nikola.markovic@avnet.com> on 4/19/23.
 //
 
 #include <stdbool.h>
@@ -62,6 +62,28 @@ static TaskHandle_t iotconnect_app_task_handle = NULL;
 static cJSON_Hooks hooks;
 static IOTC_CLIENT_REQUEST iotc_client_request;
 
+#define MEMORY_TEST
+#ifdef MEMORY_TEST
+#define TEST_BLOCK_SIZE  1024
+#define TEST_BLOCK_COUNT 10
+static void *blocks[TEST_BLOCK_COUNT];
+void memory_test() {
+    int i = 0;
+    for (; i < TEST_BLOCK_COUNT; i++) {
+        void *ptr = malloc(TEST_BLOCK_SIZE);
+        if (!ptr) {
+            break;
+        }
+        blocks[i] = ptr;
+    }
+    PRINTF("====Allocated %d blocks of size %d (of max %d)===\n", i, TEST_BLOCK_SIZE, TEST_BLOCK_COUNT);
+    for (int j = i-1; j >= 0; j--) {
+        free(blocks[j]);
+    }
+}
+
+
+
 void iotc_client_display_usage(void)
 {
     PRINTF("\nUsage: IOTC Client\n");
@@ -82,6 +104,47 @@ void iotc_client_display_usage(void)
     PRINTF("\t\tDisplay help\n");
     return ;
 }
+
+void *malloc(size_t size) {
+    return pvPortMalloc(size);
+}
+
+void free(void *ptr) {
+    vPortFree(ptr);
+}
+
+void *calloc(size_t nmemb, size_t size) {
+    // not sure if this should be doing rounding to 32 bits on size.
+    size_t s = nmemb * size;
+    void* ret = pvPortMalloc(s);
+    if (!ret) {
+        return NULL;
+    }
+    memset(ret, 0, s);
+    return ret;
+}
+
+void *realloc(void *ptr, size_t size) {
+    void* ret = pvPortMalloc(size);
+    if (!ret) {
+        return  NULL;
+    }
+    memcpy(ret, ptr, size);
+    free(ptr);
+    return ret;
+}
+
+
+#define IOTC_NEEDS_C_TIME
+#ifdef IOTC_NEEDS_C_TIME
+time_t time(time_t *t) {
+    DA16X_UNUSED_ARG(t);
+    __time64_t time_now = 0;
+    da16x_time64(NULL, &time_now);
+    return (time_t) time_now;
+}
+#endif
+
 
 static void iotconnect_lib_test(void) {
     IotclConfig config;
@@ -111,7 +174,8 @@ static void iotconnect_lib_test(void) {
     iotcl_telemetry_add_with_iso_time(msg, iotcl_to_iso_timestamp(now));
     iotcl_telemetry_set_number(msg, "boo.bar", 111);
     iotcl_telemetry_set_string(msg, "123", "456");
-    //iotcl_telemetry_set_number(msg, "789", 123.55);
+
+    iotcl_telemetry_set_number(msg, "789", 123.55);
 
     iotcl_telemetry_add_with_iso_time(msg, iotcl_iso_timestamp_now());
     iotcl_telemetry_set_null(msg, "nulltest");
@@ -123,30 +187,35 @@ static void iotconnect_lib_test(void) {
     iotcl_destroy_serialized(str);
 }
 
+static bool wait_for_time() {
+    bool got_time = false;
+    for (int i = 0; i < 100; i++) {
+        // needs to be after 5/10/2023
+        if (time(NULL) > 1683746313U) {
+            got_time = true;
+            break;
+        } else if (i == 0) {
+            PRINTF(">>> Waiting for SNTP...\n");
+        }
+        vTaskDelay( 100 / portTICK_PERIOD_MS );
+    }
+
+    if (!got_time) {
+        PRINTF(">>> ERROR: Timed out waiting for SNTP. Need system date to be set!\n");
+    }
+    return got_time;
+}
+
 static void iotconnect_app_task(void *param) {
     DA16X_UNUSED_ARG(param);
-    #define MEMORY_TEST
-    #ifdef MEMORY_TEST
-    #define TEST_BLOCK_SIZE  256
-    #define TEST_BLOCK_COUNT 100
-    static void *blocks[TEST_BLOCK_COUNT];
-    void memory_test() {
-        int i = 0;
-        for (; i < TEST_BLOCK_COUNT; i++) {
-            void *ptr = malloc(TEST_BLOCK_SIZE);
-            if (!ptr) {
-                break;
-            }
-            blocks[i] = ptr;
-        }
-        PRINTF("====Allocated %d blocks of size %d (of max %d)===\n", i, TEST_BLOCK_SIZE, TEST_BLOCK_COUNT);
-        for (int j = i-1; j >= 0; j--) {
-            free(blocks[j]);
-        }
-    }
+
+    PRINTF(">>> Starting the IoTConnect Client\n");
+
     memory_test();
+    if (wait_for_time()) {
+        iotconnect_lib_test();
+    } // else error will be printed
     memory_test();
-    iotconnect_lib_test();
     #endif /* MEMORY_TEST */
     while (1) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -190,13 +259,11 @@ static err_t iotc_client_parse_request(int argc, char *argv[], IOTC_CLIENT_REQUE
 
 
 
-void iotc_client_process_request(void *param) {
+int iotc_client_process_request(void *param) {
     DA16X_UNUSED_ARG(param);
 
     BaseType_t xReturned;
     IOTC_CLIENT_REQUEST* request = (IOTC_CLIENT_REQUEST*) param;
-
-    PRINTF(">>> Starting the IoTConnect Client\n");
 
     if (iotconnect_app_task_handle) {
         vTaskDelete(iotconnect_app_task_handle);
@@ -214,9 +281,8 @@ void iotc_client_process_request(void *param) {
     if (xReturned != pdPASS) {
         PRINTF(RED_COLOR " [%s] Failed task create %s \r\n" CLEAR_COLOR, __func__, IOTCONNECT_APP_TASK_NAME);
     }
-    return;
+    return ERR_OK;
 }
-
 err_t run_iotc_client(int argc, char *argv[]) {
     err_t err = ERR_OK;
     BaseType_t xReturned;
