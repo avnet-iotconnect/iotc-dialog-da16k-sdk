@@ -1,5 +1,6 @@
 /*
 
 !/.gitignore
+!/iotconnect-sdk
 !/mqtt_client
 !/common
