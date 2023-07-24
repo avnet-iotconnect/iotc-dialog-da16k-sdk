@@ -24,6 +24,7 @@ typedef struct {
     IotConnectStatusCallback status_cb; // callback for connection status
 } IotConnectDeviceClientConfig;
 
+int iotc_device_client_preinit_certs(IotConnectDeviceClientConfig *c);
 int iotc_device_client_init(IotConnectDeviceClientConfig *c); // Convenience function
 int iotc_device_client_setup(IotConnectDeviceClientConfig *c); // Break out setting up the MQTT client into an individual routine
 int iotc_device_client_run(IotConnectDeviceClientConfig *c);   // Break out running the MQTT client into an individual routine
@@ -53,7 +54,6 @@ void iotc_device_client_receive(void);
 char* iotc_device_client_get_tpm_registration_id(void);
 
 int iotc_platform_acquire_config_values(IotConnectClientConfig *c);
-void iotc_platform_release_config_values(IotConnectClientConfig *c);
 
 #ifdef __cplusplus
 }

@@ -35,17 +35,23 @@ typedef struct {
     const char *env;    // Obtained Settings->KeyVault at IoTConnect Web Site
 } IotclDeviceConfig;
 
+typedef struct IotclTelemetryConfig {
+    // Can be copied at the device page. Can be obtained via REST Sync call.
+    // Device template GUID required to send telemetry data.
+    const char *dtg;
+} IotclTelemetryConfig;
+
 typedef struct {
     IotclDeviceConfig device;
     IotclTelemetryConfig telemetry;
     IotclEventFunctions event_functions; // Event callbacks for the event library. @see iotconnect_event.h
 } IotclConfig;
 
-bool iotcl_init(IotclConfig *c);
-
 IotclConfig *iotcl_get_config(void);
 
-void iotcl_deinit(void);
+bool iotcl_preinit_certs(IotclConfig *c); // pre-initialization, e.g. setting up HTTPS/MQTTS certificates -- may not be affected by iotcl_deinit()
+bool iotcl_init(IotclConfig *c);
+void iotcl_deinit(void);            // undo iotcl_init()
 
 #ifdef __cplusplus
 }

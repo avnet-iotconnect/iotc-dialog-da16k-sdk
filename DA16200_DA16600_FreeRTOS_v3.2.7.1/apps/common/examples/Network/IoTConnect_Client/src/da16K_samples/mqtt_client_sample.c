@@ -84,7 +84,7 @@ static disconn_cb_t g_disconn_cb = NULL;
 static sub_cb_t g_sub_cb = NULL;
 static unsub_cb_t g_unsub_cb = NULL;
 
-static BaseType_t _mqtt_send_to_q(const char *buf)
+static BaseType_t _mqtt_send_to_q(const char *buf, bool copy)
 {
     BaseType_t status;
 
@@ -93,12 +93,19 @@ static BaseType_t _mqtt_send_to_q(const char *buf)
 	return -1;
     }
 
-    /* Take a copy of the message, as it may be freed before the Q entry is dealt with? */
     int user_msg_buf_size = strlen(buf) + 1;
-    char *user_msg_buf = malloc(user_msg_buf_size);
+    char *user_msg_buf = NULL;
+    if(copy) {
+        /* Take a copy of the message, as the original may be freed before the Q entry is dealt with? */
+        user_msg_buf = malloc(user_msg_buf_size);
+    } else {
+        // assume buf can use free() on buf once it has been sent - original argument should not be deallocated
+        user_msg_buf = (char *) buf;
+    }
+
     if (!user_msg_buf) {
         MQTT_ERROR("[%s] failed to allocate user_msg_buf!", __func__);
-	return -1;
+    	return -1;
     }
 
     sprintf(user_msg_buf, "%s", buf);
@@ -182,7 +189,7 @@ static void _mqtt_unsub_cb(void)
     }
 }
 
-int mqtt_sample_client_pub_send(const char *pub_message)
+int mqtt_sample_client_pub_send(const char *pub_message, bool copy)
 {
     BaseType_t ret;
 
@@ -198,7 +205,7 @@ int mqtt_sample_client_pub_send(const char *pub_message)
         return -1;
     } 
 
-    if ((ret = _mqtt_send_to_q(pub_message)) != pdPASS ) {
+    if ((ret = _mqtt_send_to_q(pub_message, copy)) != pdPASS ) {
         MQTT_ERROR("[%s] Failed to add a message to Q (%d)\r\n", __func__, ret);
         return -1;
     }
@@ -436,27 +443,28 @@ int platform_poll_iotconnect_mode(int *value) {
 
     *value = 0;
     *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_MQTT_CLIENT_IOTCONNECT_MODE, string);
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_CPID\n");
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_MODE\n");
         return -1;
     }
     if(*string == '\0')
     {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_CPID value is empty\n");
+        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_MODE value is empty\n");
         return -1;
     }
     *value = atoi(string);
 
-    if(*value != 0)
+    return 0;
+}
+
+int platform_reset_iotconnect_mode(void) {
+    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC, "0");
+    if(status != CC_SUCCESS)
     {
-        status = da16x_set_config_str(DA16X_CONF_STR_MQTT_CLIENT_IOTCONNECT_MODE, "0");
-        if(status != CC_SUCCESS)
-        {
-            MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_CPID\n");
-            return -1;
-        }
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_MODE\n");
+        return -1;
     }
 
     return 0;
@@ -525,6 +533,34 @@ int platform_get_auth_type(char *string) {
     if(*string == '\0')
     {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE value is empty\n");
+        return -1;
+    }
+    return 0;
+}
+
+int platform_set_dtg(char *string) {
+    int status;
+    status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, string);
+    if(status != CC_SUCCESS)
+    {
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_DTG\n");
+        return -1;
+    }
+    return 0;
+}
+
+int platform_get_dtg(char *string) {
+    int status;
+    *string = '\0';
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, string);
+    if(status != CC_SUCCESS)
+    {
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_DTG\n");
+        return -1;
+    }
+    if(*string == '\0')
+    {
+        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_DTG value is empty\n");
         return -1;
     }
     return 0;

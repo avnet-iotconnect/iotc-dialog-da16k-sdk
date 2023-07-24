@@ -115,7 +115,7 @@ void iotcl_discovery_free_discovery_response(IotclDiscoveryResponse *response) {
 }
 
 IotclSyncResponse *iotcl_discovery_parse_sync_response(const char *response_data) {
-    IOTC_DEBUG("%d: response_data is %d bytes in length", __LINE__, strlen(response_data));
+    IOTC_DEBUG("%d: response_data is %d bytes in length\n", __func__, strlen(response_data));
 
     _cJSON *tmp_value = NULL;
     IotclSyncResponse *response = (IotclSyncResponse *) calloc(1, sizeof(IotclSyncResponse));
@@ -124,18 +124,12 @@ IotclSyncResponse *iotcl_discovery_parse_sync_response(const char *response_data
         return NULL;
     }
 
-    IOTC_DEBUG("%d: response_data is %d bytes in length", __LINE__, strlen(response_data));
-
     _cJSON *sync_json_root = _cJSON_Parse(response_data);
     if (!sync_json_root) {
-        IOTC_DEBUG("%d: response_data is %d bytes in length", __LINE__, strlen(response_data));
-
         response->ds = IOTCL_SR_PARSING_ERROR;
         IOTC_ERROR("_cJSON_Parse failed\n");
         return response;
     }
-
-    IOTC_DEBUG("%d: response_data is %d bytes in length", __LINE__, strlen(response_data));
 
     _cJSON *sync_res_json = _cJSON_GetObjectItemCaseSensitive(sync_json_root, "d");
     if (!sync_res_json) {

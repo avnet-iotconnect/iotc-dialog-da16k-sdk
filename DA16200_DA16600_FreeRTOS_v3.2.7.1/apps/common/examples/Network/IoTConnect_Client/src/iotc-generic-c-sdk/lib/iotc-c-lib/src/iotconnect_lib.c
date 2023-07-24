@@ -15,23 +15,24 @@ static IotclConfig config;
 static bool config_is_valid = false;
 
 bool iotcl_init(IotclConfig *c) {
+    IOTC_DEBUG("%s\n", __func__);
     iotcl_deinit();
     if (
             !c || !c->device.env || !c->device.cpid || !c->device.duid ||
             0 == strlen(c->device.env) || 0 == strlen(c->device.cpid) || 0 == strlen(c->device.duid)
             ) {
-        IOTCL_LOG ("IotConnectLib_Configure: configuration parameters missing" IOTCL_NL);
+        IOTC_ERROR ("IotConnectLib_Configure: configuration parameters missing");
         return false;
     }
     if (strlen(c->device.cpid) + 1 /* dash, separator */  + strlen(c->device.duid) > MAX_DEVICE_COMBINED_NAME) {
-        IOTCL_LOG ("IotConnectLib_Configure: combined name (cpid + uuid) exceeded maximum value" IOTCL_NL);
+        IOTC_ERROR ("IotConnectLib_Configure: combined name (cpid + uuid) exceeded maximum value");
         return false;
     }
     memcpy(&config, c, sizeof(config));
 
     if (!config.device.duid || !config.device.cpid || !config.device.env) {
         // allocation failure
-        IOTCL_LOG ("IotConnectLib_Configure: malloc failure" IOTCL_NL);
+        IOTC_ERROR ("IotConnectLib_Configure: malloc failure");
         iotcl_deinit();
         return false;
     }
@@ -41,13 +42,16 @@ bool iotcl_init(IotclConfig *c) {
 
 
 IotclConfig *iotcl_get_config(void) {
+    IOTC_DEBUG("%s\n", __func__);
     if (!config_is_valid) {
+        IOTC_ERROR ("!config_is_valid");
         return NULL;
     }
     return &config;
 }
 
 void iotcl_deinit(void) {
+    IOTC_DEBUG("%s\n", __func__);
     config_is_valid = false;
 
     memset(&config, 0, sizeof(config));

@@ -30,6 +30,32 @@ static IotclSyncResponse *sync_response = NULL;
 // once (if) we support a dispose method, we should free this value
 static char *tpm_registration_id = NULL;
 
+static void on_mqtt_c2d_message(const unsigned char *message, size_t message_len) {
+    char *str = malloc(message_len + 1);
+    if(!str) {
+        IOTC_ERROR("Unable to allocate memory\n");
+        return;
+    }
+
+    memcpy(str, message, message_len);
+    str[message_len] = 0;
+    IOTC_DEBUG("event>>> %s\n", str);
+    if (!iotcl_process_event(str)) {
+        IOTC_ERROR("Error encountered while processing %s\n", str);
+    }
+    free(str);
+}
+
+static void set_device_client_config(IotConnectDeviceClientConfig *pc) {
+    memset(pc, 0, sizeof(*pc));
+
+    pc->sr = sync_response;
+    pc->qos = config.qos;
+    pc->status_cb = config.status_cb;
+    pc->c2d_msg_cb = on_mqtt_c2d_message;
+    pc->auth = &config.auth_info;
+}
+
 static void dump_response(const char *message, IotConnectHttpResponse *response) {
     if (response->data) {
         IOTC_DEBUG("%s", message);
@@ -212,22 +238,6 @@ static IotclSyncResponse *run_http_sync(const char *cpid, const char *uniqueid) 
     return ret;
 }
 
-static void on_mqtt_c2d_message(const unsigned char *message, size_t message_len) {
-    char *str = malloc(message_len + 1);
-    if(!str) {
-        IOTC_ERROR("Unable to allocate memory\n");
-        return;
-    }
-
-    memcpy(str, message, message_len);
-    str[message_len] = 0;
-    IOTC_DEBUG("event>>> %s\n", str);
-    if (!iotcl_process_event(str)) {
-        IOTC_ERROR("Error encountered while processing %s\n", str);
-    }
-    free(str);
-}
-
 void iotconnect_sdk_disconnect(void) {
     IOTC_DEBUG("Disconnecting...\n");
     if (0 == iotc_device_client_disconnect()) {
@@ -239,19 +249,12 @@ bool iotconnect_sdk_is_connected(void) {
     return iotc_device_client_is_connected();
 }
 
-IotConnectClientConfig *iotconnect_sdk_init_and_get_config(void) {
-    memset(&config, 0, sizeof(config));
+static void iotconnect_sdk_reset_config(void) {
+    IOTC_DEBUG("%s\n", __func__);
 
-    if(iotc_platform_acquire_config_values(&config) != 0)
-    {
-        return NULL;
+    if(iotconnect_sdk_is_connected() == true) {
+        iotconnect_sdk_disconnect();
     }
-
-    return &config;
-}
-
-void iotconnect_sdk_deinit(void) {
-    iotconnect_sdk_disconnect();
 
     tpm_registration_id = NULL;
 
@@ -261,8 +264,98 @@ void iotconnect_sdk_deinit(void) {
     iotcl_discovery_free_discovery_response(discovery_response);
     discovery_response = NULL;
 
-    iotc_platform_release_config_values(&config);
+    free(config.cpid);
+    free(config.duid);
+    free(config.env);
+    free((void *) config.auth_info.data.symmetric_key);
     memset(&config, 0, sizeof(config));
+}
+
+//
+// Any allocated storage is free'd in iotconnect_sdk_reset_config() to avoid a leak
+//
+// Although there is no explicit deinit() routine
+//
+IotConnectClientConfig *iotconnect_sdk_init_and_get_config(void) {
+    iotconnect_sdk_reset_config();
+
+    if(iotc_platform_acquire_config_values(&config) != 0)
+    {
+        return NULL;
+    }
+
+    return &config;
+}
+
+//
+// Any allocated storage is free'd in iotconnect_sdk_reset_config() to avoid a leak
+//
+// Although there is no explicit deinit() routine
+//
+IotConnectClientConfig *iotconnect_sdk_init_and_set_config(char *env, char *cpid, char *duid, int authentication_type, char *symmetric_key) {
+    iotconnect_sdk_reset_config();
+
+    config.env = iotcl_strdup(env);
+    if(config.env == NULL)
+    {
+        IOTC_ERROR("iotcl_strdup() failed\n");
+        goto cleanup;
+    }
+
+    config.cpid = iotcl_strdup(cpid);
+    if(config.cpid == NULL)
+    {
+        IOTC_ERROR("iotcl_strdup() failed\n");
+        goto cleanup;
+    }
+
+    config.duid = iotcl_strdup(duid);
+    if(config.duid == NULL)
+    {
+        IOTC_ERROR("iotcl_strdup() failed\n");
+        goto cleanup;
+    }
+
+    config.auth_info.type = authentication_type;
+    if(config.auth_info.type == IOTC_AT_SYMMETRIC_KEY)
+    {
+        config.auth_info.data.symmetric_key = (const char *) iotcl_strdup(symmetric_key);
+        if(config.auth_info.data.symmetric_key == NULL)
+        {
+            IOTC_ERROR("iotcl_strdup() failed\n");
+            goto cleanup;
+        }
+    }
+
+    return &config;
+
+cleanup:
+    iotconnect_sdk_reset_config();
+    return NULL;
+}
+
+int iotconnect_sdk_preinit_certs(void) {
+    IotConnectDeviceClientConfig pc;
+    set_device_client_config(&pc);
+
+    if (iotc_device_client_preinit_certs(&pc)) {
+        IOTC_ERROR("iotc_device_client_preinit_certs() failed\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int iotconnect_sdk_init(void) {
+    IOTC_DEBUG("%s\n", __func__);
+
+    if(iotconnect_sdk_setup_mqtt_client() != 0)
+    {
+        IOTC_ERROR("iotc_device_client_preinit_certs() failed\n");
+        return -1;
+    }
+
+    return iotconnect_sdk_run_mqtt_client();
 }
 
 static void on_message_intercept(IotclEventData data, IotConnectEventType type) {
@@ -270,6 +363,7 @@ static void on_message_intercept(IotclEventData data, IotConnectEventType type) 
         case ON_FORCE_SYNC:
             iotconnect_sdk_disconnect();
             iotcl_discovery_free_discovery_response(discovery_response);
+            discovery_response = NULL;
             iotcl_discovery_free_sync_response(sync_response);
             sync_response = NULL;
             discovery_response = run_http_discovery(config.cpid, config.env);
@@ -301,6 +395,7 @@ static void on_message_intercept(IotclEventData data, IotConnectEventType type) 
 }
 
 int iotconnect_sdk_send_packet(const char *data) {
+    IOTC_DEBUG("Sending: %s\n", data);
     return iotc_device_client_send_message(data);
 }
 
@@ -308,19 +403,11 @@ void iotconnect_sdk_receive(void) {
     iotc_device_client_receive();
 }
 
-static void set_device_client_config(IotConnectDeviceClientConfig *pc) {
-    memset(pc, 0, sizeof(*pc));
-
-    pc->sr = sync_response;
-    pc->qos = config.qos;
-    pc->status_cb = config.status_cb;
-    pc->c2d_msg_cb = on_mqtt_c2d_message;
-    pc->auth = &config.auth_info;
-}
-
 ///////////////////////////////////////////////////////////////////////////////////
 // this the Initialization os IoTConnect SDK
 int iotconnect_sdk_setup_mqtt_client(void) {
+    IOTC_DEBUG("%s\n", __func__);
+
     if (config.auth_info.type == IOTC_AT_TPM) {
         if (!config.duid || strlen(config.duid) == 0) {
             if (!tpm_registration_id) {
@@ -338,7 +425,7 @@ int iotconnect_sdk_setup_mqtt_client(void) {
         }
         IOTC_DEBUG("Discovery response parsing successful.\n");
     } else {
-        IOTC_WARN("Reusing reusing previous discovery_response\n");
+        IOTC_WARN("Reusing previous discovery_response\n");
     }
 
     if (!sync_response) {
@@ -349,7 +436,7 @@ int iotconnect_sdk_setup_mqtt_client(void) {
         }
         IOTC_DEBUG("Sync response parsing successful.\n");
     } else {
-        IOTC_WARN("Reusing reusing previous sync_response\n");
+        IOTC_WARN("Reusing previous sync_response\n");
     }
 
     if (!config.env || !config.cpid || !config.duid) {
@@ -373,19 +460,6 @@ int iotconnect_sdk_setup_mqtt_client(void) {
         IOTC_ERROR("Error: Unsupported authentication type!\n");
         return -1;
     }
-
-#if 0
-    if (!config.auth_info.trust_store) {
-        IOTC_ERROR("Error: Configuration server certificate is required.\n");
-        return -1;
-    }
-    if (config.auth_info.type == IOTC_AT_X509 && (
-            !config.auth_info.data.cert_info.device_cert ||
-            !config.auth_info.data.cert_info.device_key)) {
-        IOTC_ERROR("Error: Configuration authentication info is invalid.\n");
-        return -1;
-    }
-#endif
 
     if (config.auth_info.type == IOTC_AT_SYMMETRIC_KEY) {
         if (config.auth_info.data.symmetric_key && strlen(config.auth_info.data.symmetric_key) > 0) {
@@ -430,12 +504,7 @@ int iotconnect_sdk_setup_mqtt_client(void) {
         return ret;
     }
 
-    return 0;
-}
-
-int iotconnect_sdk_run_mqtt_client(void) {
-    int ret = 0;
-
+    // initialize the IoTConnect Lib - needed for telemetry messages
     IotclConfig lib_config;
     memset(&lib_config, 0, sizeof(lib_config));
 
@@ -453,6 +522,12 @@ int iotconnect_sdk_run_mqtt_client(void) {
         IOTC_ERROR("Error: Failed to initialize the IoTConnect Lib\n");
         return -1;
     }
+
+    return 0;
+}
+
+int iotconnect_sdk_run_mqtt_client(void) {
+    int ret = 0;
 
     IotConnectDeviceClientConfig pc;
     set_device_client_config(&pc);
@@ -475,13 +550,4 @@ int iotconnect_sdk_run_mqtt_client(void) {
     }
 
     return ret;
-}
-
-int iotconnect_sdk_init(void) {
-    if(iotconnect_sdk_setup_mqtt_client() != 0)
-    {
-        return -1;
-    }
-
-    return iotconnect_sdk_run_mqtt_client();
 }

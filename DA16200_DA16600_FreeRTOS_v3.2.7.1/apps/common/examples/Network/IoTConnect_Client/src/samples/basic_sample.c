@@ -16,7 +16,8 @@
 //
 // The HTTPS and MQTTS certificates (and device certificate / private key) are saved to NVRAM explicitly in the executable
 //
-#define STANDALONE 1
+#undef STANDALONE
+//#define STANDALONE 1
 
 #ifdef STANDALONE
 /*
@@ -155,61 +156,23 @@ static void on_ota(IotclEventData data) {
 }
 
 
-static void publish_telemetry() {
-    IotclMessageHandle msg = NULL;
+static void publish_telemetry(void) {
     const char *str = NULL;
-    const char *timestamp = NULL;
 
-    msg = iotcl_telemetry_create();
-    if(msg == NULL) {
-        IOTC_ERROR("iotcl_telemetry_create() failed\n");
-        goto cleanup;
-    }
+    char *number_names[] = { "cpu" };
+    double number_values[] = { 3.123 };
 
-    // Optional. The first time you create a data point, the current timestamp will be automatically added
-    // TelemetryAddWith* calls are only required if sending multiple data points in one packet.
-    timestamp = iotcl_iso_timestamp_now();
-    if(timestamp == NULL) {
-        IOTC_ERROR("iotcl_iso_timestamp_now() failed\n");
-        goto cleanup;
-    }
-
-    if(iotcl_telemetry_add_with_iso_time(msg, timestamp) == false) {
-        IOTC_ERROR("iotcl_telemetry_add_with_iso_time() failed\n");
-        goto cleanup;
-    }
-
-    if(iotcl_telemetry_set_string(msg, "version", APP_VERSION) == false) {
-        IOTC_ERROR("iotcl_telemetry_set_string() failed\n");
-        goto cleanup;
-    }
-
-    // test floating point numbers
-    if(iotcl_telemetry_set_number(msg, "cpu", 3.123) == false) {
-        IOTC_ERROR("iotcl_telemetry_set_number() failed\n");
-        goto cleanup;
-    }
-
-    str = iotcl_create_serialized_string(msg, false);
+    str = iotcl_serialise_telemetry_strings(0, NULL, NULL,
+                                            1, number_names, number_values,
+                                            0, NULL, NULL,
+                                            0, NULL);
     if(str == NULL) {
-        IOTC_ERROR("iotcl_create_serialized_string() failed\n");
-        goto cleanup;
+        IOTC_ERROR("iotcl_serialise_telemetry_strings() failed\n");
+        return;
     }
 
-    // partial cleanup
-    iotcl_telemetry_destroy(msg);
-    msg = NULL;
-
-    IOTC_DEBUG("Sending: %s\n", str);
     iotconnect_sdk_send_packet(str); // underlying code will report an error
-cleanup:
-    if(msg) {
-        iotcl_telemetry_destroy(msg);
-    }
-
-    if(str) {
-        iotcl_destroy_serialized(str);
-    }
+    iotcl_destroy_serialized(str);
 }
 
 int iotconnect_basic_sample_main(void)
@@ -234,13 +197,22 @@ int iotconnect_basic_sample_main(void)
     }
 #endif
 
-    IotConnectClientConfig *config = iotconnect_sdk_init_and_get_config();
+    IotConnectClientConfig *config = iotconnect_sdk_init_and_set_config(IOTCONNECT_ENV, IOTCONNECT_CPID, IOTCONNECT_DUID, IOTCONNECT_AUTH_TYPE, (char *) iotc_base64_symmetric_key);
     if(config == NULL) {
         IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
         return -1;
     }
 
+    IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
+    IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
+    IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
+    IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
+    IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
+
     config->auth_info.trust_store = mqtt_root_ca_buffer0;
+    config->status_cb = on_connection_status;
+    config->ota_cb = on_ota;
+    config->cmd_cb = on_command;
 
     if (config->auth_info.type == IOTC_AT_X509) {
         // device certificate and private key are assumed to be written to NVRAM
@@ -274,21 +246,32 @@ int iotconnect_basic_sample_main(void)
         return -1;
     }
 
-    config->status_cb = on_connection_status;
-    config->ota_cb = on_ota;
-    config->cmd_cb = on_command;
+    // MQTT Root CA and/or device certificate and private key will be written to NVRAM
+    int status = iotconnect_sdk_preinit_certs();
+    if (0 != status) {
+        IOTC_ERROR("iotconnect_sdk_preinit_certs() exited with error code %d\n", status);
+        return status;
+    }
 
     // run a dozen connect/send/disconnect cycles with each cycle being about a minute
-    for (int j = 0; j < 10; j++) {
+    for (int j = 0; j < 3; j++) {
+        IOTC_DEBUG("iotconnect_sdk_init() %d ->\n", j);
+
+        //
+        // Run discovery/sync
+        // Startup mqtt_client with new MQTT_XXXX values
+        //
+        // Only runs discovery/sync once -- multiple calls will re-use previous values
+        //
         int ret = iotconnect_sdk_init();
         if (0 != ret) {
-            IOTC_ERROR("IoTConnect exited with error code %d\n", ret);
+            IOTC_ERROR("iotconnect_sdk_init() exited with error code %d\n", ret);
             return ret;
         }
-        IOTC_DEBUG("iotconnect_sdk_init() %d\n", j);
+        IOTC_DEBUG("<- iotconnect_sdk_init() %d\n", j);
 
         // send 10 messages
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 3; i++) {
             if  (!iotconnect_sdk_is_connected()) {
                 IOTC_ERROR("iotconnect_sdk_is_connected() returned false\n");
                 break;
@@ -305,22 +288,22 @@ int iotconnect_basic_sample_main(void)
         iotconnect_sdk_disconnect();
     }
 
-    iotconnect_sdk_deinit();
+    // there is a slight "leak" here that discovery_response / sync_response / config may be holding onto dynamic memory
 
-    IOTC_DEBUG("exiting basic_sample()\n" );
+    IOTC_DEBUG("exiting basic_sample()\n");
     return 0;
 }
 #else
 //
-// This is a cutdown version that monitors the DA16X_CONF_STR_MQTT_CLIENT_IOTCONNECT_MODE environment variable
-// which is set by AT+NWMQCLIC command
+// This is a cutdown version that monitors the DA16X_CONF_STR_IOTCONNECT_SYNC environment variable
+// which is set by AT+NWICSYNC command
 // 
 // When the value changes to 1 it will perform IoTConnect discovery and write NVRAM values, the MQTT client
 // will be restarted and the new values from IoTConnect discovery should be used for MQTT.
 //
 // So sequence of events is:
 // - set IoTConnect NVRAM values
-// - set DA16X_CONF_STR_MQTT_CLIENT_IOTCONNECT_MODE to 1
+// - set DA16X_CONF_STR_IOTCONNECT_SYNC to 1
 // - ensure MQTT client is running
 //
 //
@@ -334,46 +317,106 @@ int iotconnect_basic_sample_main(void)
         
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
-    if(iotconnect_sdk_init_and_get_config() == NULL) {
+    IotConnectClientConfig *config = iotconnect_sdk_init_and_get_config();
+    if(config == NULL) {
         IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
         return -1;
     }
 
+    IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
+    IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
+    IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
+    IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
+    IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
+
+    /*
+     * TODO FIXME CHECK Haven't set up any callbacks here -- not sure how "AT command"-style reflects MQTT state changes -- ugghh!
+     */
+
+    /*
+     * Explicity *NOT* setting any certificates for "AT command" version
+     *
+     * Certificates can be set see: Table 16, Page 50, "UM-WI-003 DA16200 DA16600 Host Interface and AT Command User Manual" 
+     */
+
     platform_poll_iotconnect_mode(&iotc_mode);
     IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE initial value %d\n", iotc_mode);
-    if(iotc_mode != 0)
+    if(iotc_mode == 1)
     {
         //
         // This only sets up the MQTT NVRAM settings, interaction with the mqtt_client is assumed to be done via AT commands
         //
-        iotconnect_sdk_setup_mqtt_client();
+        int ret = iotconnect_sdk_init();
+        if (0 != ret) {
+            IOTC_ERROR("iotconnect_sdk_init() exited with error code %d\n", ret);
+            return ret;
+        }
     }
 
     while(1)
     {
+        int new_iotc_mode = 0;
+
         //
         // Horrid polling mechanism -- maybe need to have some sort of waitQueue in the future
         //
         vTaskDelay(1000/portTICK_PERIOD_MS);
 
-        platform_poll_iotconnect_mode(&iotc_mode);
-        if(iotc_mode == 0)
+        platform_poll_iotconnect_mode(&new_iotc_mode);
+        if(new_iotc_mode == iotc_mode)
         {
             continue;
         }
-        IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE changed to %d\n", iotc_mode);
 
-        //
-        // This only sets up the MQTT NVRAM settings, interaction with the mqtt_client is assumed to be done via AT commands
-        //
-        iotconnect_sdk_deinit();
-        iotconnect_sdk_init_and_get_config();
+        IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE changed to %d\n", new_iotc_mode);
 
-        iotconnect_sdk_setup_mqtt_client();
+        if(new_iotc_mode == 1)
+        {
+            IOTC_DEBUG("calling iotconnect_sdk_init()\n" );
+
+            //
+            // Run discovery/sync
+            // Startup mqtt_client with new MQTT_XXXX values
+            //
+            // Because discovery/sync responses are cleared below -- the discovery/sync will also run (with up to date values).
+            //
+            iotconnect_sdk_init();
+
+            // send messages via AT+NWICMSG
+            
+            iotc_mode = 1;
+            continue;
+        }
+
+        if(iotc_mode != 0)
+        {
+            IOTC_DEBUG("calling iotconnect_sdk_init_and_get_config()\n" );
+
+            //
+            // Load up config with new IOTC_XXXX values
+            //
+            // Clear any previous discovery/sync responses
+            //
+            // note iotconnect_sdk_init_and_get_config() here should free any dynamic memory that discovery_response / sync_response / config may be holding onto
+            //
+            config = iotconnect_sdk_init_and_get_config();
+            if(config == NULL) {
+                IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
+                break;
+            }
+
+            IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
+            IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
+            IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
+            IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
+            IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
+
+            iotc_mode = 0;
+        }
     }
 
-    iotconnect_sdk_deinit();
-
+    // there is a slight "leak" here that discovery_response / sync_response / config may be holding onto dynamic memory
+    
     IOTC_DEBUG("exiting basic_sample()\n" );
     return 0;
 }

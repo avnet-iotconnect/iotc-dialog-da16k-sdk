@@ -68,12 +68,15 @@ typedef struct {
 
 
 IotConnectClientConfig *iotconnect_sdk_init_and_get_config(void);
+IotConnectClientConfig *iotconnect_sdk_init_and_set_config(char *env, char *cpid, char *duid, int authentication_type, char *symmetric_key);
 
 // call iotconnect_sdk_init_and_get_config first and configure the SDK before calling iotconnect_sdk_init()
+
+int iotconnect_sdk_preinit_certs(void); // intentionally broken out so different SDKs have option to use/not
+
 int iotconnect_sdk_init(void); // convenience routine that calls iotconnect_sdk_setup_mqtt_client() and then iotconnect_sdk_run_mqtt_client() - depending upon success.
 int iotconnect_sdk_setup_mqtt_client(void); // intentionally broken out so different SDKs have option to use/not
 int iotconnect_sdk_run_mqtt_client(void); // intentionally broken out so different SDKs have option to use/not
-void iotconnect_sdk_deinit(void);
 
 bool iotconnect_sdk_is_connected(void);
 

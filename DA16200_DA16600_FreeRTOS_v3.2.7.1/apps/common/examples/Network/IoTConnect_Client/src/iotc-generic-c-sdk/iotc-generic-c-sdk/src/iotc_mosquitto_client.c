@@ -89,24 +89,21 @@ int iotc_device_client_send_message_qos(const char *message, int qos) {
     // maybe we can implement by setting in NVRAM?
     // but really should be kept with the message in the message Q
     (void) qos;
-    return mqtt_sample_client_pub_send(message);
+    return mqtt_sample_client_pub_send(message, true);
 }
 
 int iotc_device_client_send_message(const char *message) {
-    return mqtt_sample_client_pub_send(message);
+    return mqtt_sample_client_pub_send(message, true);
 }
 
 int iotc_platform_acquire_config_values(IotConnectClientConfig *c) {
     char temp_str[256];
     int temp_int;
 
-    if(platform_get_cpid(temp_str) != 0)
-    {
-        IOTC_ERROR("platform_get_cpid() failed\n");
-        return -1;
-    }
-    c->cpid = iotcl_strdup(temp_str);
-    IOTC_DEBUG("IOTC_CPID = %s\n", c->cpid);
+    c->env = NULL;
+    c->cpid = NULL;
+    c->duid = NULL;
+    c->auth_info.data.symmetric_key = NULL;
 
     if(platform_get_env(temp_str) != 0)
     {
@@ -114,7 +111,23 @@ int iotc_platform_acquire_config_values(IotConnectClientConfig *c) {
         goto cleanup;
     }
     c->env = iotcl_strdup(temp_str);
-    IOTC_DEBUG("IOTC_ENV = %s\n", c->env);
+    if(c->env == NULL)
+    {
+        IOTC_ERROR("iotcl_strdup() failed\n");
+        goto cleanup;
+    }
+
+    if(platform_get_cpid(temp_str) != 0)
+    {
+        IOTC_ERROR("platform_get_cpid() failed\n");
+        goto cleanup;
+    }
+    c->cpid = iotcl_strdup(temp_str);
+    if(c->cpid == NULL)
+    {
+        IOTC_ERROR("iotcl_strdup() failed\n");
+        goto cleanup;
+    }
 
     if(platform_get_duid(temp_str) != 0)
     {
@@ -122,7 +135,11 @@ int iotc_platform_acquire_config_values(IotConnectClientConfig *c) {
         goto cleanup;
     }
     c->duid = iotcl_strdup(temp_str);
-    IOTC_DEBUG("IOTC_DUID = %s\n", c->duid);
+    if(c->duid == NULL)
+    {
+        IOTC_ERROR("iotcl_strdup() failed\n");
+        goto cleanup;
+    }
 
     if(platform_get_auth_type(temp_str) != 0)
     {
@@ -135,7 +152,6 @@ int iotc_platform_acquire_config_values(IotConnectClientConfig *c) {
         goto cleanup;
     }
     c->auth_info.type = temp_int;
-    IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", c->auth_info.type);
 
     if(c->auth_info.type == IOTC_AT_SYMMETRIC_KEY)
     {
@@ -145,29 +161,33 @@ int iotc_platform_acquire_config_values(IotConnectClientConfig *c) {
             goto cleanup;
         }
         c->auth_info.data.symmetric_key = (const char *) iotcl_strdup(temp_str);
-        IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %d\n", c->auth_info.type);
+        if(c->auth_info.data.symmetric_key == NULL)
+        {
+            IOTC_ERROR("iotcl_strdup() failed\n");
+            goto cleanup;
+        }
     }
 
     return 0;
 
 cleanup:
-    iotc_platform_release_config_values(c);
-    return -1;
-}
-
-void iotc_platform_release_config_values(IotConnectClientConfig *c) {
+    free(c->env);
     free(c->cpid);
     free(c->duid);
-    free(c->env);
     free((void *) c->auth_info.data.symmetric_key);
-
-    memset(c, 0, sizeof(*c));
+    return -1;
 }
 
 //
 // setup the MQTT client configuration
 //
 int iotc_device_client_setup(IotConnectDeviceClientConfig *c) {
+    /*
+     * Remember the dtg value recovered from the sync response
+     * The dtg value is needed if ever need to create a message "from scratch" and use AT+NWMSMSG command instead of AT+NWICMSG
+     */
+    platform_set_dtg(c->sr->dtg);
+
     mqtt_sample_client_nvram_config(c->sr->broker.host,
 		           8883,
 			   c->sr->broker.user_name,
@@ -188,13 +208,6 @@ int iotc_device_client_setup(IotConnectDeviceClientConfig *c) {
 int iotc_device_client_run(IotConnectDeviceClientConfig *c) {
     int ret;
 
-    // Need X509 certificate the server -- this isn't optional
-    mqtt_broker_cert_config( c->auth->trust_store, strlen(c->auth->trust_store));
-
-    // Need X509 certificate and private key for the device -- they may be NULL for some authentication types
-    mqtt_device_cert_config( c->auth->data.cert_info.device_cert, (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_cert) : 0,
-  			     c->auth->data.cert_info.device_key,  (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_key) : 0);
-
     ret = mqtt_sample_client_init(iotc_mqtt_msg_cb, iotc_mqtt_pub_cb, iotc_mqtt_conn_cb, iotc_mqtt_disconn_cb, iotc_mqtt_sub_cb, iotc_mqtt_unsub_cb);
     if (ret != 0) {
         IOTC_ERROR("[%s] mqtt_sample_client_init() failed\n", __func__);
@@ -211,6 +224,17 @@ int iotc_device_client_run(IotConnectDeviceClientConfig *c) {
 cleanup:
     iotc_device_deinit();
     return -1;
+}
+
+int iotc_device_client_preinit_certs(IotConnectDeviceClientConfig *c) {
+    // Need X509 certificate the server -- this isn't optional
+    mqtt_broker_cert_config( c->auth->trust_store, strlen(c->auth->trust_store));
+
+    // Need X509 certificate and private key for the device -- they may be NULL for some authentication types
+    mqtt_device_cert_config( c->auth->data.cert_info.device_cert, (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_cert) : 0,
+  			     c->auth->data.cert_info.device_key,  (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_key) : 0);
+    
+    return 0;
 }
 
 int iotc_device_client_init(IotConnectDeviceClientConfig *c) {
