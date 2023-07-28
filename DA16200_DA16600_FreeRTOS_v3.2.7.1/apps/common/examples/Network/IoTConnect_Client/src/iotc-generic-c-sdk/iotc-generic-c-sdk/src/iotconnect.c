@@ -551,3 +551,16 @@ int iotconnect_sdk_run_mqtt_client(void) {
 
     return ret;
 }
+
+void iotconnect_command_status(IotConnectEventType type, const char *ack_id, bool status, const char *message) {
+    IOTC_DEBUG("type: %d, ack_id: %s, status: %d :: message: %s\n", type, ack_id, status, message );
+    const char *ack = iotcl_create_ack_string(type, ack_id, status, message);
+    iotconnect_sdk_send_packet(ack);
+    IOTC_DEBUG("Sent CMD ack: %s\n", ack);
+    free((void *) ack);
+}
+
+// just a helper routine to separate out the OTA response
+void iotconnect_ota_status(const char *ack_id, bool status, const char *message) {
+    iotconnect_command_status(DEVICE_OTA, ack_id, status, message);
+}

@@ -437,16 +437,16 @@ int set_nvcache_str(int key, const char *value) {
     return 0;
 }
 
-int platform_poll_iotconnect_mode(int *value) {
+int platform_poll_iotconnect_sync_mode(int *value) {
     int status;
     char string[8];
 
     *value = 0;
     *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC, string);
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_MODE\n");
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_SYNC_MODE\n");
         return -1;
     }
     if(*string == '\0')
@@ -459,17 +459,82 @@ int platform_poll_iotconnect_mode(int *value) {
     return 0;
 }
 
-int platform_reset_iotconnect_mode(void) {
-    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC, "0");
+int platform_reset_iotconnect_sync_mode(void) {
+    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, "0");
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_MODE\n");
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_SYNC_MODE\n");
         return -1;
     }
 
     return 0;
 }
 
+int platform_poll_iotconnect_use_cmdack(int *value) {
+    int status;
+    char string[8];
+
+    *value = 0;
+    *string = '\0';
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, string);
+    if(status != CC_SUCCESS)
+    {
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_CMDACK\n");
+        return -1;
+    }
+    if(*string == '\0')
+    {
+        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_CMDACK value is empty\n");
+        return -1;
+    }
+    *value = atoi(string);
+
+    return 0;
+}
+
+int platform_reset_iotconnect_use_cmdack(void) {
+    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, "0");
+    if(status != CC_SUCCESS)
+    {
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_CMDACK\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int platform_poll_iotconnect_use_otaack(int *value) {
+    int status;
+    char string[8];
+
+    *value = 0;
+    *string = '\0';
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, string);
+    if(status != CC_SUCCESS)
+    {
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_OTAACK\n");
+        return -1;
+    }
+    if(*string == '\0')
+    {
+        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_OTAACK value is empty\n");
+        return -1;
+    }
+    *value = atoi(string);
+
+    return 0;
+}
+
+int platform_reset_iotconnect_use_otaack(void) {
+    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, "0");
+    if(status != CC_SUCCESS)
+    {
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_OTAACK\n");
+        return -1;
+    }
+
+    return 0;
+}
 int platform_get_cpid(char *string) {
     int status;
     *string = '\0';

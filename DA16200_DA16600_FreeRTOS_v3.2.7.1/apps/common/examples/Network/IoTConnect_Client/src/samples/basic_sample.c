@@ -7,9 +7,14 @@
 #include <string.h>
 
 #include "iotconnect_common.h"
+#include "iotconnect_discovery.h"
 #include "iotconnect.h"
 
 #include "mqtt_client_sample.h"
+
+#include "atcmd.h"
+
+#define APP_OTA_VERSION "00.01.00"
 
 //
 // This is a standalone example that directly communicates with the mqtt_client and sends it's own telemetry information
@@ -18,6 +23,135 @@
 //
 #undef STANDALONE
 //#define STANDALONE 1
+
+static void on_connection_status(IotConnectConnectionStatus status) {
+    // Add your own status handling
+    switch (status) {
+        case IOTC_CS_MQTT_CONNECTED:
+            IOTC_DEBUG("IoTConnect Client Connected\n");
+            break;
+        case IOTC_CS_MQTT_DISCONNECTED:
+            IOTC_DEBUG("IoTConnect Client Disconnected\n");
+            break;
+        default:
+            IOTC_DEBUG("IoTConnect Client ERROR\n");
+            break;
+    }
+
+    //
+    // reflect the state of the IoTConnect MQTT connection
+    //
+    atcmd_asynchony_event_for_icmqtt(status == IOTC_CS_MQTT_CONNECTED ? 1 : 0);
+}
+
+static void on_command(IotclEventData data) {
+    int iotc_cmdack;
+    platform_poll_iotconnect_use_cmdack(&iotc_cmdack);
+
+    IotConnectEventType type = iotcl_get_event_type(data);
+    char *ack_id = iotcl_clone_ack_id(data);
+    if(NULL == ack_id) {
+        goto cleanup;
+    }
+
+    if(iotc_cmdack != 1) {
+        IOTC_DEBUG("iotc_cmdack %d -- ignoring command\n", iotc_cmdack);
+
+        //
+        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMDACK is not 1 a validly treated command will immediately respond false
+        //
+        iotconnect_command_status(type, ack_id, false, "Not implemented");
+        goto cleanup_ack_id;
+    }
+
+    //
+    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMDACK is 1, the response to a validly treated command is at the discretion of the AT user.
+    // Simply provide information.
+    //
+    char *command = iotcl_clone_command(data);
+    if (NULL == command) {
+        IOTC_ERROR("%s: command == NULL\n", __func__);
+        iotconnect_command_status(type, ack_id, false, "Internal error");
+
+        atcmd_asynchony_event_for_iccmd(UNKNOWN_EVENT, NULL, NULL);
+        goto cleanup_ack_id;
+    }
+    
+    // send command asynchronously here?
+    // replace any spaces with a comma
+    for(unsigned int i = 0;i < strlen(command);i++) {
+        command[i] = (command[i] == ' ') ? ',' : command[i];
+    }
+
+    IOTC_DEBUG("%s command: %s\n", __func__, command);
+
+    atcmd_asynchony_event_for_iccmd(type, ack_id, command);
+    free((void *) command);
+
+cleanup_ack_id:
+    free((void *) ack_id);
+cleanup:
+    iotcl_destroy_event(data);
+}
+
+static void on_ota(IotclEventData data) {
+    int iotc_otaack;
+    platform_poll_iotconnect_use_otaack(&iotc_otaack);
+
+    IotConnectEventType type = iotcl_get_event_type(data);
+    char *ack_id = iotcl_clone_ack_id(data);
+    if(NULL == ack_id) {
+        goto cleanup;
+    }
+
+    if(iotc_otaack != 1) {
+        IOTC_DEBUG("iotc_otaack %d -- ignoring command\n", iotc_otaack);
+
+        //
+        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTAACK is not 1 a validly treated OTA message will immediately respond false
+        //
+        iotconnect_command_status(type, ack_id, false, "Not implemented");
+        goto cleanup_ack_id;
+    }
+
+    //
+    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTAACK is 1, the response to a validly treated OTA message is at the discretion of the AT user.
+    // Simply provide information.
+    //
+    const char *version = iotcl_clone_sw_version(data);
+    if (NULL == version) {
+        IOTC_ERROR("%s: version == NULL\n", __func__);
+        iotconnect_command_status(type, ack_id, false, "Internal error");
+
+        atcmd_asynchony_event_for_icota(NULL, NULL, NULL);
+        goto cleanup_ack_id;
+    }
+
+    const char *url = iotcl_clone_download_url(data, 0);
+    if (NULL == url) {
+        // FIXME TODO original code had comments that "url" couuld be null, and somehoe inside a "data" item instead does that need more implementation here?
+
+
+        IOTC_ERROR("%s: url == NULL\n", __func__);
+        iotconnect_command_status(type, ack_id, false, "Internal error");
+
+        atcmd_asynchony_event_for_icota(NULL, NULL, NULL);
+        goto cleanup_version;
+    }
+
+    IOTC_DEBUG("Download version is: %s\n", version);
+    IOTC_DEBUG("Download URL is: %s\n", url);
+
+    atcmd_asynchony_event_for_icota(ack_id, version, url);
+
+    free((void *) url);
+cleanup_version:
+    free((void *) version);
+cleanup_ack_id:
+    free((void *) ack_id);
+cleanup:
+    iotcl_destroy_event(data);
+}
 
 #ifdef STANDALONE
 /*
@@ -65,96 +199,6 @@ static int iotc_usleep(unsigned long usec) {
     vTaskDelay( delay ); // delay in ticks
     return 0;
 }
-
-#define APP_VERSION "00.01.00"
-
-static void on_connection_status(IotConnectConnectionStatus status) {
-    // Add your own status handling
-    switch (status) {
-        case IOTC_CS_MQTT_CONNECTED:
-            IOTC_DEBUG("IoTConnect Client Connected\n");
-            break;
-        case IOTC_CS_MQTT_DISCONNECTED:
-            IOTC_DEBUG("IoTConnect Client Disconnected\n");
-            break;
-        default:
-            IOTC_DEBUG("IoTConnect Client ERROR\n");
-            break;
-    }
-}
-
-static void command_status(IotclEventData data, bool status, const char *command_name, const char *message) {
-    const char *ack = iotcl_create_ack_string_and_destroy_event(data, status, message);
-    IOTC_DEBUG("command: %s status=%s: %s\n", command_name, status ? "OK" : "Failed", message);
-    IOTC_DEBUG("Sent CMD ack: %s\n", ack);
-    iotconnect_sdk_send_packet(ack);
-    free((void *) ack);
-}
-
-static void on_command(IotclEventData data) {
-    char *command = iotcl_clone_command(data);
-    if (NULL != command) {
-        command_status(data, false, command, "Not implemented");
-        free((void *) command);
-    } else {
-        command_status(data, false, "?", "Internal error");
-    }
-}
-
-static bool is_app_version_same_as_ota(const char *version) {
-    return strcmp(APP_VERSION, version) == 0;
-}
-
-static bool app_needs_ota_update(const char *version) {
-    return strcmp(APP_VERSION, version) < 0;
-}
-
-static void on_ota(IotclEventData data) {
-    const char *message = NULL;
-    char *url = iotcl_clone_download_url(data, 0);
-    bool success = false;
-    if (NULL != url) {
-        IOTC_DEBUG("Download URL is: %s\n", url);
-        const char *version = iotcl_clone_sw_version(data);
-        if (is_app_version_same_as_ota(version)) {
-            IOTC_DEBUG("OTA request for same version %s. Sending success\n", version);
-            success = true;
-            message = "Version is matching";
-        } else if (app_needs_ota_update(version)) {
-            IOTC_DEBUG("OTA update is required for version %s.\n", version);
-            success = false;
-            message = "Not implemented";
-        } else {
-            IOTC_DEBUG("Device firmware version %s is newer than OTA version %s. Sending failure\n", APP_VERSION,
-                   version);
-            // Not sure what to do here. The app version is better than OTA version.
-            // Probably a development version, so return failure?
-            // The user should decide here.
-            success = false;
-            message = "Device firmware version is newer";
-        }
-
-        free((void *) url);
-        free((void *) version);
-    } else {
-        // compatibility with older events
-        // This app does not support FOTA with older back ends, but the user can add the functionality
-        const char *command = iotcl_clone_command(data);
-        if (NULL != command) {
-            // URL will be inside the command
-            IOTC_DEBUG("Command is: %s\n", command);
-            message = "Old back end URLS are not supported by the app";
-            free((void *) command);
-        }
-    }
-    const char *ack = iotcl_create_ack_string_and_destroy_event(data, success, message);
-    if (NULL != ack) {
-        IOTC_DEBUG("Sent OTA ack: %s\n", ack);
-        iotconnect_sdk_send_packet(ack);
-        free((void *) ack);
-    }
-}
-
 
 static void publish_telemetry(void) {
     const char *str = NULL;
@@ -294,6 +338,68 @@ int iotconnect_basic_sample_main(void)
     return 0;
 }
 #else
+
+//
+// a wrapper to send +NWICCONFIGSTART / +NWICCONFIGEND messages
+//
+IotConnectClientConfig *read_environment(void)
+{
+    atcmd_asynchony_event_for_icconfig_start();
+    IOTC_DEBUG("calling iotconnect_sdk_init_and_get_config()\n" );
+
+    //
+    // Load up config with new IOTC_XXXX values
+    //
+    // Clear any previous discovery/sync responses
+    //
+    // note iotconnect_sdk_init_and_get_config() here should free any dynamic memory that discovery_response / sync_response / config may be holding onto
+    //
+    IotConnectClientConfig *config = iotconnect_sdk_init_and_get_config();
+    if(config == NULL) {
+        IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
+        goto exit;
+    }
+
+    IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
+    IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
+    IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
+    IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
+    IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
+
+    /*
+     * TODO FIXME CHECK Haven't set up any callbacks here -- not sure how "AT command"-style reflects MQTT state changes -- ugghh!
+     */
+    config->status_cb = on_connection_status;
+    config->ota_cb = on_ota;
+    config->cmd_cb = on_command;
+
+exit:
+    atcmd_asynchony_event_for_icconfig_end(config != NULL);
+    return config;
+}
+
+//
+// a wrapper to send +NWICSYNCSTART / +NWICSYNCEND messages
+//
+int discover_and_sync()
+{
+    //
+    // Run discovery/sync
+    // Startup mqtt_client with new MQTT_XXXX values
+    //
+    // Because discovery/sync responses are cleared below -- the discovery/sync will also run (with up to date values).
+    //
+    atcmd_asynchony_event_for_icsync_start();
+    int ret = iotconnect_sdk_init();
+    atcmd_asynchony_event_for_icsync_end(ret == 0);
+
+    if (0 != ret) {
+        IOTC_ERROR("iotconnect_sdk_init() exited with error code %d\n", ret);
+    }
+
+    return ret;
+}
+
 //
 // This is a cutdown version that monitors the DA16X_CONF_STR_IOTCONNECT_SYNC environment variable
 // which is set by AT+NWICSYNC command
@@ -317,40 +423,17 @@ int iotconnect_basic_sample_main(void)
         
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
-    IotConnectClientConfig *config = iotconnect_sdk_init_and_get_config();
-    if(config == NULL) {
-        IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
-        return -1;
-    }
-
-    IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
-    IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
-    IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
-    IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
-    IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
-
-    /*
-     * TODO FIXME CHECK Haven't set up any callbacks here -- not sure how "AT command"-style reflects MQTT state changes -- ugghh!
-     */
-
     /*
      * Explicity *NOT* setting any certificates for "AT command" version
      *
      * Certificates can be set see: Table 16, Page 50, "UM-WI-003 DA16200 DA16600 Host Interface and AT Command User Manual" 
      */
 
-    platform_poll_iotconnect_mode(&iotc_mode);
-    IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE initial value %d\n", iotc_mode);
-    if(iotc_mode == 1)
-    {
-        //
-        // This only sets up the MQTT NVRAM settings, interaction with the mqtt_client is assumed to be done via AT commands
-        //
-        int ret = iotconnect_sdk_init();
-        if (0 != ret) {
-            IOTC_ERROR("iotconnect_sdk_init() exited with error code %d\n", ret);
-            return ret;
-        }
+    IotConnectClientConfig *config = read_environment();
+    if(config == NULL) {
+        IOTC_ERROR("read_environment() failed\n");
+        // FIXME TODO CHECK not sure what to do here?
+        iotc_mode = 2; // an error state 
     }
 
     while(1)
@@ -362,56 +445,40 @@ int iotconnect_basic_sample_main(void)
         //
         vTaskDelay(1000/portTICK_PERIOD_MS);
 
-        platform_poll_iotconnect_mode(&new_iotc_mode);
+        platform_poll_iotconnect_sync_mode(&new_iotc_mode);
         if(new_iotc_mode == iotc_mode)
         {
             continue;
         }
 
-        IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE changed to %d\n", new_iotc_mode);
+        IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE is %d (was %d)\n", new_iotc_mode, iotc_mode);
 
         if(new_iotc_mode == 1)
         {
-            IOTC_DEBUG("calling iotconnect_sdk_init()\n" );
+            if(discover_and_sync() != 0)
+            {
+                // FIXME TODO CHECK not sure what to do here?
 
-            //
-            // Run discovery/sync
-            // Startup mqtt_client with new MQTT_XXXX values
-            //
-            // Because discovery/sync responses are cleared below -- the discovery/sync will also run (with up to date values).
-            //
-            iotconnect_sdk_init();
-
-            // send messages via AT+NWICMSG
+                iotc_mode = 3; // an error state 
+                continue; 
+            }
             
             iotc_mode = 1;
             continue;
         }
 
-        if(iotc_mode != 0)
+        if(new_iotc_mode == 0)
         {
-            IOTC_DEBUG("calling iotconnect_sdk_init_and_get_config()\n" );
-
-            //
-            // Load up config with new IOTC_XXXX values
-            //
-            // Clear any previous discovery/sync responses
-            //
-            // note iotconnect_sdk_init_and_get_config() here should free any dynamic memory that discovery_response / sync_response / config may be holding onto
-            //
-            config = iotconnect_sdk_init_and_get_config();
+            config = read_environment();
             if(config == NULL) {
-                IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
-                break;
+                IOTC_ERROR("read_environment() failed\n");
+
+                iotc_mode = 2; // an error state 
+                continue; 
             }
 
-            IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
-            IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
-            IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
-            IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
-            IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
-
             iotc_mode = 0;
+            continue;
         }
     }
 

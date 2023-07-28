@@ -41,6 +41,13 @@
 #include "atcmd_transfer_mng.h"
 
 #include "da16x_compile_opt.h"
+
+#if 1
+#include "iotconnect.h"
+#include "iotconnect_telemetry.h"
+#include "iotconnect_event.h"
+#endif
+
 #pragma GCC diagnostic ignored "-Wrestrict"
 
 
@@ -511,8 +518,14 @@ static const command_t commands[] = {
   { (char *)"AT+NWICAT",          atcmd_network,        1, (char *) "<set_iotconnect_at>",                        "Set IoTConnect AUTH TYPE"                              },
   { (char *)"AT+NWICSK",          atcmd_network,        1, (char *) "<set_iotconnect_sk>",                        "Set IoTConnect SYMMETRIC KEY"                          },
   { (char *)"AT+NWICSYNC",        atcmd_network,        1, (char *) "<0/1>",                                      "Start/stop IoTConnect sync"                            },
-  { (char *)"AT+NWICDTG",         atcmd_network,        0, (char *) "<set_iotconnect_dtg>",                       "Set IoTConnect DTG (saved from discovery process)"     },
+  { (char *)"AT+NWICDTG",         atcmd_network,        0, (char *) "<get_iotconnect_dtg>",                       "Get IoTConnect DTG (saved from discovery process)"     },
   { (char *)"AT+NWICMSG",         atcmd_network,        15, (char *) "<name1>,<value1>,<name2>,<value2>,...",     "Send an IoTConnect format MQTT message, using name/value pairs"    },
+// might also relect device message version here?
+  { (char *)"AT+NWICVER",         atcmd_network,        0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
+  { (char *)"AT+NWICCMDACK",      atcmd_network,        5, (char *) "<type>,<ack_id>,<0/1>,<message>",            "Acknowledge IoTConnect command with <type>,<ack_id>,etc."   },
+  { (char *)"AT+NWICUSECMDACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using CMDACK, i.e. responding to async commands"   },
+  { (char *)"AT+NWICOTAACK",      atcmd_network,        4, (char *) "<ack_id>,<0/1>,<message>",                   "Acknowledge IoTConnect OTA with <ack_id>,etc."   },
+  { (char *)"AT+NWICUSEOTAACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using OTAACK, i.e. responding to async commands"   },
 #endif
 
 #if defined ( __SUPPORT_WPA_ENTERPRISE__ )
@@ -775,6 +788,50 @@ void atcmd_wf_jap_print_with_cause(int cause)
 #endif // __SUPPORT_DPM_ABNORM_MSG__
 }
 
+#if 1
+void atcmd_asynchony_event_for_iccmd(int type, const char *ack_id, const char *command)
+{
+    if (type == 0 || ack_id == NULL || command == NULL) {
+        PRINTF_ATCMD("\r\n+NWICCMDFAIL\r\n");
+    } else {
+        PRINTF_ATCMD("\r\n+NWICCMD:%d,%s,%s\r\n", type, ack_id, command);
+    }
+}
+
+void atcmd_asynchony_event_for_icota(const char *ack_id, const char *version, const char *url)
+{
+    if (ack_id == NULL || version == NULL || url == NULL) {
+        PRINTF_ATCMD("\r\n+NWICOTAFAIL\r\n");
+    } else {
+        PRINTF_ATCMD("\r\n+NWICOTA:%s,%s,%s\r\n", ack_id, version, url);
+    }
+}
+
+void atcmd_asynchony_event_for_icmqtt(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICMQ:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icsync_start(void)
+{
+    PRINTF_ATCMD("\r\n+NWICSYNCSTART:\r\n");
+}
+
+void atcmd_asynchony_event_for_icsync_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICSYNCEND:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icconfig_start(void)
+{
+    PRINTF_ATCMD("\r\n+NWICCONFIGSTART:\r\n");
+}
+
+void atcmd_asynchony_event_for_icconfig_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICCONFIGEND:%d\r\n", status);
+}
+#endif
 
 #if defined (__SUPPORT_MQTT__)
 static int atcmd_wfjap_not_send_by_err;
@@ -7162,14 +7219,40 @@ int atcmd_network(int argc, char *argv[])
 #if 1
     // AT+NWICSYNC
     else if (strcasecmp(argv[0] + 5, "ICSYNC") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICSYNC=? */
-            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC, result_str);
+            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, result_str);
         } else if (argc == 2) {
-            PRINTF("%s\n", argv[1]);
             /* AT+NWICSYNC=<0/1> */
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC, argv[1]) != CC_SUCCESS) {
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, argv[1]) != CC_SUCCESS) {
+                err_code = AT_CMD_ERR_COMMON_ARG_LEN;
+            }
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICUSECMDACK
+    else if (strcasecmp(argv[0] + 5, "ICUSECMDACK") == 0) {
+        if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
+            /* AT+NWICCMDACK=? */
+            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, result_str);
+        } else if (argc == 2) {
+            /* AT+NWICUSECMDACK=<0/1> */
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, argv[1]) != CC_SUCCESS) {
+                err_code = AT_CMD_ERR_COMMON_ARG_LEN;
+            }
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICUSEOTAACK
+    else if (strcasecmp(argv[0] + 5, "ICUSEOTAACK") == 0) {
+        if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
+            /* AT+NWICOTAACK=? */
+            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, result_str);
+        } else if (argc == 2) {
+            /* AT+NWICUSEOTAACK=<0/1> */
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
             }
         } else {
@@ -7178,12 +7261,10 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICDUID
     else if (strcasecmp(argv[0] + 5, "ICDUID") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICDUID=? */
             da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, result_str);
         } else if (argc == 2) {
-            PRINTF("%s\n", argv[1]);
             /* AT+NWICDUID=<duid> */
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
@@ -7194,12 +7275,10 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICCPID
     else if (strcasecmp(argv[0] + 5, "ICCPID") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICCPID=? */
             da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, result_str);
         } else if (argc == 2) {
-            PRINTF("%s\n", argv[1]);
             /* AT+NWICCPID=<cpid> */
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
@@ -7210,28 +7289,19 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICDTG
     else if (strcasecmp(argv[0] + 5, "ICDTG") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICDTG=? */
             da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, result_str);
-        } else if (argc == 2) {
-            PRINTF("%s\n", argv[1]);
-            /* AT+NWICDTG=<cpid> */
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, argv[1]) != CC_SUCCESS) {
-                err_code = AT_CMD_ERR_COMMON_ARG_LEN;
-            }
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
     // AT+NWICENV
     else if (strcasecmp(argv[0] + 5, "ICENV") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICENV=? */
             da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, result_str);
         } else if (argc == 2) {
-            PRINTF("%s\n", argv[1]);
             /* AT+NWICENV=<env> */
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
@@ -7242,12 +7312,10 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICAT
     else if (strcasecmp(argv[0] + 5, "ICAT") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICAT=? */
             da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, result_str);
         } else if (argc == 2) {
-            PRINTF("%s\n", argv[1]);
             /* AT+NWICAT=<authentication_type> */
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
@@ -7258,7 +7326,6 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICSK
     else if (strcasecmp(argv[0] + 5, "ICSK") == 0) {
-        PRINTF("%s\n", argv[0]);
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICSK=? */
             da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, result_str);
@@ -7274,7 +7341,6 @@ int atcmd_network(int argc, char *argv[])
             if(len >= 3 && arg[len-3] == '-')
                 arg[len-3] = '=';
 
-            PRINTF("%s\n", argv[1]);
             /* AT+NWICSK=<symmetric_key> */
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
@@ -7285,9 +7351,6 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICMSG
     else if (strcasecmp(argv[0] + 5, "ICMSG") == 0) {
-#include "iotconnect_telemetry.h"
-#include "iotconnect.h"
-
         if (argc == 3 || argc == 5 || argc == 7 || argc == 9 || argc == 11 || argc == 13 || argc == 15) {
             const char *str = NULL;
     
@@ -7300,8 +7363,6 @@ int atcmd_network(int argc, char *argv[])
             {
                 names[i] = argv[1 + (i * 2)];
                 values[i] = argv[2 + (i * 2)];
-
-                PRINTF("%d: %s = \"%s\"\n", i, names[i], values[i]);
             }
 
             str = iotcl_serialise_telemetry_strings(half_argc, names, values,
@@ -7318,6 +7379,51 @@ int atcmd_network(int argc, char *argv[])
                 iotconnect_sdk_send_packet(str); // underlying code will report an error
                 iotcl_destroy_serialized(str);
             }
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICVER
+    else if (strcasecmp(argv[0] + 5, "ICVER") == 0) {
+
+// Just to give some scope for "expansion" -- update this if AT commands get added/updated
+#define IOTCONNECT_AT_VERSION "1.0.0"
+
+        if (argc == 1) {
+            /* AT+NWICVER */
+            strcpy(result_str, IOTCONNECT_AT_VERSION);
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICCMDACK
+    else if (strcasecmp(argv[0] + 5, "ICCMDACK") == 0) {
+        if (argc == 5) {
+           /* AT+NWICCMDACK status, type, ack_id, command_name, message */
+           IotConnectEventType type = (IotConnectEventType) atoi(argv[1]);
+           const char *ack_id = (const char *) argv[2];
+           bool cmd_status = (bool) atoi(argv[3]);
+           const char *message = (const char *) argv[4];
+
+           iotconnect_command_status(type, ack_id, cmd_status, message);
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICOTAACK
+    else if (strcasecmp(argv[0] + 5, "ICOTAACK") == 0) {
+        PRINTF("ICOTAACK %d\n", argc);
+        if (argc == 4) {
+           /* AT+NWICOTAACK status, type, ack_id, command_name, message */
+           const char *ack_id = (const char *) argv[1];
+           bool cmd_status = (bool) atoi(argv[2]);
+           const char *message = (const char *) argv[3];
+
+        PRINTF("ICOTAACK ack_id %s\n", ack_id);
+        PRINTF("ICOTAACK cmd_status %d\n", cmd_status);
+        PRINTF("ICOTAACK message %s\n", message);
+
+           iotconnect_ota_status(ack_id, cmd_status, message);
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }

@@ -90,6 +90,9 @@ int iotconnect_sdk_send_packet(const char *data);
 
 void iotconnect_sdk_disconnect(void);
 
+void iotconnect_command_status(IotConnectEventType type, const char *ack_id, bool status, const char *message);
+void iotconnect_ota_status(const char *ack_id, bool status, const char *message);
+
 #ifdef __cplusplus
 }
 #endif
