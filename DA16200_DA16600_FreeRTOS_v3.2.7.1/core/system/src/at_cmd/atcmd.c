@@ -523,9 +523,9 @@ static const command_t commands[] = {
 // might also relect device message version here?
   { (char *)"AT+NWICVER",         atcmd_network,        0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
   { (char *)"AT+NWICCMDACK",      atcmd_network,        5, (char *) "<type>,<ack_id>,<0/1>,<message>",            "Acknowledge IoTConnect command with <type>,<ack_id>,etc."   },
-  { (char *)"AT+NWICUSECMDACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using CMDACK, i.e. responding to async commands"   },
+  { (char *)"AT+NWICUSECMDACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using CMD ACK, i.e. responding to async commands"   },
   { (char *)"AT+NWICOTAACK",      atcmd_network,        4, (char *) "<ack_id>,<0/1>,<message>",                   "Acknowledge IoTConnect OTA with <ack_id>,etc."   },
-  { (char *)"AT+NWICUSEOTAACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using OTAACK, i.e. responding to async commands"   },
+  { (char *)"AT+NWICUSEOTAACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using OTA ACK, i.e. responding to async commands"   },
 #endif
 
 #if defined ( __SUPPORT_WPA_ENTERPRISE__ )
@@ -7235,10 +7235,10 @@ int atcmd_network(int argc, char *argv[])
     else if (strcasecmp(argv[0] + 5, "ICUSECMDACK") == 0) {
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICCMDACK=? */
-            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, result_str);
+            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, result_str);
         } else if (argc == 2) {
             /* AT+NWICUSECMDACK=<0/1> */
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, argv[1]) != CC_SUCCESS) {
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
             }
         } else {
@@ -7249,10 +7249,10 @@ int atcmd_network(int argc, char *argv[])
     else if (strcasecmp(argv[0] + 5, "ICUSEOTAACK") == 0) {
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
             /* AT+NWICOTAACK=? */
-            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, result_str);
+            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, result_str);
         } else if (argc == 2) {
             /* AT+NWICUSEOTAACK=<0/1> */
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, argv[1]) != CC_SUCCESS) {
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, argv[1]) != CC_SUCCESS) {
                 err_code = AT_CMD_ERR_COMMON_ARG_LEN;
             }
         } else {
@@ -7352,33 +7352,37 @@ int atcmd_network(int argc, char *argv[])
     // AT+NWICMSG
     else if (strcasecmp(argv[0] + 5, "ICMSG") == 0) {
         if (argc == 3 || argc == 5 || argc == 7 || argc == 9 || argc == 11 || argc == 13 || argc == 15) {
-            const char *str = NULL;
-    
             int half_argc = (argc-1)/2;
             char **names = (char **) malloc(sizeof(char *) * half_argc);
             char **values = (char **) malloc(sizeof(char *) * half_argc);
 
-            // shuffle around the names/values
-            for(int i = 0;i < half_argc;i++)
-            {
-                names[i] = argv[1 + (i * 2)];
-                values[i] = argv[2 + (i * 2)];
+            if(names && values) {
+                const char *str = NULL;
+    
+                // shuffle around the names/values
+                for(int i = 0;i < half_argc;i++)
+                {
+                    names[i] = argv[1 + (i * 2)];
+                    values[i] = argv[2 + (i * 2)];
+                }
+
+                str = iotcl_serialise_telemetry_strings(half_argc, names, values,
+                                                        0, NULL, NULL,
+                                                        0, NULL, NULL,
+                                                        0, NULL);
+                if(str == NULL) {
+                    ATCMD_DBG("iotcl_serialise_telemetry_strings() failed\n");
+                    err_code = AT_CMD_ERR_UNKNOWN;
+                } else {
+                    iotconnect_sdk_send_packet(str); // underlying code will report an error
+                    iotcl_destroy_serialized(str);
+                }
+            } else {
+                err_code = AT_CMD_ERR_UNKNOWN;
             }
 
-            str = iotcl_serialise_telemetry_strings(half_argc, names, values,
-                                                    0, NULL, NULL,
-                                                    0, NULL, NULL,
-                                                    0, NULL);
             free(names);
             free(values);
-
-            if(str == NULL) {
-                ATCMD_DBG("iotcl_serialise_telemetry_strings() failed\n");
-                err_code = AT_CMD_ERR_NOT_SUPPORTED;
-            } else {
-                iotconnect_sdk_send_packet(str); // underlying code will report an error
-                iotcl_destroy_serialized(str);
-            }
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
@@ -7416,14 +7420,10 @@ int atcmd_network(int argc, char *argv[])
         if (argc == 4) {
            /* AT+NWICOTAACK status, type, ack_id, command_name, message */
            const char *ack_id = (const char *) argv[1];
-           bool cmd_status = (bool) atoi(argv[2]);
+           bool ota_status = (bool) atoi(argv[2]);
            const char *message = (const char *) argv[3];
 
-        PRINTF("ICOTAACK ack_id %s\n", ack_id);
-        PRINTF("ICOTAACK cmd_status %d\n", cmd_status);
-        PRINTF("ICOTAACK message %s\n", message);
-
-           iotconnect_ota_status(ack_id, cmd_status, message);
+           iotconnect_ota_status(ack_id, ota_status, message);
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }

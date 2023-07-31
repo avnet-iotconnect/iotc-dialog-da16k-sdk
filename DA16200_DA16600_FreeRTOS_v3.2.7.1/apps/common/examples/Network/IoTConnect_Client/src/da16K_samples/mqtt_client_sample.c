@@ -476,15 +476,15 @@ int platform_poll_iotconnect_use_cmdack(int *value) {
 
     *value = 0;
     *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, string);
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_CMDACK\n");
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
         return -1;
     }
     if(*string == '\0')
     {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_CMDACK value is empty\n");
+        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK value is empty\n");
         return -1;
     }
     *value = atoi(string);
@@ -493,10 +493,10 @@ int platform_poll_iotconnect_use_cmdack(int *value) {
 }
 
 int platform_reset_iotconnect_use_cmdack(void) {
-    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMDACK, "0");
+    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, "0");
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_CMDACK\n");
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
         return -1;
     }
 
@@ -509,15 +509,15 @@ int platform_poll_iotconnect_use_otaack(int *value) {
 
     *value = 0;
     *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, string);
+    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_OTAACK\n");
+        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
         return -1;
     }
     if(*string == '\0')
     {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_OTAACK value is empty\n");
+        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK value is empty\n");
         return -1;
     }
     *value = atoi(string);
@@ -526,10 +526,10 @@ int platform_poll_iotconnect_use_otaack(int *value) {
 }
 
 int platform_reset_iotconnect_use_otaack(void) {
-    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTAACK, "0");
+    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, "0");
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_OTAACK\n");
+        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
         return -1;
     }
 

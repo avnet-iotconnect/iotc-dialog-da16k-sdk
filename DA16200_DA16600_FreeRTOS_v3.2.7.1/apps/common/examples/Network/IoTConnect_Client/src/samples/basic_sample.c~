@@ -58,14 +58,14 @@ static void on_command(IotclEventData data) {
         IOTC_DEBUG("iotc_cmdack %d -- ignoring command\n", iotc_cmdack);
 
         //
-        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMD_ACK is not 1 a validly treated command will immediately respond false
+        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMDACK is not 1 a validly treated command will immediately respond false
         //
         iotconnect_command_status(type, ack_id, false, "Not implemented");
         goto cleanup_ack_id;
     }
 
     //
-    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMD_ACK is 1, the response to a validly treated command is at the discretion of the AT user.
+    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMDACK is 1, the response to a validly treated command is at the discretion of the AT user.
     // Simply provide information.
     //
     char *command = iotcl_clone_command(data);
@@ -83,11 +83,7 @@ static void on_command(IotclEventData data) {
         command[i] = (command[i] == ' ') ? ',' : command[i];
     }
 
-    IOTC_DEBUG("\n\n%s type: %d\n", __func__, type);
-    IOTC_DEBUG("%s ack_id: %s\n", __func__, ack_id);
-    IOTC_DEBUG("%s command: %s\n\n", __func__, command);
-    IOTC_DEBUG("iotconnect_client cmd_ack %d %s 1 \"message\" - if ok\n", type, ack_id);
-    IOTC_DEBUG("iotconnect_client cmd_ack %d %s 0 \"message\" - if failed\n\n", type, ack_id);
+    IOTC_DEBUG("%s command: %s\n", __func__, command);
 
     atcmd_asynchony_event_for_iccmd(type, ack_id, command);
     free((void *) command);
@@ -112,14 +108,14 @@ static void on_ota(IotclEventData data) {
         IOTC_DEBUG("iotc_otaack %d -- ignoring command\n", iotc_otaack);
 
         //
-        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTA_ACK is not 1 a validly treated OTA message will immediately respond false
+        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTAACK is not 1 a validly treated OTA message will immediately respond false
         //
         iotconnect_command_status(type, ack_id, false, "Not implemented");
         goto cleanup_ack_id;
     }
 
     //
-    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTA_ACK is 1, the response to a validly treated OTA message is at the discretion of the AT user.
+    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTAACK is 1, the response to a validly treated OTA message is at the discretion of the AT user.
     // Simply provide information.
     //
     const char *version = iotcl_clone_sw_version(data);
@@ -143,11 +139,8 @@ static void on_ota(IotclEventData data) {
         goto cleanup_version;
     }
 
-    IOTC_DEBUG("\n\n%s ack_id: %s\n", __func__, ack_id);
-    IOTC_DEBUG("%s version: %s\n", __func__, version);
-    IOTC_DEBUG("%s url: %s\n\n", __func__, url);
-    IOTC_DEBUG("iotconnect_client ota_ack %s 1 \"message\" - if ok\n", ack_id);
-    IOTC_DEBUG("iotconnect_client ota_ack %s 0 \"message\" - if failed\n\n", ack_id);
+    IOTC_DEBUG("Download version is: %s\n", version);
+    IOTC_DEBUG("Download URL is: %s\n", url);
 
     atcmd_asynchony_event_for_icota(ack_id, version, url);
 
@@ -358,7 +351,7 @@ int iotconnect_basic_sample_main(void)
 
     IotConnectClientConfig *config = iotconnect_sdk_init_and_set_config(IOTCONNECT_ENV, IOTCONNECT_CPID, IOTCONNECT_DUID, IOTCONNECT_AUTH_TYPE, (char *) iotc_base64_symmetric_key);
     if(config == NULL) {
-        IOTC_ERROR("iotconnect_sdk_init_and_set_config() failed\n");
+        IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
         return -1;
     }
 
@@ -460,6 +453,7 @@ int iotconnect_basic_sample_main(void)
 IotConnectClientConfig *read_environment(void)
 {
     atcmd_asynchony_event_for_icconfig_start();
+    IOTC_DEBUG("calling iotconnect_sdk_init_and_get_config()\n" );
 
     //
     // Load up config with new IOTC_XXXX values
@@ -567,21 +561,18 @@ int iotconnect_basic_sample_main(void)
 
         IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE is %d (was %d)\n", new_iotc_mode, iotc_mode);
 
-        if(config != NULL)
+        if(new_iotc_mode == 1)
         {
-            if(new_iotc_mode == 1)
+            if(discover_and_sync() != 0)
             {
-                if(discover_and_sync() != 0)
-                {
-                    // FIXME TODO CHECK not sure what to do here?
-    
-                    iotc_mode = 3; // an error state 
-                    continue; 
-                }
-                
-                iotc_mode = 1;
-                continue;
+                // FIXME TODO CHECK not sure what to do here?
+
+                iotc_mode = 3; // an error state 
+                continue; 
             }
+            
+            iotc_mode = 1;
+            continue;
         }
 
         if(new_iotc_mode == 0)
