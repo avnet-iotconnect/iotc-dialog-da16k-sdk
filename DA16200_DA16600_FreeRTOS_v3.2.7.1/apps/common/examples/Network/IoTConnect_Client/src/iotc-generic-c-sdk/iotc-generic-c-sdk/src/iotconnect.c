@@ -249,7 +249,7 @@ bool iotconnect_sdk_is_connected(void) {
     return iotc_device_client_is_connected();
 }
 
-static void iotconnect_sdk_reset_config(void) {
+void iotconnect_sdk_reset_config(void) {
     IOTC_DEBUG("%s\n", __func__);
 
     if(iotconnect_sdk_is_connected() == true) {
@@ -351,7 +351,7 @@ int iotconnect_sdk_init(void) {
 
     if(iotconnect_sdk_setup_mqtt_client() != 0)
     {
-        IOTC_ERROR("iotc_device_client_preinit_certs() failed\n");
+        IOTC_ERROR("iotconnect_sdk_setup_mqtt_client() failed\n");
         return -1;
     }
 

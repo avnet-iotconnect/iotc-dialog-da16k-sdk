@@ -437,40 +437,7 @@ int set_nvcache_str(int key, const char *value) {
     return 0;
 }
 
-int platform_poll_iotconnect_sync_mode(int *value) {
-    int status;
-    char string[8];
-
-    *value = 0;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_SYNC_MODE\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_MODE value is empty\n");
-        return -1;
-    }
-    *value = atoi(string);
-
-    return 0;
-}
-
-int platform_reset_iotconnect_sync_mode(void) {
-    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, "0");
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_SYNC_MODE\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-int platform_poll_iotconnect_use_cmdack(int *value) {
+int platform_get_iotconnect_use_cmdack(int *value) {
     int status;
     char string[8];
 
@@ -479,7 +446,7 @@ int platform_poll_iotconnect_use_cmdack(int *value) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
         return -1;
     }
     if(*string == '\0')
@@ -492,7 +459,7 @@ int platform_poll_iotconnect_use_cmdack(int *value) {
     return 0;
 }
 
-int platform_reset_iotconnect_use_cmdack(void) {
+int platform_set_iotconnect_use_cmdack(void) {
     int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, "0");
     if(status != CC_SUCCESS)
     {
@@ -503,7 +470,7 @@ int platform_reset_iotconnect_use_cmdack(void) {
     return 0;
 }
 
-int platform_poll_iotconnect_use_otaack(int *value) {
+int platform_get_iotconnect_use_otaack(int *value) {
     int status;
     char string[8];
 
@@ -512,7 +479,7 @@ int platform_poll_iotconnect_use_otaack(int *value) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
         return -1;
     }
     if(*string == '\0')
@@ -525,7 +492,7 @@ int platform_poll_iotconnect_use_otaack(int *value) {
     return 0;
 }
 
-int platform_reset_iotconnect_use_otaack(void) {
+int platform_set_iotconnect_use_otaack(void) {
     int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, "0");
     if(status != CC_SUCCESS)
     {
@@ -541,7 +508,7 @@ int platform_get_cpid(char *string) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_CPID\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_CPID\n");
         return -1;
     }
     if(*string == '\0')
@@ -558,7 +525,7 @@ int platform_get_env(char *string) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_ENV\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_ENV\n");
         return -1;
     }
     if(*string == '\0')
@@ -575,7 +542,7 @@ int platform_get_duid(char *string) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_DUID\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_DUID\n");
         return -1;
     }
     if(*string == '\0')
@@ -592,7 +559,7 @@ int platform_get_auth_type(char *string) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE\n");
         return -1;
     }
     if(*string == '\0')
@@ -620,7 +587,7 @@ int platform_get_dtg(char *string) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_DTG\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_DTG\n");
         return -1;
     }
     if(*string == '\0')
@@ -637,7 +604,7 @@ int platform_get_symmetric_key(char *string) {
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, string);
     if(status != CC_SUCCESS)
     {
-        MQTT_ERROR("Failed to read DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY\n");
+        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY\n");
         return -1;
     }
     if(*string == '\0')

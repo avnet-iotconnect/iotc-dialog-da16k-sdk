@@ -46,6 +46,7 @@
 #include "iotconnect.h"
 #include "iotconnect_telemetry.h"
 #include "iotconnect_event.h"
+#include "basic_sample.h"
 #endif
 
 #pragma GCC diagnostic ignored "-Wrestrict"
@@ -517,7 +518,10 @@ static const command_t commands[] = {
   { (char *)"AT+NWICENV",         atcmd_network,        1, (char *) "<set_iotconnect_env>",                       "Set IoTConnect ENV"                                    },
   { (char *)"AT+NWICAT",          atcmd_network,        1, (char *) "<set_iotconnect_at>",                        "Set IoTConnect AUTH TYPE"                              },
   { (char *)"AT+NWICSK",          atcmd_network,        1, (char *) "<set_iotconnect_sk>",                        "Set IoTConnect SYMMETRIC KEY"                          },
-  { (char *)"AT+NWICSYNC",        atcmd_network,        1, (char *) "<0/1>",                                      "Start/stop IoTConnect sync"                            },
+  { (char *)"AT+NWICSETUP",       atcmd_network,        0, (char *) "<setup iotconnect config>",                  "Setup the IoTConnect configuration"                    },
+  { (char *)"AT+NWICSTART",       atcmd_network,        0, (char *) "<start iotconnect connection>",              "Start the IoTConnect connection"                       },
+  { (char *)"AT+NWICSTOP",        atcmd_network,        0, (char *) "<stop iotconnect connection>",               "Stop the IoTConnect connection"                        },
+  { (char *)"AT+NWICRESET",       atcmd_network,        0, (char *) "<stop iotconnect connection and reset>",     "Stop the IoTConnect connection and reset any configuration" },
   { (char *)"AT+NWICDTG",         atcmd_network,        0, (char *) "<get_iotconnect_dtg>",                       "Get IoTConnect DTG (saved from discovery process)"     },
   { (char *)"AT+NWICMSG",         atcmd_network,        15, (char *) "<name1>,<value1>,<name2>,<value2>,...",     "Send an IoTConnect format MQTT message, using name/value pairs"    },
 // might also relect device message version here?
@@ -812,24 +816,44 @@ void atcmd_asynchony_event_for_icmqtt(int status)
     PRINTF_ATCMD("\r\n+NWICMQ:%d\r\n", status);
 }
 
-void atcmd_asynchony_event_for_icsync_start(void)
+void atcmd_asynchony_event_for_icsetup_begin(void)
 {
-    PRINTF_ATCMD("\r\n+NWICSYNCSTART:\r\n");
+    PRINTF_ATCMD("\r\n+NWICSETUPBEGIN:\r\n");
 }
 
-void atcmd_asynchony_event_for_icsync_end(int status)
+void atcmd_asynchony_event_for_icsetup_end(int status)
 {
-    PRINTF_ATCMD("\r\n+NWICSYNCEND:%d\r\n", status);
+    PRINTF_ATCMD("\r\n+NWICSETUPEND:%d\r\n", status);
 }
 
-void atcmd_asynchony_event_for_icconfig_start(void)
+void atcmd_asynchony_event_for_icstart_begin(void)
 {
-    PRINTF_ATCMD("\r\n+NWICCONFIGSTART:\r\n");
+    PRINTF_ATCMD("\r\n+NWICSTARTBEGIN:\r\n");
 }
 
-void atcmd_asynchony_event_for_icconfig_end(int status)
+void atcmd_asynchony_event_for_icstart_end(int status)
 {
-    PRINTF_ATCMD("\r\n+NWICCONFIGEND:%d\r\n", status);
+    PRINTF_ATCMD("\r\n+NWICSTARTEND:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icstop_begin(void)
+{
+    PRINTF_ATCMD("\r\n+NWICSTOPBEGIN:\r\n");
+}
+
+void atcmd_asynchony_event_for_icstop_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICSTOPEND:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icreset_begin(void)
+{
+    PRINTF_ATCMD("\r\n+NWICRESETBEGIN:\r\n");
+}
+
+void atcmd_asynchony_event_for_icreset_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICRESETEND:%d\r\n", status);
 }
 #endif
 
@@ -7217,16 +7241,34 @@ int atcmd_network(int argc, char *argv[])
 #endif // __SUPPORT_MQTT__
 
 #if 1
-    // AT+NWICSYNC
-    else if (strcasecmp(argv[0] + 5, "ICSYNC") == 0) {
-        if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
-            /* AT+NWICSYNC=? */
-            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, result_str);
-        } else if (argc == 2) {
-            /* AT+NWICSYNC=<0/1> */
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, argv[1]) != CC_SUCCESS) {
-                err_code = AT_CMD_ERR_COMMON_ARG_LEN;
-            }
+    // AT+NWICSETUP
+    else if (strcasecmp(argv[0] + 5, "ICSETUP") == 0) {
+        if (argc == 1) {
+            setup_iotconnect();
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICSTART
+    else if (strcasecmp(argv[0] + 5, "ICSTART") == 0) {
+        if (argc == 1) {
+            start_iotconnect();
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICSTOP
+    else if (strcasecmp(argv[0] + 5, "ICSTOP") == 0) {
+        if (argc == 1) {
+            stop_iotconnect();
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
+    // AT+NWICRESET
+    else if (strcasecmp(argv[0] + 5, "ICRESET") == 0) {
+        if (argc == 1) {
+            reset_iotconnect();
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }

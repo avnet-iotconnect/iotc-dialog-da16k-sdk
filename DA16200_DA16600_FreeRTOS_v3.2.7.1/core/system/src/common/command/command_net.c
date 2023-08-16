@@ -84,6 +84,7 @@
 #include "iotconnect.h"
 #include "iotconnect_telemetry.h"
 #include "iotconnect_event.h"
+#include "basic_sample.h"
 #endif
 
 extern UINT isVaildDomain(char *domain);
@@ -1822,8 +1823,6 @@ void cmd_iotconnect_config(int argc, char *argv[])
         PRINTF("      symmetric_key: %s\n", string);
         if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, string) != CC_SUCCESS) { *string = '\0'; }
         PRINTF("      auth_type:     %s\n", string);
-        if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, string) != CC_SUCCESS) { *string = '\0'; }
-        PRINTF("      sync_mode:     %s\n", string);
         if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, string) != CC_SUCCESS) { *string = '\0'; }
         PRINTF("      use cmd ack:   %s\n", string);
         if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, string) != CC_SUCCESS) { *string = '\0'; }
@@ -1863,9 +1862,6 @@ void cmd_iotconnect_config(int argc, char *argv[])
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, "") != CC_SUCCESS)
             {
                 PRINTF("Failed to set DTG");
-            }
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, "0") != CC_SUCCESS) {
-                PRINTF("Failed to set sync mode");
             }
         } else {
             goto usage;
@@ -1922,18 +1918,14 @@ usage:
 
 void cmd_iotconnect_client(int argc, char *argv[])
 {
-    if (argc == 2 && strcmp(argv[1], "start") == 0) {
-        if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, "1") != CC_SUCCESS) {
-            PRINTF("Failed to start iotconnect_client");
-        } else {
-            PRINTF("Starting iotconnect_client discovery/sync asynchronously");
-        }
-    } else if (argc == 2 && strcmp(argv[1], "stop") == 0) {
-        if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_SYNC_MODE, "0") != CC_SUCCESS) {
-            PRINTF("Failed to stop iotconnect_client");
-        } else {
-            PRINTF("Stopping iotconnect_client asynchronously (updating MQTT config values)");
-        }
+    if (argc == 2 && strcmp(argv[1], "stop") == 0) {
+        stop_iotconnect();
+    } else if (argc == 2 && strcmp(argv[1], "setup") == 0) {
+        setup_iotconnect();
+    } else if (argc == 2 && strcmp(argv[1], "start") == 0) {
+        start_iotconnect();
+    } else if (argc == 2 && strcmp(argv[1], "reset") == 0) {
+        reset_iotconnect();
     } else if (argc >= 2 && strcmp(argv[1], "msg") == 0) {
          if (argc > 2) {
             int half_argc = (argc-2)/2;

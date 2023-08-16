@@ -11,10 +11,9 @@
 #include "iotconnect.h"
 
 #include "mqtt_client_sample.h"
+#include "basic_sample.h"
 
 #include "atcmd.h"
-
-#define APP_OTA_VERSION "00.01.00"
 
 //
 // This is a standalone example that directly communicates with the mqtt_client and sends it's own telemetry information
@@ -23,6 +22,41 @@
 //
 #undef STANDALONE
 //#define STANDALONE 1
+
+#define    EVT_IOTC_STOP      (1UL << 0x00)
+#define    EVT_IOTC_SETUP     (1UL << 0x01)
+#define    EVT_IOTC_START     (1UL << 0x02)
+#define    EVT_IOTC_RESET     (1UL << 0x03)
+
+static EventGroupHandle_t my_app_event_group = NULL;
+
+void stop_iotconnect(void) {
+    if(my_app_event_group == NULL) {
+        return;
+    }
+    xEventGroupSetBits(my_app_event_group, EVT_IOTC_STOP);
+}
+
+void setup_iotconnect(void) {
+    if(my_app_event_group == NULL) {
+        return;
+    }
+    xEventGroupSetBits(my_app_event_group, EVT_IOTC_SETUP);
+}
+
+void start_iotconnect(void) {
+    if(my_app_event_group == NULL) {
+        return;
+    }
+    xEventGroupSetBits(my_app_event_group, EVT_IOTC_START);
+}
+
+void reset_iotconnect(void) {
+    if(my_app_event_group == NULL) {
+        return;
+    }
+    xEventGroupSetBits(my_app_event_group, EVT_IOTC_RESET);
+}
 
 static void on_connection_status(IotConnectConnectionStatus status) {
     // Add your own status handling
@@ -46,7 +80,7 @@ static void on_connection_status(IotConnectConnectionStatus status) {
 
 static void on_command(IotclEventData data) {
     int iotc_cmdack;
-    platform_poll_iotconnect_use_cmdack(&iotc_cmdack);
+    platform_get_iotconnect_use_cmdack(&iotc_cmdack);
 
     IotConnectEventType type = iotcl_get_event_type(data);
     char *ack_id = iotcl_clone_ack_id(data);
@@ -100,7 +134,7 @@ cleanup:
 
 static void on_ota(IotclEventData data) {
     int iotc_otaack;
-    platform_poll_iotconnect_use_otaack(&iotc_otaack);
+    platform_get_iotconnect_use_otaack(&iotc_otaack);
 
     IotConnectEventType type = iotcl_get_event_type(data);
     char *ack_id = iotcl_clone_ack_id(data);
@@ -338,6 +372,15 @@ int iotconnect_basic_sample_main(void)
 {
     IOTC_WARN("\n\n\nRunning in STANDALONE mode\n\n\n");
 
+    my_app_event_group = xEventGroupCreate();
+    if (my_app_event_group == NULL) {
+        IOTC_ERROR("[%s] Event group Create Error!", __func__);
+        return -1;
+    }
+
+    /* clear wait bits here */
+    xEventGroupClearBits( my_app_event_group, (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET) );
+
 #if 0
     if (access(IOTCONNECT_SERVER_CERT, F_OK) != 0) {
         IOTC_ERROR("Unable to access IOTCONNECT_SERVER_CERT. "
@@ -447,7 +490,13 @@ int iotconnect_basic_sample_main(void)
         iotconnect_sdk_disconnect();
     }
 
-    // there is a slight "leak" here that discovery_response / sync_response / config may be holding onto dynamic memory
+    if(my_app_event_group) {
+        vEventGroupDelete(my_app_event_group);
+        my_app_event_group = NULL;
+    }
+    
+    iotconnect_sdk_reset_config();
+    config = NULL;
 
     IOTC_DEBUG("exiting basic_sample()\n");
     return 0;
@@ -455,63 +504,118 @@ int iotconnect_basic_sample_main(void)
 #else
 
 //
-// a wrapper to send +NWICCONFIGSTART / +NWICCONFIGEND messages
+// a wrapper to send +NWICSETUPBEGIN / +NWICSETUPEND messages
 //
-IotConnectClientConfig *read_environment(void)
+IotConnectClientConfig *setup_wrapper(void)
 {
-    atcmd_asynchony_event_for_icconfig_start();
+    atcmd_asynchony_event_for_icsetup_begin();
+
+    IotConnectClientConfig *config = NULL;
 
     //
-    // Load up config with new IOTC_XXXX values
+    // Try a small number of times - in case of an intermitent failure
     //
-    // Clear any previous discovery/sync responses
-    //
-    // note iotconnect_sdk_init_and_get_config() here should free any dynamic memory that discovery_response / sync_response / config may be holding onto
-    //
-    IotConnectClientConfig *config = iotconnect_sdk_init_and_get_config();
+    for(int i = 0;i < 5;i++) {
+        //
+        // Load up config with new IOTC_XXXX values
+        //
+        // Clear any previous discovery/sync responses
+        //
+        // note iotconnect_sdk_init_and_get_config() here should free any dynamic memory that discovery_response / sync_response / config may be holding onto
+        //
+        config = iotconnect_sdk_init_and_get_config();
+        if(config != NULL) {
+            break;
+        }
+
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+    }
     if(config == NULL) {
         IOTC_ERROR("iotconnect_sdk_init_and_get_config() failed\n");
-        goto exit;
+    } else {
+        IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
+        IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
+        IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
+        IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
+        IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
+    
+        /*
+         * TODO FIXME CHECK Haven't set up any callbacks here -- not sure how "AT command"-style reflects MQTT state changes -- ugghh!
+         */
+        config->status_cb = on_connection_status;
+        config->ota_cb = on_ota;
+        config->cmd_cb = on_command;
     }
 
-    IOTC_DEBUG("IOTC_ENV = %s\n", config->env);
-    IOTC_DEBUG("IOTC_CPID = %s\n", config->cpid);
-    IOTC_DEBUG("IOTC_DUID = %s\n", config->duid);
-    IOTC_DEBUG("IOTC_AUTH_TYPE = %d\n", config->auth_info.type);
-    IOTC_DEBUG("IOTC_AUTH_SYMMETRIC_KEY = %s\n", config->auth_info.data.symmetric_key ? config->auth_info.data.symmetric_key : "(null)");
+    if(config == NULL) {
+        IOTC_ERROR("setup_wrapper() failed - no config available\n");
+    }
 
-    /*
-     * TODO FIXME CHECK Haven't set up any callbacks here -- not sure how "AT command"-style reflects MQTT state changes -- ugghh!
-     */
-    config->status_cb = on_connection_status;
-    config->ota_cb = on_ota;
-    config->cmd_cb = on_command;
-
-exit:
-    atcmd_asynchony_event_for_icconfig_end(config != NULL);
+    atcmd_asynchony_event_for_icsetup_end(config != NULL);
     return config;
 }
 
 //
-// a wrapper to send +NWICSYNCSTART / +NWICSYNCEND messages
+// a wrapper to send +NWICSTARTBEGIN / +NWICSTARTEND messages
 //
-int discover_and_sync()
+int start_wrapper(IotConnectClientConfig *config)
 {
-    //
-    // Run discovery/sync
-    // Startup mqtt_client with new MQTT_XXXX values
-    //
-    // Because discovery/sync responses are cleared below -- the discovery/sync will also run (with up to date values).
-    //
-    atcmd_asynchony_event_for_icsync_start();
-    int ret = iotconnect_sdk_init();
-    atcmd_asynchony_event_for_icsync_end(ret == 0);
+    int ret = -1;
 
-    if (0 != ret) {
-        IOTC_ERROR("iotconnect_sdk_init() exited with error code %d\n", ret);
+    atcmd_asynchony_event_for_icstart_begin();
+
+    if(config == NULL) {
+        IOTC_ERROR("start_wrapper() failed - no config available\n");
+        goto end;
     }
 
+    //
+    // Try a small number of times - in case of an intermitent failure
+    //
+    for(int i = 0;i < 5;i++) {
+        //
+        // Run discovery/sync
+        // Startup mqtt_client with new MQTT_XXXX values
+        //
+        // Because discovery/sync responses are cleared below -- the discovery/sync will also run (with up to date values).
+        //
+        ret = iotconnect_sdk_init();
+        if(ret == 0) {
+            break;
+        }
+
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+    }
+
+end:
+    if (ret != 0) {
+        IOTC_ERROR("start_wrapper() failed: %d\n", ret);
+    }
+
+    atcmd_asynchony_event_for_icstart_end(ret == 0);
     return ret;
+}
+
+//
+// a wrapper to send +NWICSTOPBEGIN / +NWICSTOPEND messages
+//
+static void stop_wrapper(void)
+{
+    atcmd_asynchony_event_for_icstop_begin();
+    if(iotconnect_sdk_is_connected() == true) {
+        iotconnect_sdk_disconnect();
+    }
+    atcmd_asynchony_event_for_icstop_end(true);
+}
+
+//
+// a wrapper to send +NWICRESETBEGIN / +NWICRESETEND messages
+//
+static void reset_wrapper(void)
+{
+    atcmd_asynchony_event_for_icreset_begin();
+    iotconnect_sdk_reset_config();
+    atcmd_asynchony_event_for_icreset_end(true);
 }
 
 //
@@ -533,8 +637,6 @@ int discover_and_sync()
 //
 int iotconnect_basic_sample_main(void)
 {
-    int iotc_mode = 0;
-        
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
     /*
@@ -543,63 +645,76 @@ int iotconnect_basic_sample_main(void)
      * Certificates can be set see: Table 16, Page 50, "UM-WI-003 DA16200 DA16600 Host Interface and AT Command User Manual" 
      */
 
-    IotConnectClientConfig *config = read_environment();
-    if(config == NULL) {
-        IOTC_ERROR("read_environment() failed\n");
-        // FIXME TODO CHECK not sure what to do here?
-        iotc_mode = 2; // an error state 
+    IotConnectClientConfig *config = NULL;
+
+    my_app_event_group = xEventGroupCreate();
+    if (my_app_event_group == NULL) {
+        IOTC_ERROR("[%s] Event group Create Error!", __func__);
+        return -1;
     }
+
+    /* clear wait bits here */
+    xEventGroupClearBits( my_app_event_group, (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET) );
+
+    //
+    // Initially run the setup and start iotconnect
+    //
+    xEventGroupSetBits(my_app_event_group, (EVT_IOTC_SETUP | EVT_IOTC_START));
 
     while(1)
     {
-        int new_iotc_mode = 0;
+        EventBits_t events = xEventGroupWaitBits(my_app_event_group,
+                                     (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET),
+                                     pdFALSE,
+                                     pdFALSE,
+                                     30000 / portTICK_PERIOD_MS);
 
-        //
-        // Horrid polling mechanism -- maybe need to have some sort of waitQueue in the future
-        //
-        vTaskDelay(1000/portTICK_PERIOD_MS);
+        bool reset = events & EVT_IOTC_RESET;
+        bool start = events & EVT_IOTC_START;
+        bool setup = events & EVT_IOTC_SETUP;
+        bool stop = events & EVT_IOTC_STOP;
 
-        platform_poll_iotconnect_sync_mode(&new_iotc_mode);
-        if(new_iotc_mode == iotc_mode)
-        {
+        xEventGroupClearBits( my_app_event_group, (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET) );
+
+        if(start == false && setup == false && stop == false && reset == false) {
+            // just timed out
             continue;
         }
 
-        IOTC_DEBUG("DA16X_CONF_STR_MQTT_IOTCONNECT_MODE is %d (was %d)\n", new_iotc_mode, iotc_mode);
-
-        if(config != NULL)
-        {
-            if(new_iotc_mode == 1)
-            {
-                if(discover_and_sync() != 0)
-                {
-                    // FIXME TODO CHECK not sure what to do here?
-    
-                    iotc_mode = 3; // an error state 
-                    continue; 
-                }
-                
-                iotc_mode = 1;
-                continue;
-            }
+        //
+        // disconnect from iotconnect, 
+        // teardown the current config and deallocate any memory
+        //
+        if(reset) {
+            reset_wrapper();
+            config = NULL; // config will no longer be valid after reset_wrapper();
+            continue;
         }
 
-        if(new_iotc_mode == 0)
-        {
-            config = read_environment();
-            if(config == NULL) {
-                IOTC_ERROR("read_environment() failed\n");
-
-                iotc_mode = 2; // an error state 
-                continue; 
-            }
-
-            iotc_mode = 0;
+        //
+        // disconnect from iotconnect, but leave the config intact
+        //
+        if(stop) {
+            stop_wrapper();
             continue;
+        }
+
+        if(setup) {
+            config = setup_wrapper();
+        }
+
+        if(start) {
+            start_wrapper(config);
         }
     }
 
-    // there is a slight "leak" here that discovery_response / sync_response / config may be holding onto dynamic memory
+    if(my_app_event_group) {
+        vEventGroupDelete(my_app_event_group);
+        my_app_event_group = NULL;
+    }
+    
+    iotconnect_sdk_reset_config();
+    config = NULL;
     
     IOTC_DEBUG("exiting basic_sample()\n" );
     return 0;

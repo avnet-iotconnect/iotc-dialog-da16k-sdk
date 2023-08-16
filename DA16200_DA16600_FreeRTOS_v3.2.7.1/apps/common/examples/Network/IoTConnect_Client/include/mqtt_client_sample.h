@@ -46,14 +46,11 @@ int platform_get_symmetric_key(char *symmetric_key);
 int platform_set_dtg(char *string);
 int platform_get_dtg(char *string);
 
-int platform_poll_iotconnect_sync_mode(int *mode);
-int platform_reset_iotconnect_sync_mode(void);
+int platform_get_iotconnect_use_cmdack(int *mode);
+int platform_set_iotconnect_use_cmdack(void);
 
-int platform_poll_iotconnect_use_cmdack(int *mode);
-int platform_reset_iotconnect_use_cmdack(void);
-
-int platform_poll_iotconnect_use_otaack(int *mode);
-int platform_reset_iotconnect_use_otaack(void);
+int platform_get_iotconnect_use_otaack(int *mode);
+int platform_set_iotconnect_use_otaack(void);
 
 #ifdef __cplusplus
 }
