@@ -3,7 +3,7 @@
 This document and the information it contains is CONFIDENTIAL and remains the property of our company. It may not be copied or communicated to a third party or used for any purpose other than that for which it is supplied without the prior written consent of our company. This document must be destroyed with a paper shredder.
 
 ## Boards
-#Using DA16200MOD EVK
+# Using DA16200MOD EVK
 
 Connect USB lead to board and PC.
 ![](assets/IMG_20230724_180805286.jpg)
@@ -44,8 +44,8 @@ or
 [Renesas DA16600 page](https://www.renesas.com/eu/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16600mod-devkt-da16600-ultra-low-power-wi-fi-bluetooth-low-energy-modules-development-kit#document).
 
 At the command prompt `[/DA16200] #` type `setup` to:
--    associate a WiFi access point (SSID, password, etc.)
--   set SNTP to start automatically on boot. 
+- associate a WiFi access point (SSID, password, etc.)
+- set SNTP to start automatically on boot. 
 
 This setup process will write values to NVRAM that will be used when the DA16200 reboots.
 
@@ -53,6 +53,201 @@ The following images show an example of how to configure the DA16200.
 ![](assets/Screenshot_2023-08-15_123954-1.png)
 
 ![](assets/Screenshot_2023-08-15_124048.png)
+
+
+Text example is shown below:
+```
+Wakeup source is 0x0
+[dpm_init_retmemory] DPM INIT CONFIGURATION(1)
+
+
+        ******************************************************
+        *             DA16200 SDK Information
+        * ---------------------------------------------------
+        *
+        * - CPU Type        : Cortex-M4 (120MHz)
+        * - OS Type         : FreeRTOS 10.4.3
+        * - Serial Flash    : 4 MB
+        * - SDK Version     : V3.2.7.1 GEN
+        * - F/W Version     : FRTOS-GEN01-01-98e58a5d3-006374
+        * - F/W Build Time  : Aug 16 2023 11:50:07
+        * - Boot Index      : 0
+        *
+        ******************************************************
+
+
+
+System Mode : Station Only (0)
+>>> Start DA16X Supplicant ...
+>>> DA16x Supp Ver2.7 - 2022_03
+>>> MAC address (sta0) : d4:3d:39:39:75:00
+>>> sta0 interface add OK
+>>> Start STA mode...
+
+>>> UART1 : Clock=80000000, BaudRate=115200
+>>> UART1 : DMA Enabled ...
+
+[/DA16200] # setup
+
+Stop all services for the setting.
+ Are you sure ? [Yes/No] : y
+
+
+
+[ DA16200 EASY SETUP ]
+
+Country Code List:
+AD  AE  AF  AI  AL  AM  AR  AS  AT  AU  AW  AZ  BA  BB  BD  BE  BF  BG  BH  BL
+BM  BN  BO  BR  BS  BT  BY  BZ  CA  CF  CH  CI  CL  CN  CO  CR  CU  CX  CY  CZ
+DE  DK  DM  DO  DZ  EC  EE  EG  ES  ET  EU  FI  FM  FR  GA  GB  GD  GE  GF  GH
+GL  GP  GR  GT  GU  GY  HK  HN  HR  HT  HU  ID  IE  IL  IN  IR  IS  IT  JM  JO
+JP  KE  KH  KN  KP  KR  KW  KY  KZ  LB  LC  LI  LK  LS  LT  LU  LV  MA  MC  MD
+ME  MF  MH  MK  MN  MO  MP  MQ  MR  MT  MU  MV  MW  MX  MY  NG  NI  NL  NO  NP
+NZ  OM  PA  PE  PF  PG  PH  PK  PL  PM  PR  PT  PW  PY  QA  RE  RO  RS  RU  RW
+SA  SE  SG  SI  SK  SN  SR  SV  SY  TC  TD  TG  TH  TN  TR  TT  TW  TZ  UA  UG
+UK  US  UY  UZ  VA  VC  VE  VI  VN  VU  WF  WS  YE  YT  ZA  ZW  ALL
+
+ COUNTRY CODE ? [Quit] (Default KR) : uk
+
+
+SYSMODE(WLAN MODE) ?
+        1. Station
+        2. Soft-AP
+        3. Station & SOFT-AP
+ MODE ?  [1/2/3/Quit] (Default Station) : 1
+
+[ STATION CONFIGURATION ]
+============================================================================
+[NO] [SSID]                                         [SIGNAL] [CH] [SECURITY]
+----------------------------------------------------------------------------
+[ 1] NETGEAR83                                          -51   1         WPA2
+[ 2] VM0423187                                          -85   6         WPA2
+[ 3] Virgin Media                                       -86   6     WPA2-ENT
+[ 4] BT-XHASKN                                          -88   1         WPA2
+[ 5] SKY40F4C                                           -88  11         WPA2
+[ 6] BTHub6-R2MK                                        -89   6         WPA2
+[ 7] SKY40F4C                                           -90   1         WPA2
+[ 8] TALKTALKD6CAFD                                     -91   6         WPA2
+[ 9] BTHub6-J563                                        -91  11         WPA2
+[10] BTHub6-6SWG                                        -93  11         WPA2
+[11] BTWi-fi                                            -88   1
+[12] BTWi-fi                                            -90   6
+[13] BTWi-fi                                            -92  11
+[14] BTWi-fi                                            -93  11
+----------------------------------------------------------------------------
+[M] Manual Input
+[Enter] Rescan
+============================================================================
+
+ Select SSID ? (1~14/Manual/Quit) : 1
+
+ PSK-KEY(ASCII characters 8~63 or Hexadecimal characters 64) ? [Quit]
+[123456789|123456789|123456789|123456789|123456789|123456789|1234]
+:***********
+
+ Do you want to set advanced WiFi configuration ? [No/Yes/Quit] (Default No) : n
+
+============================================
+SSID        : NETGEAR83
+AUTH        : WPA/WAP2-PSK
+ENCRYPTION  : TKIP/AES(CCMP)
+PSK KEY     : ***********
+KEY TYPE    : ASCII
+PMF MODE    : Disable
+Hidden AP   : Not connect
+============================================
+ WIFI CONFIGURATION CONFIRM ? [Yes/No/Quit] : y
+
+ IP Connection Type ? [Automatic IP/Static IP/Quit] : a
+
+
+IP Connection Type: Automatic IP
+
+ IP CONFIGURATION CONFIRM ? [Yes/No/Quit] : y
+
+ SNTP Client enable ? [Yes/No/Quit] : y
+
+
+ SNTP Period time (1 ~ 36 hours) ? (default : 36 hours) [Quit]
+
+ GMT Timezone +xx:xx|-xx:xx (-12:00 ~ +12:00) ? (default : 00:00) [Quit]
+
+ SNTP Server 0 addr ? (default : pool.ntp.org) [Quit]
+Input :
+
+ SNTP Server 1 addr ? (default : 1.pool.ntp.org) [Quit]
+Input :
+
+ SNTP Server 2 addr ? (default : 2.pool.ntp.org) [Quit]
+Input :
+============================================
+SNTP Client      : Enable
+SNTP Period time : 36 hours
+SNTP GMT Timezone: 00:00
+SNTP Server addr : pool.ntp.org
+SNTP Server addr1: 1.pool.ntp.org
+SNTP Server addr2: 2.pool.ntp.org
+============================================
+ SNTP Client CONFIRM ? [Yes/No/Quit] : y
+
+ Fast Connection Sleep 2 Mode ? [Yes/No/Quit] : y
+
+Configuration OK
+
+Reboot...
+
+
+Wakeup source is 0x0
+[dpm_init_retmemory] DPM INIT CONFIGURATION(1)
+
+
+        ******************************************************
+        *             DA16200 SDK Information
+        * ---------------------------------------------------
+        *
+        * - CPU Type        : Cortex-M4 (120MHz)
+        * - OS Type         : FreeRTOS 10.4.3
+        * - Serial Flash    : 4 MB
+        * - SDK Version     : V3.2.7.1 GEN
+        * - F/W Version     : FRTOS-GEN01-01-98e58a5d3-006374
+        * - F/W Build Time  : Aug 16 2023 11:50:07
+        * - Boot Index      : 0
+        *
+        ******************************************************
+
+
+>>> Wi-Fi Fast_Connection mode ...
+
+
+System Mode : Station Only (0)
+>>> Start DA16X Supplicant ...
+>>> DA16x Supp Ver2.7 - 2022_03
+>>> MAC address (sta0) : d4:3d:39:39:75:00
+>>> sta0 interface add OK
+>>> Start STA mode...
+
+>>> UART1 : Clock=80000000, BaudRate=115200
+>>> UART1 : DMA Enabled ...
+Fast scan(Manual=0), freq=2412, num_ssids=1
+
+>>> Network Interface (wlan0) : UP
+>>> Associated with cc:40:d0:ef:b4:57
+
+Connection COMPLETE to cc:40:d0:ef:b4:57
+
+-- DHCP Client WLAN0: SEL(6)
+-- DHCP Client WLAN0: REQ(1)
+-- DHCP Client WLAN0: CHK(8)
+-- DHCP Client WLAN0: BOUND(10)
+         Assigned addr   : 192.168.0.12
+               netmask   : 255.255.255.0
+               gateway   : 192.168.0.1
+               DNS addr  : 192.168.0.1
+
+         DHCP Server IP  : 192.168.0.1
+         Lease Time      : 24h 00m 00s
+         Renewal Time    : 12h 00m 00s
+```
 
 ## Flashing DA16200 images
 
