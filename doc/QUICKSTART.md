@@ -249,7 +249,7 @@ Connection COMPLETE to cc:40:d0:ef:b4:57
          Renewal Time    : 12h 00m 00s
 ```
 
-## Flashing DA16200 images
+## Flashing images
 
 To flash DA16200 images use TeraTerm YModem transfer protocol (or similar) to send the images to the DA16200 using the “command console”, e.g.
 ![](assets/Screenshot_2023-08-14_150336.png)
@@ -268,7 +268,11 @@ reboot
 ```
 ### Images for DA16200
 
-See:[DA16200 images](./image/release-da16200-images-332b6a40bac5213ee79c4c991b9af3e2bbd1a41c.tgz).
+See: [DA16200 images](./image/release-da16200-images-332b6a40bac5213ee79c4c991b9af3e2bbd1a41c.tgz).
+
+### Images for DA16600 with Adesto flash
+
+See: [DA16600 Adesto images](./image/release-da16600-adesto-images-5b816ee62b6747c543c8287e0148712557f7c691.tgz).
 
 ## Setting up IoTConnect
 
