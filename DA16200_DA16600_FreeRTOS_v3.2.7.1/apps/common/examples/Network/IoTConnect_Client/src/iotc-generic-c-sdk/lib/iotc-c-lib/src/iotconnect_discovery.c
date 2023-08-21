@@ -115,7 +115,7 @@ void iotcl_discovery_free_discovery_response(IotclDiscoveryResponse *response) {
 }
 
 IotclSyncResponse *iotcl_discovery_parse_sync_response(const char *response_data) {
-    IOTC_DEBUG("%d: response_data is %d bytes in length\n", __func__, strlen(response_data));
+    IOTC_DEBUG("%s: response_data is %ld bytes in length\n", __func__, strlen(response_data));
 
     _cJSON *tmp_value = NULL;
     IotclSyncResponse *response = (IotclSyncResponse *) calloc(1, sizeof(IotclSyncResponse));
