@@ -3,13 +3,19 @@
 This document and the information it contains is CONFIDENTIAL and remains the property of our company. It may not be copied or communicated to a third party or used for any purpose other than that for which it is supplied without the prior written consent of our company. This document must be destroyed with a paper shredder.
 
 ## Boards
-# Using DA16200MOD EVK
+
+Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” to check that the configuration shown above is valid - in case there are changes in the future.
+Setup DA16200
+
+### Using DA16200MOD EVK
 
 Connect USB lead to board and PC.
 ![](assets/IMG_20230724_180805286.jpg)
 
 ### Using DA16200MOD
 ![](assets/IMG_20230719_180344535.jpg)
+
+#### FTDI connection
 
 Connect to FTDI as follows
 ![](assets/IMG_20230817_144820004.jpg)
@@ -23,16 +29,42 @@ FTDI connections
 Note RX/TX are crossed, TX on FTDI goes to RX on PMOD and RX on FTDI goes to TX on PMOD.
 FTDI is set to 3.3v
 
-## Connect DA16200
+### Using DA16600MOD EVK
+
+Connect USB lead to board and PC.
+![](assets/IMG_20230724_180805286.jpg)
+
+### Using DA16600MOD
+![](assets/IMG_20230822_110208433.jpg)
+
+#### FTDI connection
+
+Connect to FTDI as per DA16200
+![](assets/IMG_20230822_093301382.jpg)
+
+## Connect DA16200 (or DA16600)
 ![](assets/Screenshot_2023-08-14_151921.png)
 
-Note: on the DA16200 dev kit, there are two consoles, a “command console” on the lower port (at 230400 baud) and an “AT console” on the higher port (at 115200 baud).
-Note: on the PMOD DA16200 board there is only one console, the “command console” at 230400 baud.
+### DA16200MOD EVK and DA16600MOD EVK
 
-Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” to check that the configuration shown above is valid - in case there are changes in the future.
-Setup DA16200
+Note: on the DA16200/DA16600 dev kit, there are two consoles.
 
-## Setup your DA16200 as per the Renesas document
+#### Command console
+The “command console” is on the lower port (at 230400 baud). 
+
+#### AT console
+The “AT console” is on the higher port (at 115200 baud) -- note this doesn't echo by default.
+
+### DA16200PMOD and DA16600MOD
+Note: on the PMOD DA16200/DA16600 board there are also two consoles.
+
+#### Command console
+The “command console” at 230400 baud accessed via the breakout pins, as shown above.
+
+#### AT console
+The “command console” at 230400 baud accessed via the breakout pins, see the ![AT Command Set](AT_COMMAND_SET.md).
+
+## Setup your DA16200 (or DA16600) as per the Renesas document
 ```
 User Manual
 DA16200 DA16600 FreeRTOS Getting Started Guide
@@ -555,6 +587,4 @@ Note ack_id is printed on the terminal when the OTA request is received.
 
 ## Using AT Commands
 
-The use of AT commands is beyond this Quickstart guide, see: H0037 - 47 - A - Renesas DA16200 "AT" command set
-
- 
+The use of AT commands is beyond this Quickstart guide, see the ![AT Command Set](AT_COMMAND_SET.md).
