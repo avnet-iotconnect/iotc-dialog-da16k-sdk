@@ -23,7 +23,7 @@ The “AT console” at 115200 baud accessed via the PMOD connector pins.
 Colors on the FTDI cable differ from the ![Quickstart Guide](./QUICKSTART.md).
 
 Connecting as a Type 3A Extended UART PMOD seems to work:
-![](assets/IMG_20230817_144820004.jpg)
+![](assets/IMG_20230822_122024106.jpg)
 
 ## AT Commands
 
