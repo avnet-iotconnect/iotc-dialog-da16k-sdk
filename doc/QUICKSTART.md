@@ -281,6 +281,10 @@ Connection COMPLETE to cc:40:d0:ef:b4:57
          Renewal Time    : 12h 00m 00s
 ```
 
+### DPM
+
+Note at present need to have DPM support selected as No during setup.
+
 ## Flashing images
 
 To flash DA16200 images use TeraTerm YModem transfer protocol (or similar) to send the images to the DA16200 using the “command console”, e.g.
@@ -417,6 +421,33 @@ TLS_CERT for ATCMD
   - TLS_CERT_10 : Empty
 
 [/DA16200/NET] #
+```
+
+### MQTT device certificate and private key  
+If the device is using an X509-style authentication scheme, then you will also have to write:
+
+#### MQTT device certificate
+```
+[/DA16200/NET] # cert write cert1
+Typing data: (Certificate value)
+        Cancel - CTRL+D, End of Input - CTRL+C or CTRL+Z
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+
+cert1 Write success.
+```
+
+#### MQTT device private key
+```
+[/DA16200/NET] # cert write key1
+Typing data: (Certificate value)
+        Cancel - CTRL+D, End of Input - CTRL+C or CTRL+Z
+-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----
+
+key1 Write success.
 ```
 
 ## Command line
