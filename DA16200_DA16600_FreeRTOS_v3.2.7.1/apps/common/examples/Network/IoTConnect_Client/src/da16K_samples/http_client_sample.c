@@ -91,6 +91,7 @@ static DA16_HTTP_CLIENT_REQUEST g_request;
 static char g_post_data[256];
 static char g_http_url[256];
 
+#if 0
 /* DigiCert Global Root G2 */
 static const char *http_root_ca_buffer0 =
 "-----BEGIN CERTIFICATE-----\r\n"
@@ -121,6 +122,7 @@ static void http_broker_cert_config(const char *root_ca, int root_ca_len)
 {
     cert_flash_write(SFLASH_ROOT_CA_ADDR2, (char *) root_ca, root_ca_len);
 }
+#endif
 
 #ifdef ENABLE_HTTPS_SERVER_VERIFY_REQUIRED
 #define    CERT_MAX_LENGTH        1024 * 4
@@ -298,25 +300,10 @@ static void httpc_cb_result_fn(void *arg, httpc_result_t httpc_result,
     return;
 }
 
-static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb,
-                              struct pbuf *p, err_t err)
+static void add_single_payload(struct pbuf *p)
 {
-    char *resize_total_payload;
-
-    DA16X_UNUSED_ARG(arg);
-    DA16X_UNUSED_ARG(tpcb);
-    DA16X_UNUSED_ARG(err);
-
-    if (p == NULL) {
-        HTTP_ERROR("\n[%s:%d] Receive data is NULL !! \r\n", __func__, __LINE__);
-        return ERR_BUF;
-    }
-
-    HTTP_DEBUG("\n[%s:%d] Received length = %d \r\n", __func__, __LINE__, p->len);
-    //hexa_dump_print((u8 *)"Received packet data \r\n", p->payload, p->len, 0, OUTPUT_HEXA_ASCII);
-
     // +1 for a NULL terminator!
-    resize_total_payload = (total_payload == NULL) ? malloc(p->len + 1) : realloc(total_payload, total_payload_len + p->len + 1);
+    char *resize_total_payload = (total_payload == NULL) ? malloc(p->len + 1) : realloc(total_payload, total_payload_len + p->len + 1);
     if (resize_total_payload == NULL) {
         if (total_payload) {
             free(total_payload);
@@ -326,7 +313,7 @@ static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb,
 
         /* subsequent calls may malloc()/realloc() -- but the EVT_HTTP_ERROR bit should indicate that payload data is missing */
         xEventGroupSetBits(my_app_event_group, EVT_HTTP_ERROR);
-        return ERR_OK;
+        return;
     }
 
     total_payload = resize_total_payload;
@@ -334,6 +321,26 @@ static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb,
     total_payload_len = total_payload_len + p->len; // doesn't count NULL terminator
     total_payload[total_payload_len] = '\0'; // ensure is NULL terminated in case do string operations later
     HTTP_DEBUG("total_payload_len = %d \r\n", total_payload_len);
+}
+
+static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb,
+                              struct pbuf *p, err_t err)
+{
+    DA16X_UNUSED_ARG(arg);
+    DA16X_UNUSED_ARG(tpcb);
+    DA16X_UNUSED_ARG(err);
+
+    if (p == NULL) {
+        HTTP_ERROR("\n[%s:%d] Receive data is NULL !! \r\n", __func__, __LINE__);
+        return ERR_BUF;
+    } else {
+        while (p != NULL) {
+            HTTP_DEBUG("\n[%s:%d] Received length = %d \r\n", __func__, __LINE__, p->len);
+            add_single_payload(p);
+            p = p->next;
+        }
+    }
+
     return ERR_OK;
 }
 
@@ -515,7 +522,9 @@ int iotconnect_https_request(IotConnectHttpResponse *response, const char *url_b
         *g_post_data = '\0';
     }
 
+#if 0
     http_broker_cert_config(http_root_ca_buffer0, strlen(http_root_ca_buffer0));
+#endif
 
     /*
      * http_client_parse_uri() will set
