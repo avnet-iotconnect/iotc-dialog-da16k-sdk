@@ -45,6 +45,8 @@ Connect to FTDI as per DA16200
 ## Connect DA16200 (or DA16600)
 ![](assets/Screenshot_2023-08-14_151921.png)
 
+minicom: need to turn off software and hardware flow control and add '-c on' as console output includes color codes -- as well as setting baud rate, etc.
+
 ### DA16200MOD EVK and DA16600MOD EVK
 
 Note: on the DA16200/DA16600 dev kit, there are two consoles.
@@ -285,7 +287,19 @@ Connection COMPLETE to cc:40:d0:ef:b4:57
 
 Note at present need to have DPM support selected as No during setup.
 
-## Flashing images
+## Flashing images using uart_program_da16200
+
+Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” in case there are changes in the future - in version 8, see section 4.5 "Programming Firmware Images".
+
+For example, after building IoTConnect_client, copy appropriate Linux or Windows version of uart_program_da16200 to apps/common/examples/Network/IoTConnect_Client/projects/da16200/img and then (in Linux)
+- cd apps/common/examples/Network/IoTConnect_Client/projects/da16200/img
+- ./uart_program_da16200 -i 0 DA16200_FBOOT-GEN01-01-c7f4c6cc22_W25Q32JW.img
+- ./uart_program_da16200 -i 23000 DA16200_FRTOS-GEN01-01-f017bfdf51-006558.img
+- ./uart_program_da16200
+
+## Flashing images using Ymodem
+
+Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” in case there are changes in the future - in version 7, see section 4.5.1 "Firmware Update Using Commands".
 
 To flash DA16200 images use TeraTerm YModem transfer protocol (or similar) to send the images to the DA16200 using the “command console”, e.g.
 ![](assets/Screenshot_2023-08-14_150336.png)
