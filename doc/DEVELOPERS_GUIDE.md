@@ -41,13 +41,13 @@ Clone the git repo and then use the downloaded files to overwrite their counterp
 
 The IoTConnect application is at apps/common/examples/Network/IoTConnect_Client.
 
-## DA16200
+### DA16200
 
 A DA16200 based project should use `projects/da16200` to compile the application.
 
 Once the binaries are compiled they should be in: `projects/da16200/img`.
 
-## DA16600
+### DA16600
 
 A DA16600 based project should use `projects/da16600` to compile the application.
 
