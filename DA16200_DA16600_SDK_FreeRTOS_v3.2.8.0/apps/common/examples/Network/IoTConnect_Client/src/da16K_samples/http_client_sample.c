@@ -54,6 +54,7 @@
 #include "mbedtls/ssl.h"
 #include "command_net.h"
 #include <string.h>
+#include "da16x_cert.h"
 
 #include "iotc_http_request.h"
 #include "common_config.h"
@@ -91,38 +92,11 @@ static DA16_HTTP_CLIENT_REQUEST g_request;
 static char g_post_data[256];
 static char g_http_url[256];
 
-#if 0
-/* DigiCert Global Root G2 */
-static const char *http_root_ca_buffer0 =
-"-----BEGIN CERTIFICATE-----\r\n"
-"MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh\r\n"
-"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\r\n"
-"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH\r\n"
-"MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT\r\n"
-"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j\r\n"
-"b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG\r\n"
-"9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI\r\n"
-"2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx\r\n"
-"1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ\r\n"
-"q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz\r\n"
-"tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ\r\n"
-"vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP\r\n"
-"BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV\r\n"
-"5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY\r\n"
-"1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4\r\n"
-"NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG\r\n"
-"Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91\r\n"
-"8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe\r\n"
-"pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl\r\n"
-"MrY=\r\n"
-"-----END CERTIFICATE-----\r\n";
-
 // Need certificate for HTTPS to talk to the server
-static void http_broker_cert_config(const char *root_ca, int root_ca_len)
+void http_broker_cert_config(const char *root_ca, int root_ca_len)
 {
     cert_flash_write(SFLASH_ROOT_CA_ADDR2, (char *) root_ca, root_ca_len);
 }
-#endif
 
 #ifdef ENABLE_HTTPS_SERVER_VERIFY_REQUIRED
 
@@ -526,10 +500,6 @@ int iotconnect_https_request(IotConnectHttpResponse *response, const char *url_b
     } else {
         *g_post_data = '\0';
     }
-
-#if 0
-    http_broker_cert_config(http_root_ca_buffer0, strlen(http_root_ca_buffer0));
-#endif
 
     /*
      * http_client_parse_uri() will set
