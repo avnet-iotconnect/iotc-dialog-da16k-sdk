@@ -30,7 +30,8 @@ Issue: It should be possible to easily use binaries between different boards usi
 
 ## Setup for IoTConnect development
 
-Warning: the FreeRTOS software the IoTConnect application has been based on is DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1.zip – other versions may work, but cannot be guaranteed.
+Warning: the FreeRTOS software the IoTConnect application was originally based on DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1.zip (using eclipse) but is now updated to DA16200_DA16600_SDK_FreeRTOS_v3.2.8.0.zip (using e2studio).
+Other versions may work, but cannot be guaranteed.
 
 The IoTConnect example application and modifications to the FreeRTOS package can be accessed at [IoTConnect dialog github](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk).
 
@@ -40,13 +41,19 @@ Clone the git repo and then use the downloaded files to overwrite their counterp
 
 The IoTConnect application is at apps/common/examples/Network/IoTConnect_Client.
 
-The application was developed for a DA16200, so `projects/da16200` should work to compile the application.
+## DA16200
 
-Hopefully (warning) DA16600 version, i.e. `projects/da16600` should also work to compile the application.
+A DA16200 based project should use `projects/da16200` to compile the application.
 
-Once the binaries are compiled they should be in: `projects/dialog/img`.
+Once the binaries are compiled they should be in: `projects/da16200/img`.
+
+## DA16600
+
+A DA16600 based project should use `projects/da16600` to compile the application.
+
+Once the binaries are compiled they should be in: `projects/da16600/img`.
+
+## Flashing the IoTConnect application
 
 See [QUICKSTART](./QUICKSTART.md) for details on how to flash the images and setup IoTConnect.
-
- 
 
