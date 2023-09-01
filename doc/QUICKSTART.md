@@ -309,7 +309,7 @@ To flash DA16200 images use TeraTerm YModem transfer protocol (or similar) to se
 ![](assets/Screenshot_2023-08-14_150336.png)
 
 Note: TeraTerm Ymodem transfer seems a little sensitive.
-- The first transfer (when the file selector is not in the correct directory) sometimes seems upset the transfer process -- so the transfer process may have to be cancelled and restarted.
+- The first transfer (when the file selector is not in the correct directory) sometimes seems to upset the transfer process -- so the transfer process may have to be cancelled and restarted.
 - Subsequent transfers (when the file selection is already in the correct directory) seem much better behaved.
 - Moving TeraTerm Ymodem windows seems to adversely affect any ongoing transfer.
 
