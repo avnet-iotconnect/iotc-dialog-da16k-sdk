@@ -64,7 +64,7 @@ Note: on the PMOD DA16200/DA16600 board there are also two consoles.
 The “command console” at 230400 baud accessed via the breakout pins, as shown above.
 
 #### AT console
-The “command console” at 230400 baud accessed via the breakout pins, see the ![AT Command Set](AT_COMMAND_SET.md).
+The “command console” at 230400 baud accessed via the breakout pins, see the [AT Command Set](AT_COMMAND_SET.md).
 
 ## Setup your DA16200 (or DA16600) as per the Renesas document
 ```
@@ -297,6 +297,10 @@ For example, after building IoTConnect_client, copy appropriate Linux or Windows
 - ./uart_program_da16200 -i 23000 DA16200_FRTOS-GEN01-01-f017bfdf51-006558.img
 - ./uart_program_da16200
 
+Note: the uart_program_da16200 is part of the DA16200_DA16600_SDK_FreeRTOS_v3.2.8.0.zip in:
+- utility/j-link/scripts/qspi/linux/uart_program_da16200
+- utility/j-link/scripts/qspi/win/uart_program_da16200.exe
+
 ## Flashing images using Ymodem
 
 Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” in case there are changes in the future - in version 7, see section 4.5.1 "Firmware Update Using Commands".
@@ -304,9 +308,10 @@ Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getti
 To flash DA16200 images use TeraTerm YModem transfer protocol (or similar) to send the images to the DA16200 using the “command console”, e.g.
 ![](assets/Screenshot_2023-08-14_150336.png)
 
-Note: moving TeraTerm Ymodem window can adversely affect any transfer – so best not to move windows around while sending data.
-
-Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” to check that the commands shown above are valid - in case there are changes in the future.
+Note: TeraTerm Ymodem transfer seems a little sensitive.
+- The first transfer (when the file selector is not in the correct directory) sometimes seems to upset the transfer process -- so the transfer process may have to be cancelled and restarted.
+- Subsequent transfers (when the file selection is already in the correct directory) seem much better behaved.
+- Moving TeraTerm Ymodem windows seems to adversely affect any ongoing transfer.
 
 The smaller image, e.g. DA16200_FBOOT-GEN01-01-922f1e27d_W25Q32JW.img is flashed using loady 0
 
@@ -632,4 +637,4 @@ Note ack_id is printed on the terminal when the OTA request is received.
 
 ## Using AT Commands
 
-The use of AT commands is beyond this Quickstart guide, see the ![AT Command Set](AT_COMMAND_SET.md).
+The use of AT commands is beyond this Quickstart guide, see the [AT Command Set](AT_COMMAND_SET.md).

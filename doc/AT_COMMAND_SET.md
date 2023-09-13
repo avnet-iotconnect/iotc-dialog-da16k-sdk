@@ -15,12 +15,12 @@ The “AT console” is on the higher port (at 115200 baud) -- note this doesn't
 Note: on the PMOD DA16200/DA16600 board there are also two consoles.
 
 #### Command console
-The “command console” at 230400 baud accessed via the breakout pins, see the ![Quickstart Guide](./QUICKSTART.md).
+The “command console” at 230400 baud accessed via the breakout pins, see the [Quickstart Guide](./QUICKSTART.md).
 
 #### AT console
 The “AT console” at 115200 baud accessed via the PMOD connector pins.
 
-Colors on the FTDI cable differ from the ![Quickstart Guide](./QUICKSTART.md).
+Colors on the FTDI cable differ from the [Quickstart Guide](./QUICKSTART.md).
 
 Connecting as a Type 3A Extended UART PMOD seems to work:
 ![](assets/IMG_20230822_122024106.jpg)
