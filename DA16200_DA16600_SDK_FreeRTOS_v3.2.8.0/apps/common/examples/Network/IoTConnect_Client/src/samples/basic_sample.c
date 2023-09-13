@@ -248,124 +248,21 @@ static const char *mqtt_root_ca_buffer0 =
     "R9I4LtD+gdwyah617jzV/OeBHRnDJELqYzmp\n"
     "-----END CERTIFICATE-----\n";
 
-#define IOTCONNECT_CPID "avtds"
-#define IOTCONNECT_ENV "avnetpoc"
+#warning Please fill in the  IOTCONNECT_CPID IOTCONNECT_ENV with your correct values
 
-#if 0
-#define IOTCONNECT_DUID "binarytestdevice"
-#define IOTCONNECT_AUTH_TYPE IOTC_AT_SYMMETRIC_KEY
-static const char *iotc_base64_symmetric_key = "YzlgdRbYcreYW1fhjwxO4b3X7hBlDY3OVuw6q9wDbAo="; // note this is base64 encoded
-static const char *mqtt_device_cert0 = NULL;
-static const char *mqtt_device_private_key0 = NULL;
-#endif
-
-#if 0
-#define IOTCONNECT_DUID "justatoken"
-#define IOTCONNECT_AUTH_TYPE IOTC_AT_TOKEN
-static const char *iotc_base64_symmetric_key = NULL;
-static const char *mqtt_device_cert0 = NULL;
-static const char *mqtt_device_private_key0 = NULL;
-#endif
-
-#if 0
-#define IOTCONNECT_DUID "left2myowndevice"
-#define IOTCONNECT_AUTH_TYPE IOTC_AT_SYMMETRIC_KEY
-static const char *iotc_base64_symmetric_key = "cGFzc3dvcmRwYXNzd29yZAo="; // note this is base64 encoded
-static const char *mqtt_device_cert0 = NULL;
-static const char *mqtt_device_private_key0 = NULL;
-#endif
-
-#if 0
-#define IOTCONNECT_DUID "x509device"
-#define IOTCONNECT_AUTH_TYPE IOTC_AT_X509
-static const char *iotc_base64_symmetric_key = NULL;
-
-/*
- * ecc-certs/avtds/x509device-crt.pem
- */
-static const char *mqtt_device_cert0 =
-    "-----BEGIN CERTIFICATE-----\n"
-    "MIIByzCCAXACAQEwCgYIKoZIzj0EAwIwczELMAkGA1UEBhMCVUsxEDAOBgNVBAgM\n"
-    "B0JyaXN0b2wxEDAOBgNVBAcMB0JyaXN0b2wxEDAOBgNVBAoMB1dpdGVraW8xEDAO\n"
-    "BgNVBAsMB0JyaXN0b2wxHDAaBgNVBAMME1VLQnJpc3RvbFdpdGVraW9ORE0wIBcN\n"
-    "MjMwNjA2MTQ0OTMxWhgPMjA1MDEwMjExNDQ5MzFaMHAxCzAJBgNVBAYTAlVLMRAw\n"
-    "DgYDVQQIDAdCcmlzdG9sMRAwDgYDVQQHDAdCcmlzdG9sMRAwDgYDVQQKDAdXaXRl\n"
-    "a2lvMRAwDgYDVQQLDAdCcmlzdG9sMRkwFwYDVQQDDBBhdnRkcy14NTA5ZGV2aWNl\n"
-    "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEJSSSLBrIyBe4TJgKC4pwjn/ZWoNH1CU2\n"
-    "dFXHuHj3UYiUJyrZ2P/cMWmOeWQDxBwCUxwiuJ6lr714bkmbVSFZMzAKBggqhkjO\n"
-    "PQQDAgNJADBGAiEAx2ixvk+8jvpHG0c3xt4IY6vky9DNzcixNYKQihqDUb4CIQDG\n"
-    "HGBV/JfCuOj1fFIdVZbF/dJQTOzy4GIYuLnO8Z0L9A==\n"
-    "-----END CERTIFICATE-----\n";
-/*
- * ecc-certs/avtds/x509device-key.pem
- */
-static const char *mqtt_device_private_key0 =
-    "-----BEGIN EC PRIVATE KEY-----\n"
-    "MHQCAQEEIA/3tFBwrmgBY491Rpdv60Cp4wt+MVFejSa+5U+jlS+HoAcGBSuBBAAK\n"
-    "oUQDQgAEJSSSLBrIyBe4TJgKC4pwjn/ZWoNH1CU2dFXHuHj3UYiUJyrZ2P/cMWmO\n"
-    "eWQDxBwCUxwiuJ6lr714bkmbVSFZMw==\n"
-    "-----END EC PRIVATE KEY-----\n";
-#endif
-
-#if 1
-#define IOTCONNECT_DUID "selfsignedv1"
+#define IOTCONNECT_CPID "" // replace with cpid from the dashboard
+#define IOTCONNECT_ENV "" // replace with env from the dashboard
+#define IOTCONNECT_DUID "" // replace with devicename from the dashboard
 #define IOTCONNECT_AUTH_TYPE IOTC_AT_X509 // FIXME TODO actually IOTC_AT_SELF_SIGNED
 static const char *iotc_base64_symmetric_key = NULL;
 
-/*
- * E119D239D166719652EFE06A5A7004DCE421C959/DeviceCertificate.pem 
- */
+#warning Please fill in mqtt_device_cert0 and mqtt_device_private_key0 with correct values for the (self-signed) device X509 information from the dashboard
 static const char *mqtt_device_cert0 =
     "-----BEGIN CERTIFICATE-----\n"
-    "MIICxzCCAa8CFDuST50yWFK3bOGaaesggUXeyWpGMA0GCSqGSIb3DQEBCwUAMCIx\n"
-    "IDAeBgNVBAMMF0lvdEh1YiB0ZXN0IGNlcnRpZmljYXRlMB4XDTIzMDYxNDE2MTQx\n"
-    "N1oXDTI0MDYxMzE2MTQxN1owHjEcMBoGA1UEAwwTYXZ0ZHMtc2VsZnNpZ25lZF92\n"
-    "MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALjszhOwdeJunimxl7P2\n"
-    "tmomYwYm2DR6c9EtAIl2ycTbdYJq78RCn+BA/to5U8LIf8q6Be4OYGJzuQcpJirn\n"
-    "sy7HqTD0mqgsStN4rMP8paB08rfHM+6c8H67oW53CK3J3l6nPTE8cnV34Ch3bIzy\n"
-    "CiJVP/DJ7AB7NkQCxjda+shuOW+hAOrXRXiAUyiMUp5GOR05R2Erad73YpQNXyRR\n"
-    "5PcMGG2teyZBonHk/f3aXFncTlLPzEQyrM1wZ3B2jaUJ6dsBzURnftiraZ+hhNXI\n"
-    "3WsHdd58wq9jkCbYtkqa/W8rbhvXu+O8o1AMrTwulCDrZ1/njHhUnCApeXD8b7qB\n"
-    "kwUCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAU3sQK9+IAXb3hqO4rkrM61H1Ozb5\n"
-    "y/a3xOSt1c2/6BwdmiP239VOfeIQ+p1KNMhoz4emiXT9cJlkzSBzl3bZw01MCGEb\n"
-    "Ub0QP7G0IdUvxnyyai95OWiGkzoXG8HIBHeD11gQc9KVXw0hnQT/UJ9bQYQ6S9yL\n"
-    "NqziL8wf/+BATRm7YPDs8NFVtjd4A0drp36zbYo23zZJ7ud/QHZdO6qwFzrqC9dB\n"
-    "N0sMH8gYzQUBnkksuR3QOTSMnTrqY3LjiSZfgq5iFgF0J7OPerfNCum1TCV7aDeW\n"
-    "8JoBQQc3SJY4bq9gUvcrERW9JWHqIHzIf2ljy0hOr7PBVP0ZyqjtyYo1Bg==\n"
     "-----END CERTIFICATE-----\n";
-/*
- * E119D239D166719652EFE06A5A7004DCE421C959/device.key 
- */
 static const char *mqtt_device_private_key0 =
     "-----BEGIN PRIVATE KEY-----\n"
-    "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC47M4TsHXibp4p\n"
-    "sZez9rZqJmMGJtg0enPRLQCJdsnE23WCau/EQp/gQP7aOVPCyH/KugXuDmBic7kH\n"
-    "KSYq57Mux6kw9JqoLErTeKzD/KWgdPK3xzPunPB+u6Fudwityd5epz0xPHJ1d+Ao\n"
-    "d2yM8goiVT/wyewAezZEAsY3WvrIbjlvoQDq10V4gFMojFKeRjkdOUdhK2ne92KU\n"
-    "DV8kUeT3DBhtrXsmQaJx5P392lxZ3E5Sz8xEMqzNcGdwdo2lCenbAc1EZ37Yq2mf\n"
-    "oYTVyN1rB3XefMKvY5Am2LZKmv1vK24b17vjvKNQDK08LpQg62df54x4VJwgKXlw\n"
-    "/G+6gZMFAgMBAAECggEAIKglDmITt1yMjtVfcncHqMBFrYDvnnjfehml5iC1qg+N\n"
-    "dW4YEIMpg6tGtlf4XEYXF0B5qpwcVlaUXtjb9ii7wm+dB9mydC96OVUuwV+dCjSM\n"
-    "5nqFx8YsTF0rOXxI6pPjMrj6+/ZuSiNU0SCh6VQXCRAf/hBSnpUjtKf+xCjLb9iF\n"
-    "u8owuREOGeOLeILWUxZX0RVj2TBedxVsPwbZ0GgXbxie40CQlU6J+rbvs4A2ICDn\n"
-    "mGBrcKCXMaBFxVmiwgOBhOSZP2fZwg0vvxws/vNtb3LPoPlnmc6+DS/dCsAwd1lD\n"
-    "N5PSUvGl77mh0c7lmZpOpIJNVxfJd+UP4JhkU/U+cQKBgQC+DdlhelvY1hqU+1Vr\n"
-    "ejovYrZSHTSWrDVZaoOOiw6OgudmEyWrj7ifcdStUgpoPji7IPa5hSzkqyVhsFiL\n"
-    "NudgoAkVXHNoQZ0PuR+8IkBGRQXH2SWdFVEdY+cQb2MqOyf3a4xfe+2HsrZH1obZ\n"
-    "NieMljeR98qnHJrklErlvo6eeQKBgQD5F1lvK0DFUt/moccD2oSiuD1fI4KSk8P2\n"
-    "xWENWBy1pAq6kBJh0qc+JGWZRMrt/AHmDFJnGQxa7680NbIKte3QQh/mY91eLpY/\n"
-    "LGrX/n+Lyvfj4vdKVm8h0RdbRyUhFcg8umFIl3R8p9e9JX4omLnUPpnq69Z3kfkA\n"
-    "4RE1IESF7QKBgHqC5uwFOguvCHedBFVB9xvwn+KS3QF7hPBczu0mCn4nOA7+rLvI\n"
-    "65QshpIrXnYQFfXaq/CvPl8xS+mLCajD/aa1wuU4MVS1Zw9poGFgGtqxR6ap/asi\n"
-    "wKUXby2S//OLKpo9g8FRW66rrwDj8w018YyYkL3RY5sRv281gIpUqg7RAoGASnQN\n"
-    "OmpeSNzVqfUvLFqzjIOvbHGLxM5AI9GpibiNlEl9H3iS1gSGEtAEQkTKt0m9M4r5\n"
-    "UnGtPL0pzFxEZGkutTIeoNm2wEECjc1z/i3G5/z6DXa43dJqE1yRM6pXUcVV/bjj\n"
-    "/TOwENaGaLX9OJs16Ffx38MwbrsGB5o+b3e+o50CgYAjrP0pGonOBXO351/IXciY\n"
-    "64fYuKiTc261ovbqas2YyFPSEhsRU+CpUY1L6aoF1z+xJP9OZnX4gm83MtP+5Ho/\n"
-    "8rxhr13/gPJIwLGDUb6HgnvRwYQGBkLKwnwYFer/ZI0x6iuBEcEl8QP3OhSmdmZw\n"
-    "T5VocTUIZufG5RXYT6DGWQ==\n"
     "-----END PRIVATE KEY-----\n";
-#endif
 
 static int iotc_usleep(unsigned long usec) {
     unsigned long delay = usec/1000; // convert from microseconds to milliseconds
