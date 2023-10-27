@@ -335,6 +335,8 @@ See: [DA16600 Adesto images](./image/release-da16600-adesto-images-5b816ee62b674
 
 At the command prompt, type net to get access to the network based commands (need to type up to get back to “normal” command prompt).
 
+NOTE: on Linux a more specialised terminal program may be required such as minicom, rather than uart_program_da16200 -- since entering a certicate is finised by pressing control-C or control-Z which kills/stops uart_program_da16200.
+
 Need to set the X509 certificates for IoTConnect discovery/sync and Azure MQTT, e.g.
 ```
 [/DA16200/NET] # cert status
@@ -566,12 +568,17 @@ To revert to implicit OTA acknowledgement set use_ota_ack to 0.
 
 #### Setup - read IOTC values from NVRAM
 
+Note: ensure all certificates are in place, and that iotconnect_config has been used to save the configuration -- before initiating "iotconnect_client setup".
+If the configuration stage is missed, then there will be no valid values to setup.
+
 To setup IoTConnect values. run
 ```
 iotconnect_client setup
 ```
 
 #### Start (Discovery/Sync & MQTT Setup)
+
+Note: ensure that all certificates are in place, that iotconnect_config has been used to save the configuration, and that "iotconnect_client setup" has been run -- before initiating "iotconnect_client start".
 
 To run IoTConnect discovery/sync and update MQTT values and start mqtt_client, run
 ```
