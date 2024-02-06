@@ -1,3 +1,0 @@
-http_client_sample.c is a reworked version of the original http_client_sample.c from DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1 in apps/common/examples/Network/MQTT_Client/src
-
-mqtt_client_sample.c is a reworked version of the original mqtt_client_sample.c from DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1 in apps/common/examples/Network/Http_Client/src
