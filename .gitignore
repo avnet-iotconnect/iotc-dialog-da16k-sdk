@@ -1,0 +1,14 @@
+# Ignore everything in "DA16200_DA16600_SDK_*" folder
+DA16200_DA16600_SDK_*/*
+
+# Except for our custom things. 
+!DA16200_DA16600_SDK_*/apps/common/examples/Network/IoTConnect_Client
+!DA16200_DA16600_SDK_*/apps/da16200/get_started/src/apps/user_nvram_cmd_table.c
+!DA16200_DA16600_SDK_*/apps/da16200/get_started/include/apps/user_nvram_cmd_table.h
+!DA16200_DA16600_SDK_*/apps/da16600/get_started/src/apps/user_nvram_cmd_table.c
+!DA16200_DA16600_SDK_*/apps/da16600/get_started/include/apps/user_nvram_cmd_table.h
+
+!DA16200_DA16600_SDK_*/core/*
+
+# Old stuff
+old*/*
