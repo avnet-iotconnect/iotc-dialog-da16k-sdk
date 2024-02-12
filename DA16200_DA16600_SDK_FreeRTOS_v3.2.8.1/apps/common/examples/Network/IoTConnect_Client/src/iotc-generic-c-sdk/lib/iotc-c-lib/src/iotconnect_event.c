@@ -108,75 +108,13 @@ static inline bool is_valid_string(const _cJSON *json) {
     return (NULL != json && _cJSON_IsString(json) && json->valuestring != NULL);
 }
 
-#if 1
-bool iotcl_process_event(const char *event) {
-    IOTC_DEBUG("%s\n", __func__);
-
-    bool status = false;
-    _cJSON *root = _cJSON_Parse(event);
-    if (root == NULL)
-    {
-        IOTC_ERROR("%s root == NULL\n", __func__);
-        return false;
-    }
-
-
-    { // scope out the on-the fly varialble declarations for cleanup jump
-    	_cJSON *j_type = _cJSON_GetObjectItemCaseSensitive(root, "ct");
-        if (!_cJSON_IsNumber(j_type)) {
-                IOTC_ERROR("%s failed to parse \"ct\"\n", __func__);
-        	goto cleanup;
-        }
-
-        IotConnectEventType type = j_type->valueint + 1;
-
-        _cJSON *j_ack_id;
-		j_ack_id = _cJSON_GetObjectItemCaseSensitive(root, "ack");
-
-        if (type < DEVICE_COMMAND) {
-            goto cleanup;
-        }
-
-        if (type == DEVICE_OTA) {
-        	if (!is_valid_string(j_ack_id)) {
-                IOTC_ERROR("%s failed to parse \"ack\"\n", __func__);
-            	goto cleanup;
-        	}
-        }
-
-        struct IotclEventDataTag *eventData = (struct IotclEventDataTag *) calloc(
-                sizeof(struct IotclEventDataTag), 1);
-
-        if (NULL == eventData) {
-                IOTC_ERROR("%s NULL == eventData\n", __func__);
-        	goto cleanup;
-        }
-
-        eventData->root = root;
-        eventData->data = NULL;
-        eventData->type = type;
-
-        // eventData and root (via eventData->root) will be freed when the user calls
-        // iotcl_destroy_event(). The user is responsible to free this data inside the callback,
-        // once they are done with it. This is done so that the user can choose to keep the event data
-        // for purposes of replying with an ack once another process (perhaps in another thread) completes.
-
-        return iotc_process_callback(eventData);
-    }
-
-    cleanup:
-    _cJSON_Delete(root);
-    return status;
-}
-
-
-#else
+#if AZURE_VERSION
 bool iotcl_process_event(const char *event) {
     bool status = false;
     _cJSON *root = _cJSON_Parse(event);
 
     if (!root) {
-       return false;
+        return false;
     }
 
     { // scope out the on-the fly varialble declarations for cleanup jump
@@ -235,10 +173,70 @@ bool iotcl_process_event(const char *event) {
     _cJSON_Delete(root);
     return status;
 }
+#else 
+bool iotcl_process_event(const char *event) {
+    IOTC_DEBUG("%s\n", __func__);
+
+    bool status = false;
+    _cJSON *root = _cJSON_Parse(event);
+    if (root == NULL)
+    {
+        IOTC_ERROR("%s root == NULL\n", __func__);
+        return false;
+    }
+
+
+    { // scope out the on-the fly varialble declarations for cleanup jump
+    	_cJSON *j_type = _cJSON_GetObjectItemCaseSensitive(root, "ct");
+        if (!_cJSON_IsNumber(j_type)) {
+            goto cleanup;
+        }
+
+        IotConnectEventType type = j_type->valueint + 1;
+
+        _cJSON *j_ack_id;
+        j_ack_id = _cJSON_GetObjectItemCaseSensitive(root, "ack");
+
+        if (type < DEVICE_COMMAND) {
+            goto cleanup;
+        }
+
+        if (type == DEVICE_OTA) {
+            if (!is_valid_string(j_ack_id)) {
+                IOTC_ERROR("%s failed to parse \"ack\"\n", __func__);
+            	goto cleanup;
+        	}
+        }
+
+        struct IotclEventDataTag *eventData = (struct IotclEventDataTag *) calloc(
+                sizeof(struct IotclEventDataTag), 1);
+
+        if (NULL == eventData) {
+            IOTC_ERROR("%s NULL == eventData\n", __func__);
+        	goto cleanup;
+        }
+
+        eventData->root = root;
+        eventData->data = root;
+        eventData->type = type;
+
+        // eventData and root (via eventData->root) will be freed when the user calls
+        // iotcl_destroy_event(). The user is responsible to free this data inside the callback,
+        // once they are done with it. This is done so that the user can choose to keep the event data
+        // for purposes of replying with an ack once another process (perhaps in another thread) completes.
+
+        return iotc_process_callback(eventData);
+    }
+
+    cleanup:
+    _cJSON_Delete(root);
+    return status;
+}
+
 #endif
 
 char *iotcl_clone_command(IotclEventData data) {
-    _cJSON *command = _cJSON_GetObjectItemCaseSensitive(data->data, "command");
+    _cJSON *command = _cJSON_GetObjectItemCaseSensitive(data->root, "cmd");
     if (NULL == command || !is_valid_string(command)) {
         return NULL;
     }
@@ -268,6 +266,11 @@ char *iotcl_clone_download_url(IotclEventData data, size_t index) {
 
 char *iotcl_clone_sw_version(IotclEventData data) {
     _cJSON *ver = _cJSON_GetObjectItemCaseSensitive(data->data, "ver");
+
+    if (!_cJSON_IsObject(ver)) {
+        ver = data->data; // AWS and 2.1 we presume...
+    }
+    
     if (_cJSON_IsObject(ver)) {
         _cJSON *sw = _cJSON_GetObjectItem(ver, "sw");
         if (is_valid_string(sw)) {
@@ -279,6 +282,11 @@ char *iotcl_clone_sw_version(IotclEventData data) {
 
 char *iotcl_clone_hw_version(IotclEventData data) {
     _cJSON *ver = _cJSON_GetObjectItemCaseSensitive(data->data, "ver");
+    
+    if (!_cJSON_IsObject(ver)) {
+        ver = data->data; // AWS and 2.1 we presume...
+    }
+
     if (_cJSON_IsObject(ver)) {
         _cJSON *sw = _cJSON_GetObjectItem(ver, "hw");
         if (is_valid_string(sw)) {
@@ -288,7 +296,15 @@ char *iotcl_clone_hw_version(IotclEventData data) {
     return NULL;
 }
 
-#if 1
+#if AZURE_VERSION
+char *iotcl_clone_ack_id(IotclEventData data) {
+    _cJSON *ackid = _cJSON_GetObjectItemCaseSensitive(data->data, "ackId");
+    if (is_valid_string(ackid)) {
+        return iotcl_strdup(ackid->valuestring);
+    }
+    return NULL;
+}
+#else
 char *iotcl_clone_ack_id(IotclEventData data) {
 	_cJSON *j_ack_id;
 
@@ -303,14 +319,6 @@ char *iotcl_clone_ack_id(IotclEventData data) {
 
     char *ack_id = j_ack_id->valuestring;
     return iotcl_strdup(ack_id);
-}
-#else
-char *iotcl_clone_ack_id(IotclEventData data) {
-    _cJSON *ackid = _cJSON_GetObjectItemCaseSensitive(data->data, "ackId");
-    if (is_valid_string(ackid)) {
-        return iotcl_strdup(ackid->valuestring);
-    }
-    return NULL;
 }
 #endif
 

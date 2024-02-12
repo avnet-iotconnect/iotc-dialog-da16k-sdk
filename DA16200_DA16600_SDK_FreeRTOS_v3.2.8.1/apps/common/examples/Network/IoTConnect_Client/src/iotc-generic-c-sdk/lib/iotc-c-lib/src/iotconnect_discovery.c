@@ -13,6 +13,14 @@
 #include "iotconnect_common.h"
 #include "iotconnect_discovery.h"
 
+static int get_numeric_value_or_default(_cJSON *cjson, const char *value_name, int default_value) {
+    _cJSON* tmp_value = _cJSON_GetObjectItem(cjson, value_name);
+    if (!tmp_value || !_cJSON_IsNumber(tmp_value)) {
+        return default_value;
+    }
+    return tmp_value->valueint;
+}
+
 static char *safe_get_string_and_strdup(_cJSON *cjson, const char *value_name) {
     _cJSON *value = _cJSON_GetObjectItem(cjson, value_name);
     if (!value) {
@@ -65,7 +73,13 @@ IotclDiscoveryResponse *iotcl_discovery_parse_discovery_response(const char *res
         return NULL;
     }
 
-    _cJSON *base_url_cjson = _cJSON_GetObjectItem(json_root, "baseUrl");
+    _cJSON *d_cjson = _cJSON_GetObjectItem(json_root, "d");
+    if (!d_cjson) {
+        _cJSON_Delete(json_root);
+        return NULL;
+    }
+
+    _cJSON *base_url_cjson = _cJSON_GetObjectItem(d_cjson, "bu");
     if (!base_url_cjson) {
         _cJSON_Delete(json_root);
         IOTC_ERROR("missing baseurl\n");
@@ -115,75 +129,76 @@ void iotcl_discovery_free_discovery_response(IotclDiscoveryResponse *response) {
 }
 
 IotclSyncResponse *iotcl_discovery_parse_sync_response(const char *response_data) {
-    IOTC_DEBUG("%s: response_data is %ld bytes in length\n", __func__, strlen(response_data));
 
-    _cJSON *tmp_value = NULL;
     IotclSyncResponse *response = (IotclSyncResponse *) calloc(1, sizeof(IotclSyncResponse));
     if (NULL == response) {
-        IOTC_ERROR("calloc failed\n");
         return NULL;
     }
-
     _cJSON *sync_json_root = _cJSON_Parse(response_data);
     if (!sync_json_root) {
         response->ds = IOTCL_SR_PARSING_ERROR;
-        IOTC_ERROR("_cJSON_Parse failed\n");
         return response;
     }
-
     _cJSON *sync_res_json = _cJSON_GetObjectItemCaseSensitive(sync_json_root, "d");
     if (!sync_res_json) {
         _cJSON_Delete(sync_json_root);
         response->ds = IOTCL_SR_PARSING_ERROR;
-        IOTC_ERROR("missing \"d\"\n");
         return response;
     }
-    tmp_value = _cJSON_GetObjectItem(sync_res_json, "ds");
-    if (!tmp_value) {
+
+    if (response->ds == IOTCL_SR_PARSING_ERROR) {
         response->ds = IOTCL_SR_PARSING_ERROR;
-        IOTC_ERROR("missing \"ds\"\n");
     } else {
-        response->ds = _cJSON_GetNumberValue(tmp_value);
+        response->ds = IOTCL_SR_OK;
     }
+
     if (response->ds == IOTCL_SR_OK) {
-        response->cpid = safe_get_string_and_strdup(sync_res_json, "cpId");
-        response->dtg = safe_get_string_and_strdup(sync_res_json, "dtg");
-        tmp_value = _cJSON_GetObjectItem(sync_res_json, "ee");
-        if (!tmp_value) {
-            IOTC_ERROR("missing \"ee\"\n");
-            response->ee = -1;
-        }
-        tmp_value = _cJSON_GetObjectItem(sync_res_json, "rc");
-        if (!tmp_value) {
-            IOTC_ERROR("missing \"rc\"\n");
-            response->rc = -1;
-        }
-        tmp_value = _cJSON_GetObjectItem(sync_res_json, "at");
-        if (!tmp_value) {
-            IOTC_ERROR("missing \"at\"\n");
-            response->at = -1;
-        }
+        _cJSON *meta_json = _cJSON_GetObjectItemCaseSensitive(sync_res_json, "meta");
+		if (!meta_json) {
+		    _cJSON_Delete(sync_json_root);
+		    response->ds = IOTCL_SR_PARSING_ERROR;
+		    return response;
+		}
+
+		response->cd = safe_get_string_and_strdup(meta_json, "cd");
+
+		if (!response->cd) {
+            _cJSON_Delete(sync_json_root);
+            response->ds = IOTCL_SR_PARSING_ERROR;
+            return response;
+		}
+
         _cJSON *p = _cJSON_GetObjectItemCaseSensitive(sync_res_json, "p");
+
         if (p) {
+
             response->broker.name = safe_get_string_and_strdup(p, "n");
             response->broker.client_id = safe_get_string_and_strdup(p, "id");
             response->broker.host = safe_get_string_and_strdup(p, "h");
             response->broker.user_name = safe_get_string_and_strdup(p, "un");
+            response->broker.port = get_numeric_value_or_default(p, "p", 8883);
+
+#if 0
             response->broker.pass = safe_get_string_and_strdup(p, "pwd");
-            response->broker.sub_topic = safe_get_string_and_strdup(p, "sub");
-            response->broker.pub_topic = safe_get_string_and_strdup(p, "pub");
+
+            _cJSON *topics = _cJSON_GetObjectItemCaseSensitive(p, "topics");
+
+            response->broker.sub_topic = safe_get_string_and_strdup(topics, "c2d");
+            response->broker.pub_topic = safe_get_string_and_strdup(topics, "rpt");
+#endif
+
             if (
                     !response->cpid ||
-                    !response->dtg ||
                     !response->broker.host ||
                     !response->broker.client_id ||
-                    !response->broker.user_name ||
-                    // !response->broker.pass || << password may actually be null or empty
-                    !response->broker.sub_topic ||
-                    !response->broker.pub_topic
-                    ) {
-                // Assume parsing eror, but it could alo be (unlikely) allocation error
-                IOTC_ERROR("missing lots of reasons\n");
+#if 0
+					!response->broker.pass ||   // FIXME: password field in discovery response, not sync response.  password may actually be null or empty
+					!response->broker.sub_topic ||
+                    !response->broker.pub_topic ||
+#endif
+					!response->broker.user_name
+            ) {
+                // Assume parsing error, but it could also be (unlikely) allocation error
                 response->ds = IOTCL_SR_PARSING_ERROR;
             }
         } else {
@@ -215,7 +230,7 @@ void iotcl_discovery_free_sync_response(IotclSyncResponse *response) {
         return;
     }
     free(response->cpid);
-    free(response->dtg);
+    free(response->cd);
     free(response->broker.host);
     free(response->broker.client_id);
     free(response->broker.user_name);

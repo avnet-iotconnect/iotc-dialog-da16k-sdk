@@ -39,7 +39,6 @@ typedef struct IotclTelemetryConfig {
     // Can be copied at the device page. Can be obtained via REST Sync call.
     // Device template GUID required to send telemetry data.
     const char *dtg;
-    const char *cd;		//needed for message format 2.1
 } IotclTelemetryConfig;
 
 typedef struct {

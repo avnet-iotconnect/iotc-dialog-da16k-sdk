@@ -141,10 +141,6 @@ IotclMessageHandle iotcl_telemetry_create(void) {
         IOTC_ERROR("config is NULL");
         return NULL;
     }
-    if (!config->telemetry.cd) {
-        IOTC_ERROR("config->telemetry.cd is NULL");
-        return NULL;
-    }
 
     struct IotclMessageHandleTag *msg =
             (struct IotclMessageHandleTag *) calloc(sizeof(struct IotclMessageHandleTag), 1);
@@ -159,24 +155,11 @@ IotclMessageHandle iotcl_telemetry_create(void) {
         goto cleanup;
     }
 
-    if (!_cJSON_AddStringToObject(msg->parent, "cd", config->telemetry.cd)) {
-        goto cleanup_root;
-    }
     if (!_cJSON_AddNumberToObject(msg->parent, "mt", 0)) {
         goto cleanup_root; // telemetry message type (zero)
     }
 
-//    msg->root_value = root;
-//    if (!msg->root_value) goto cleanup;
-
-    //create 1st level d object which is msg->root_vlaue
-    msg->root_value = _cJSON_AddObjectToObject(msg->parent, "d");
-    if (!msg->root_value) {
-        goto cleanup_root;
-    }
-
-    //add 2nd level d array
-    msg->telemetry_data_array = _cJSON_AddArrayToObject(msg->root_value, "d"); //create 2nd d_array in 1st d object
+    msg->telemetry_data_array = _cJSON_AddArrayToObject(msg->parent, "d"); //create d_array in parent object
     if (!msg->telemetry_data_array) {
         goto cleanup_msg;
     }
@@ -220,17 +203,16 @@ bool iotcl_telemetry_add_with_iso_time(IotclMessageHandle message, const char *t
     if (!message) {
         return false;
     }
-    if (!_cJSON_AddStringToObject(message->root_value, "dt", time)) {
-        return false;
-    }
 
     _cJSON *const telemetry_object = setup_telemetry_object(message);
     if (!telemetry_object) {
         return false;
     }
+
     if (!_cJSON_AddStringToObject(telemetry_object, "dt", time)) {
         return false;
     }
+
     return true;
 }
 
@@ -294,6 +276,7 @@ cleanup_tgt:
 
 bool iotcl_telemetry_set_string(IotclMessageHandle message, const char *path, const char *value) {
     if (!message) {
+        IOTC_ERROR("message is NULL");
         return false;
     }
     if (NULL == message->current_telemetry_object) {
