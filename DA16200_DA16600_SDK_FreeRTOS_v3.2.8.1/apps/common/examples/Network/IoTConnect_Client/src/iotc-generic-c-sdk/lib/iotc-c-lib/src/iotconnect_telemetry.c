@@ -113,11 +113,6 @@ static cJSON *setup_telemetry_object(IotclMessageHandle message) {
         goto cleanup_cto;
     }
 
-    // setup the actual telemetry object to be used in subsequent calls
-    message->current_telemetry_object = cJSON_CreateObject();
-    if (!message->current_telemetry_object) {
-        goto cleanup_cto;
-    }
     message->current_telemetry_object = d3_object;
 
     return telemetry_array; // return 2nd level d array
