@@ -195,13 +195,13 @@ int iotc_device_client_setup(IotConnectDeviceClientConfig *c) {
     platform_set_iotconnect_dtg(c->sr->dtg);
 
     mqtt_sample_client_nvram_config(c->sr->broker.host,
-		           8883,
-			   c->sr->broker.user_name,
-			   c->sr->broker.pass,
-		    	   c->sr->broker.client_id,
-                           c->sr->broker.pub_topic,
-			   c->sr->broker.sub_topic,
-                           c->qos);
+            8883,
+            c->sr->broker.user_name,
+            c->sr->broker.pass,
+            c->sr->broker.client_id,
+            c->sr->broker.pub_topic,
+            c->sr->broker.sub_topic,
+            c->qos);
 
     // Don't handle certificates -- assume that there are AT commands to set them in a standard way.
 
@@ -232,7 +232,7 @@ int iotc_device_client_run(IotConnectDeviceClientConfig *c) {
     ret = mqtt_sample_client_init(iotc_mqtt_msg_cb, iotc_mqtt_pub_cb, iotc_mqtt_conn_cb, iotc_mqtt_disconn_cb, iotc_mqtt_sub_cb, iotc_mqtt_unsub_cb);
     if (ret != 0) {
         IOTC_ERROR("[%s] mqtt_sample_client_init() failed\n", __func__);
-	goto cleanup;
+        goto cleanup;
     }
 
     is_initialized = true;
@@ -250,7 +250,7 @@ int iotc_device_client_preinit_certs(IotConnectDeviceClientConfig *c) {
 
     // Need X509 certificate and private key for the device -- they may be NULL for some authentication types
     mqtt_device_cert_config( c->auth->data.cert_info.device_cert, (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_cert) : 0,
-  			     c->auth->data.cert_info.device_key,  (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_key) : 0);
+                             c->auth->data.cert_info.device_key,  (c->auth->data.cert_info.device_cert) ? strlen(c->auth->data.cert_info.device_key) : 0);
     
     return 0;
 }
