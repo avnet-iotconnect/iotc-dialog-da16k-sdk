@@ -231,6 +231,7 @@ void iotcl_discovery_free_sync_response(IotclSyncResponse *response) {
     }
     free(response->cpid);
     free(response->cd);
+    free(response->dtg);
     free(response->broker.host);
     free(response->broker.client_id);
     free(response->broker.user_name);

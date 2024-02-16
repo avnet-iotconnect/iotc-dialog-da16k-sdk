@@ -76,6 +76,7 @@ typedef struct IotclSyncResponse {
     IotclSyncResult ds;
     char *cpid; // validated CPID from the cloud
     char *cd;
+    char *dtg;  // not used in AWS 2.1
     int ee; // reserved for future use
     int rc; // reserved for future use
     int at; // reserved for future use

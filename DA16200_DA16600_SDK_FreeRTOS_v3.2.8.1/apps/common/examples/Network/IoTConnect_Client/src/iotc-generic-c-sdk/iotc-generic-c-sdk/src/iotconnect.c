@@ -634,25 +634,15 @@ int iotconnect_sdk_setup_mqtt_client(void) {
     lib_config.event_functions.cmd_cb = config.cmd_cb;
     lib_config.event_functions.msg_cb = on_message_intercept;
 
-    lib_config.telemetry.dtg = sync_response->dtg;
 
 #if AZURE_VERSION
+    lib_config.telemetry.dtg = sync_response->dtg;
+
     if (!iotcl_init(&lib_config)) {
         IOTC_ERROR("Error: Failed to initialize the IoTConnect Lib\n");
         return -1;
     }
 #else
-    char ret_str[256] = {0, };
-    if(platform_get_iotconnect_cd(ret_str) == 0)
-    {
-        lib_config.telemetry.cd = iotcl_strdup(ret_str);
-    }
-    else
-    {
-        IOTC_ERROR("platform_get_iotconnect_cd failed.\n");
-        return -1;
-    }
-
     if (!iotcl_init_v2(&lib_config)) {
         IOTC_ERROR("Error: Failed to initialize the IoTConnect Lib\n");
         return -1;

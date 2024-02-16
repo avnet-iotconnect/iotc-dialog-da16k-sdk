@@ -188,11 +188,15 @@ cleanup:
 // setup the MQTT client configuration
 //
 int iotc_device_client_setup(IotConnectDeviceClientConfig *c) {
+
+#if AZURE_VERSION
     /*
      * Remember the dtg value recovered from the sync response
      * The dtg value is needed if ever need to create a message "from scratch" and use AT+NWMSMSG command instead of AT+NWICMSG
      */
+
     platform_set_iotconnect_dtg(c->sr->dtg);
+#endif
 
     mqtt_sample_client_nvram_config(c->sr->broker.host,
             8883,
