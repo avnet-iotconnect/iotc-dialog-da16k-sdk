@@ -3,9 +3,15 @@ DA16200_DA16600_SDK_*/library/
 DA16200_DA16600_SDK_*/tools/
 DA16200_DA16600_SDK_*/utility/
 
-
-DA16200_DA16600_SDK_*/apps/**
+DA16200_DA16600_SDK_*/apps/app_common/*
+DA16200_DA16600_SDK_*/apps/common/examples/*
+!DA16200_DA16600_SDK_*/apps/common/examples/Network/
+DA16200_DA16600_SDK_*/apps/common/examples/Network/*
 !DA16200_DA16600_SDK_*/apps/common/examples/Network/IoTConnect_Client/
+
+DA16200_DA16600_SDK_*/apps/da16200/get_started/*
+DA16200_DA16600_SDK_*/apps/da16600/get_started/*
+
 !DA16200_DA16600_SDK_*/apps/da16200/get_started/include/apps/user_nvram_cmd_table.h
 !DA16200_DA16600_SDK_*/apps/da16200/get_started/src/apps/user_nvram_cmd_table.c
 !DA16200_DA16600_SDK_*/apps/da16600/get_started/include/apps/user_nvram_cmd_table.h
@@ -20,5 +26,14 @@ DA16200_DA16600_SDK_*/core/**
 !DA16200_DA16600_SDK_*/core/system/src/common/command/command_net.c
 !DA16200_DA16600_SDK_*/core/system/src/common/mqtt_client/client/mqtt_client.c
 
-
 old_*/**/*
+
+*.d
+*.o
+*.o.in
+**/.settings
+
+DA16200_DA16600_SDK_*/apps/**/projects/**/Debug
+DA16200_DA16600_SDK_*/apps/**/projects/**/Release
+DA16200_DA16600_SDK_*/apps/**/projects/**/img
+DA16200_DA16600_SDK_*/apps/**/projects/**/*.launch
