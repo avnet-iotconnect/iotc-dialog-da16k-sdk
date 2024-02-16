@@ -1,5 +1,4 @@
 This is the version of cJSON as used in iotc-generic-c-sdk.
 
-To avoid name clashes with other versions of cJSON (cjson.c) in DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1 functions, etc. have been renamed _cJSON from cJSON.
 
 Note: DA16200 seems to have issues with sprintf() floating point numbers, so the code to write (floating point) numbers has been modified to work around this issue.

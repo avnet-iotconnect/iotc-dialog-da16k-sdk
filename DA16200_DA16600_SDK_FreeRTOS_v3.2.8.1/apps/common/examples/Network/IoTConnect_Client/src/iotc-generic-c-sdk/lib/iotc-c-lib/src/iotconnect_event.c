@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "_cJSON.h" // have globally replaced _cJSON -> _cJSON to avoid conflicts with older/incompatible version of _cJSON included by Renesas
+#include "cJSON.h"
 #include "iotconnect_common.h"
 #include "iotconnect_lib.h"
 
@@ -14,12 +14,12 @@
     (CJSON_VERSION_MAJOR * 10000 + CJSON_VERSION_MINOR * 100 + CJSON_VERSION_PATCH >= 10713)
 
 #if !CJSON_ADD_ITEM_HAS_RETURN
-#error "_cJSON version must be 1.7.13 or newer"
+#error "cJSON version must be 1.7.13 or newer"
 #endif
 
 struct IotclEventDataTag {
-    _cJSON *data;
-    _cJSON *root;
+    cJSON *data;
+    cJSON *root;
     IotConnectEventType type;
 };
 
@@ -104,14 +104,14 @@ static bool iotc_process_callback(struct IotclEventDataTag *eventData) {
 
 
 /************************ CJSON IMPLEMENTATION **************************/
-static inline bool is_valid_string(const _cJSON *json) {
-    return (NULL != json && _cJSON_IsString(json) && json->valuestring != NULL);
+static inline bool is_valid_string(const cJSON *json) {
+    return (NULL != json && cJSON_IsString(json) && json->valuestring != NULL);
 }
 
 #if AZURE_VERSION
 bool iotcl_process_event(const char *event) {
     bool status = false;
-    _cJSON *root = _cJSON_Parse(event);
+    cJSON *root = cJSON_Parse(event);
 
     if (!root) {
         return false;
@@ -119,15 +119,15 @@ bool iotcl_process_event(const char *event) {
 
     { // scope out the on-the fly varialble declarations for cleanup jump
         // root object should only have cmdType
-        _cJSON *j_type = _cJSON_GetObjectItemCaseSensitive(root, "cmdType");
+        cJSON *j_type = cJSON_GetObjectItemCaseSensitive(root, "cmdType");
         if (!is_valid_string(j_type)) goto cleanup;
 
-        _cJSON *j_ack_id = NULL;
-        _cJSON *data = NULL; // data should have ackId
+        cJSON *j_ack_id = NULL;
+        cJSON *data = NULL; // data should have ackId
         if (!is_valid_string(j_ack_id)) {
-            data = _cJSON_GetObjectItemCaseSensitive(root, "data");
+            data = cJSON_GetObjectItemCaseSensitive(root, "data");
             if (!data) goto cleanup;
-            j_ack_id = _cJSON_GetObjectItemCaseSensitive(data, "ackId");
+            j_ack_id = cJSON_GetObjectItemCaseSensitive(data, "ackId");
             if (!is_valid_string(j_ack_id)) goto cleanup;
         }
 
@@ -146,8 +146,8 @@ bool iotcl_process_event(const char *event) {
         // NOTE: "i" in cpId is lower case, but per spec it's supposed to be in upper case
         if (type == DEVICE_COMMAND || type == DEVICE_OTA) {
             if (
-                    !is_valid_string(_cJSON_GetObjectItem(data, "cpid"))
-                    || !is_valid_string(_cJSON_GetObjectItemCaseSensitive(data, "uniqueId"))
+                    !is_valid_string(cJSON_GetObjectItem(data, "cpid"))
+                    || !is_valid_string(cJSON_GetObjectItemCaseSensitive(data, "uniqueId"))
                     ) {
                 goto cleanup;
             }
@@ -170,7 +170,7 @@ bool iotcl_process_event(const char *event) {
 
     cleanup:
 
-    _cJSON_Delete(root);
+    cJSON_Delete(root);
     return status;
 }
 #else 
@@ -178,7 +178,7 @@ bool iotcl_process_event(const char *event) {
     IOTC_DEBUG("%s\n", __func__);
 
     bool status = false;
-    _cJSON *root = _cJSON_Parse(event);
+    cJSON *root = cJSON_Parse(event);
     if (root == NULL)
     {
         IOTC_ERROR("%s root == NULL\n", __func__);
@@ -187,15 +187,15 @@ bool iotcl_process_event(const char *event) {
 
 
     { // scope out the on-the fly varialble declarations for cleanup jump
-    	_cJSON *j_type = _cJSON_GetObjectItemCaseSensitive(root, "ct");
-        if (!_cJSON_IsNumber(j_type)) {
+    	cJSON *j_type = cJSON_GetObjectItemCaseSensitive(root, "ct");
+        if (!cJSON_IsNumber(j_type)) {
             goto cleanup;
         }
 
         IotConnectEventType type = j_type->valueint + 1;
 
-        _cJSON *j_ack_id;
-        j_ack_id = _cJSON_GetObjectItemCaseSensitive(root, "ack");
+        cJSON *j_ack_id;
+        j_ack_id = cJSON_GetObjectItemCaseSensitive(root, "ack");
 
         if (type < DEVICE_COMMAND) {
             goto cleanup;
@@ -229,14 +229,14 @@ bool iotcl_process_event(const char *event) {
     }
 
     cleanup:
-    _cJSON_Delete(root);
+    cJSON_Delete(root);
     return status;
 }
 
 #endif
 
 char *iotcl_clone_command(IotclEventData data) {
-    _cJSON *command = _cJSON_GetObjectItemCaseSensitive(data->root, "cmd");
+    cJSON *command = cJSON_GetObjectItemCaseSensitive(data->root, "cmd");
     if (NULL == command || !is_valid_string(command)) {
         return NULL;
     }
@@ -245,16 +245,16 @@ char *iotcl_clone_command(IotclEventData data) {
 }
 
 char *iotcl_clone_download_url(IotclEventData data, size_t index) {
-    _cJSON *urls = _cJSON_GetObjectItemCaseSensitive(data->data, "urls");
-    if (NULL == urls || !_cJSON_IsArray(urls)) {
+    cJSON *urls = cJSON_GetObjectItemCaseSensitive(data->data, "urls");
+    if (NULL == urls || !cJSON_IsArray(urls)) {
         return NULL;
     }
-    if ((size_t) _cJSON_GetArraySize(urls) > index) {
-        _cJSON *url = _cJSON_GetArrayItem(urls, (int) index);
+    if ((size_t) cJSON_GetArraySize(urls) > index) {
+        cJSON *url = cJSON_GetArrayItem(urls, (int) index);
         if (is_valid_string(url)) {
             return iotcl_strdup(url->valuestring);
-        } else if (_cJSON_IsObject(url)) {
-            _cJSON *url_str = _cJSON_GetObjectItem(url, "url");
+        } else if (cJSON_IsObject(url)) {
+            cJSON *url_str = cJSON_GetObjectItem(url, "url");
             if (is_valid_string(url_str)) {
                 return iotcl_strdup(url_str->valuestring);
             }
@@ -265,14 +265,14 @@ char *iotcl_clone_download_url(IotclEventData data, size_t index) {
 
 
 char *iotcl_clone_sw_version(IotclEventData data) {
-    _cJSON *ver = _cJSON_GetObjectItemCaseSensitive(data->data, "ver");
+    cJSON *ver = cJSON_GetObjectItemCaseSensitive(data->data, "ver");
 
-    if (!_cJSON_IsObject(ver)) {
+    if (!cJSON_IsObject(ver)) {
         ver = data->data; // AWS and 2.1 we presume...
     }
     
-    if (_cJSON_IsObject(ver)) {
-        _cJSON *sw = _cJSON_GetObjectItem(ver, "sw");
+    if (cJSON_IsObject(ver)) {
+        cJSON *sw = cJSON_GetObjectItem(ver, "sw");
         if (is_valid_string(sw)) {
             return iotcl_strdup(sw->valuestring);
         }
@@ -281,14 +281,14 @@ char *iotcl_clone_sw_version(IotclEventData data) {
 }
 
 char *iotcl_clone_hw_version(IotclEventData data) {
-    _cJSON *ver = _cJSON_GetObjectItemCaseSensitive(data->data, "ver");
+    cJSON *ver = cJSON_GetObjectItemCaseSensitive(data->data, "ver");
     
-    if (!_cJSON_IsObject(ver)) {
+    if (!cJSON_IsObject(ver)) {
         ver = data->data; // AWS and 2.1 we presume...
     }
 
-    if (_cJSON_IsObject(ver)) {
-        _cJSON *sw = _cJSON_GetObjectItem(ver, "hw");
+    if (cJSON_IsObject(ver)) {
+        cJSON *sw = cJSON_GetObjectItem(ver, "hw");
         if (is_valid_string(sw)) {
             return iotcl_strdup(sw->valuestring);
         }
@@ -298,7 +298,7 @@ char *iotcl_clone_hw_version(IotclEventData data) {
 
 #if AZURE_VERSION
 char *iotcl_clone_ack_id(IotclEventData data) {
-    _cJSON *ackid = _cJSON_GetObjectItemCaseSensitive(data->data, "ackId");
+    cJSON *ackid = cJSON_GetObjectItemCaseSensitive(data->data, "ackId");
     if (is_valid_string(ackid)) {
         return iotcl_strdup(ackid->valuestring);
     }
@@ -306,14 +306,14 @@ char *iotcl_clone_ack_id(IotclEventData data) {
 }
 #else
 char *iotcl_clone_ack_id(IotclEventData data) {
-	_cJSON *j_ack_id;
+	cJSON *j_ack_id;
 
     if (!data) return NULL;
     // already checked that ack ID is valid in the messages
 
     if(!data->root) return NULL;
 
-	j_ack_id = _cJSON_GetObjectItemCaseSensitive(data->root, "ack");
+	j_ack_id = cJSON_GetObjectItemCaseSensitive(data->root, "ack");
 
 	if (!j_ack_id) return NULL;
 
@@ -336,52 +336,52 @@ static const char *create_ack(
         return NULL;
     }
 
-    _cJSON *ack_json = _cJSON_CreateObject();
+    cJSON *ack_json = cJSON_CreateObject();
 
     if (ack_json == NULL) {
         return NULL;
     }
 
     // message type 5 in response is the command response. Type 11 is OTA response.
-    if (!_cJSON_AddNumberToObject(ack_json, "mt", message_type == DEVICE_COMMAND ? 5 : 11)) goto cleanup;
+    if (!cJSON_AddNumberToObject(ack_json, "mt", message_type == DEVICE_COMMAND ? 5 : 11)) goto cleanup;
 
     // FIXME: Is it "t" or "dt" ?
-    if (!_cJSON_AddStringToObject(ack_json, "t", iotcl_iso_timestamp_now())) goto cleanup;
+    if (!cJSON_AddStringToObject(ack_json, "t", iotcl_iso_timestamp_now())) goto cleanup;
 
-    if (!_cJSON_AddStringToObject(ack_json, "uniqueId", config->device.duid)) goto cleanup;
-    if (!_cJSON_AddStringToObject(ack_json, "cpId", config->device.cpid)) goto cleanup;
+    if (!cJSON_AddStringToObject(ack_json, "uniqueId", config->device.duid)) goto cleanup;
+    if (!cJSON_AddStringToObject(ack_json, "cpId", config->device.cpid)) goto cleanup;
 
     {
-        _cJSON *sdk_info = _cJSON_CreateObject();
+        cJSON *sdk_info = cJSON_CreateObject();
         if (NULL == sdk_info) {
             return NULL;
         }
-        if (!_cJSON_AddItemToObject(ack_json, "sdk", sdk_info)) {
-            _cJSON_Delete(sdk_info);
+        if (!cJSON_AddItemToObject(ack_json, "sdk", sdk_info)) {
+            cJSON_Delete(sdk_info);
             goto cleanup;
         }
-        if (!_cJSON_AddStringToObject(sdk_info, "l", CONFIG_IOTCONNECT_SDK_NAME)) goto cleanup;
-        if (!_cJSON_AddStringToObject(sdk_info, "v", CONFIG_IOTCONNECT_SDK_VERSION)) goto cleanup;
-        if (!_cJSON_AddStringToObject(sdk_info, "e", config->device.env)) goto cleanup;
+        if (!cJSON_AddStringToObject(sdk_info, "l", CONFIG_IOTCONNECT_SDK_NAME)) goto cleanup;
+        if (!cJSON_AddStringToObject(sdk_info, "v", CONFIG_IOTCONNECT_SDK_VERSION)) goto cleanup;
+        if (!cJSON_AddStringToObject(sdk_info, "e", config->device.env)) goto cleanup;
     }
 
     {
-        _cJSON *ack_data = _cJSON_CreateObject();
+        cJSON *ack_data = cJSON_CreateObject();
         if (NULL == ack_data) goto cleanup;
-        if (!_cJSON_AddItemToObject(ack_json, "d", ack_data)) {
-            _cJSON_Delete(ack_data);
+        if (!cJSON_AddItemToObject(ack_json, "d", ack_data)) {
+            cJSON_Delete(ack_data);
             goto cleanup;
         }
-        if (!_cJSON_AddStringToObject(ack_data, "ackId", ack_id)) goto cleanup;
-        if (!_cJSON_AddStringToObject(ack_data, "msg", message ? message : "")) goto cleanup;
-        if (!_cJSON_AddNumberToObject(ack_data, "st", to_ack_status(success, message_type))) goto cleanup;
+        if (!cJSON_AddStringToObject(ack_data, "ackId", ack_id)) goto cleanup;
+        if (!cJSON_AddStringToObject(ack_data, "msg", message ? message : "")) goto cleanup;
+        if (!cJSON_AddNumberToObject(ack_data, "st", to_ack_status(success, message_type))) goto cleanup;
     }
 
-    result = (const char *) _cJSON_PrintUnformatted(ack_json);
+    result = (const char *) cJSON_PrintUnformatted(ack_json);
 
     // fall through
     cleanup:
-    _cJSON_Delete(ack_json);
+    cJSON_Delete(ack_json);
     return result;
 }
 
@@ -410,7 +410,7 @@ const char *iotcl_create_ota_ack_response(
 }
 
 void iotcl_destroy_event(IotclEventData data) {
-    _cJSON_Delete(data->root);
+    cJSON_Delete(data->root);
     free(data);
 }
 
