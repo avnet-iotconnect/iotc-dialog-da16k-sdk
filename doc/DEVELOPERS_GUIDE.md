@@ -30,16 +30,39 @@ Issue: It should be possible to easily use binaries between different boards usi
 
 ## Setup for IoTConnect development
 
-Warning: the FreeRTOS software the IoTConnect application was originally based on DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1.zip (using eclipse) but is now updated to DA16200_DA16600_SDK_FreeRTOS_v3.2.8.0.zip (using e2studio).
+Warning: the IoTConnect application is based on the FreeRTOS SDK version 3.2.8.1 at the time of writing (using e² studio).
+
 Other versions may work, but cannot be guaranteed.
 
 The IoTConnect example application and modifications to the FreeRTOS package can be accessed at [IoTConnect dialog github](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk).
 
-Clone the git repo and then use the downloaded files to overwrite their counterparts / add files to the original Renesas FreeRTOS v3.2.7.1 package – may need to take account of different directory levels to do so.
+Clone the git repo and then use the downloaded files to overwrite their counterparts / add files to the original Renesas FreeRTOS package – may need to take account of different directory levels to do so.
 
 ## Compiling the IoTConnect application
 
 The IoTConnect application is at apps/common/examples/Network/IoTConnect_Client.
+
+### Building for AWS or Azure
+
+The application supports both Azure and AWS 2.1 at this time.
+
+It compiles for AWS by default.
+
+To build it for Azure, the `AZURE_VERSION` preprocessor define must be added to the project.
+
+To do this, right click the project in e² studio and select *C/C++ Project Settings*.
+
+![azure1](assets/azure1.png)
+
+Then, under *GNU ARM Cross C Compiler*, go to *Preprocessor* and add a new definition.
+
+![azure2](assets/azure2.png)
+
+Enter `AZURE_VERSION=1`, click *OK*, and then *Apply and Close*.
+
+![azure3](assets/azure3.png)
+
+Rebuild the application as normal.
 
 ### DA16200
 
