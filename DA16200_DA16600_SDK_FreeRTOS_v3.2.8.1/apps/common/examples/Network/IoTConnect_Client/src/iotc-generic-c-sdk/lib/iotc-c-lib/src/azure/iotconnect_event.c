@@ -3,10 +3,13 @@
  * Proprietary and confidential
  * Authors: Nikola Markovic <nikola.markovic@avnet.com> et al.
  */
+
+#if AZURE_VERSION
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "cJSON.h"
+#include "cJSON.h" // have globally replaced cJSON -> cJSON to avoid conflicts with older/incompatible version of cJSON included by Renesas
 #include "iotconnect_common.h"
 #include "iotconnect_lib.h"
 
@@ -46,10 +49,7 @@ static int to_ack_status(bool success, IotConnectEventType type) {
             case DEVICE_OTA:
                 status = 7;
                 break;
-            default:
-                // Can't do more than assume failure if unknown type is used.
-                IOTC_ERROR("%s type %d\n", __func__, type);
-                break;
+            default:; // Can't do more than assume failure if unknown type is used.
         }
     }
     return status;
@@ -57,20 +57,10 @@ static int to_ack_status(bool success, IotConnectEventType type) {
 
 
 static bool iotc_process_callback(struct IotclEventDataTag *eventData) {
-    IOTC_DEBUG("%s\n", __func__);
-
-    if (eventData == NULL)
-    {
-        IOTC_ERROR("%s eventData == NULL\n", __func__);
-        return false;
-    }
+    if (!eventData) return false;
 
     IotclConfig *config = iotcl_get_config();
-    if (config == NULL)
-    {
-        IOTC_ERROR("%s config == NULL\n", __func__);
-        return false;
-    }
+    if (!config) return false;
 
     if (config->event_functions.msg_cb) {
         config->event_functions.msg_cb(eventData, eventData->type);
@@ -78,24 +68,15 @@ static bool iotc_process_callback(struct IotclEventDataTag *eventData) {
     switch (eventData->type) {
         case DEVICE_COMMAND:
             if (config->event_functions.cmd_cb) {
-                IOTC_DEBUG("%s calling cmd_cb\n", __func__);
-
                 config->event_functions.cmd_cb(eventData);
-            } else {
-                IOTC_DEBUG("%s cmd_cb is NULL\n", __func__);
             }
             break;
         case DEVICE_OTA:
             if (config->event_functions.ota_cb) {
-                IOTC_DEBUG("%s calling ota_cb\n", __func__);
-
                 config->event_functions.ota_cb(eventData);
-            } else {
-                IOTC_DEBUG("%s ota_cb is NULL\n", __func__);
             }
             break;
         default:
-            IOTC_ERROR("%s unknown eventData->type %d\n", __func__, eventData->type);
             break;
     }
 
@@ -108,13 +89,12 @@ static inline bool is_valid_string(const cJSON *json) {
     return (NULL != json && cJSON_IsString(json) && json->valuestring != NULL);
 }
 
-#if AZURE_VERSION
 bool iotcl_process_event(const char *event) {
     bool status = false;
     cJSON *root = cJSON_Parse(event);
 
     if (!root) {
-        return false;
+       return false;
     }
 
     { // scope out the on-the fly varialble declarations for cleanup jump
@@ -173,70 +153,9 @@ bool iotcl_process_event(const char *event) {
     cJSON_Delete(root);
     return status;
 }
-#else 
-bool iotcl_process_event(const char *event) {
-    IOTC_DEBUG("%s\n", __func__);
-
-    bool status = false;
-    cJSON *root = cJSON_Parse(event);
-    if (root == NULL)
-    {
-        IOTC_ERROR("%s root == NULL\n", __func__);
-        return false;
-    }
-
-
-    { // scope out the on-the fly varialble declarations for cleanup jump
-    	cJSON *j_type = cJSON_GetObjectItemCaseSensitive(root, "ct");
-        if (!cJSON_IsNumber(j_type)) {
-            goto cleanup;
-        }
-
-        IotConnectEventType type = j_type->valueint + 1;
-
-        cJSON *j_ack_id;
-        j_ack_id = cJSON_GetObjectItemCaseSensitive(root, "ack");
-
-        if (type < DEVICE_COMMAND) {
-            goto cleanup;
-        }
-
-        if (type == DEVICE_OTA) {
-            if (!is_valid_string(j_ack_id)) {
-                IOTC_ERROR("%s failed to parse \"ack\"\n", __func__);
-            	goto cleanup;
-        	}
-        }
-
-        struct IotclEventDataTag *eventData = (struct IotclEventDataTag *) calloc(
-                sizeof(struct IotclEventDataTag), 1);
-
-        if (NULL == eventData) {
-            IOTC_ERROR("%s NULL == eventData\n", __func__);
-        	goto cleanup;
-        }
-
-        eventData->root = root;
-        eventData->data = root;
-        eventData->type = type;
-
-        // eventData and root (via eventData->root) will be freed when the user calls
-        // iotcl_destroy_event(). The user is responsible to free this data inside the callback,
-        // once they are done with it. This is done so that the user can choose to keep the event data
-        // for purposes of replying with an ack once another process (perhaps in another thread) completes.
-
-        return iotc_process_callback(eventData);
-    }
-
-    cleanup:
-    cJSON_Delete(root);
-    return status;
-}
-
-#endif
 
 char *iotcl_clone_command(IotclEventData data) {
-    cJSON *command = cJSON_GetObjectItemCaseSensitive(data->root, "cmd");
+    cJSON *command = cJSON_GetObjectItemCaseSensitive(data->data, "command");
     if (NULL == command || !is_valid_string(command)) {
         return NULL;
     }
@@ -266,11 +185,6 @@ char *iotcl_clone_download_url(IotclEventData data, size_t index) {
 
 char *iotcl_clone_sw_version(IotclEventData data) {
     cJSON *ver = cJSON_GetObjectItemCaseSensitive(data->data, "ver");
-
-    if (!cJSON_IsObject(ver)) {
-        ver = data->data; // AWS and 2.1 we presume...
-    }
-    
     if (cJSON_IsObject(ver)) {
         cJSON *sw = cJSON_GetObjectItem(ver, "sw");
         if (is_valid_string(sw)) {
@@ -282,11 +196,6 @@ char *iotcl_clone_sw_version(IotclEventData data) {
 
 char *iotcl_clone_hw_version(IotclEventData data) {
     cJSON *ver = cJSON_GetObjectItemCaseSensitive(data->data, "ver");
-    
-    if (!cJSON_IsObject(ver)) {
-        ver = data->data; // AWS and 2.1 we presume...
-    }
-
     if (cJSON_IsObject(ver)) {
         cJSON *sw = cJSON_GetObjectItem(ver, "hw");
         if (is_valid_string(sw)) {
@@ -296,7 +205,6 @@ char *iotcl_clone_hw_version(IotclEventData data) {
     return NULL;
 }
 
-#if AZURE_VERSION
 char *iotcl_clone_ack_id(IotclEventData data) {
     cJSON *ackid = cJSON_GetObjectItemCaseSensitive(data->data, "ackId");
     if (is_valid_string(ackid)) {
@@ -304,23 +212,6 @@ char *iotcl_clone_ack_id(IotclEventData data) {
     }
     return NULL;
 }
-#else
-char *iotcl_clone_ack_id(IotclEventData data) {
-	cJSON *j_ack_id;
-
-    if (!data) return NULL;
-    // already checked that ack ID is valid in the messages
-
-    if(!data->root) return NULL;
-
-	j_ack_id = cJSON_GetObjectItemCaseSensitive(data->root, "ack");
-
-	if (!j_ack_id) return NULL;
-
-    char *ack_id = j_ack_id->valuestring;
-    return iotcl_strdup(ack_id);
-}
-#endif
 
 static const char *create_ack(
         IotConnectEventType message_type,
@@ -344,8 +235,6 @@ static const char *create_ack(
 
     // message type 5 in response is the command response. Type 11 is OTA response.
     if (!cJSON_AddNumberToObject(ack_json, "mt", message_type == DEVICE_COMMAND ? 5 : 11)) goto cleanup;
-
-    // FIXME: Is it "t" or "dt" ?
     if (!cJSON_AddStringToObject(ack_json, "t", iotcl_iso_timestamp_now())) goto cleanup;
 
     if (!cJSON_AddStringToObject(ack_json, "uniqueId", config->device.duid)) goto cleanup;
@@ -414,3 +303,4 @@ void iotcl_destroy_event(IotclEventData data) {
     free(data);
 }
 
+#endif

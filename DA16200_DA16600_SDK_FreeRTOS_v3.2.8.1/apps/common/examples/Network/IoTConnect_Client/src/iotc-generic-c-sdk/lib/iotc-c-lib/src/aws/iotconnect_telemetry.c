@@ -4,15 +4,17 @@
  * Authors: Nikola Markovic <nikola.markovic@avnet.com> et al.
  */
 
+#if AZURE_VERSION
+/* do not compile AWS version... */
+#else 
+
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 
-
 #include "iotconnect_common.h"
 #include "iotconnect_lib.h"
 #include "iotconnect_telemetry.h"
-
 
 #include "cJSON.h"
 
@@ -431,3 +433,5 @@ cleanup:
 
     return NULL;
 }
+
+#endif

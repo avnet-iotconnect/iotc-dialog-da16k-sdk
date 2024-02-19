@@ -4,22 +4,16 @@
  * Authors: Nikola Markovic <nikola.markovic@avnet.com> et al.
  */
 
+#if AZURE_VERSION
+
 #include <stdbool.h>
 #include <stdlib.h>
 
 #include <string.h>
 
-#include "cJSON.h"
+#include "cJSON.h" // have globally replaced cJSON -> cJSON to avoid conflicts with older/incompatible version of cJSON included by Renesas
 #include "iotconnect_common.h"
 #include "iotconnect_discovery.h"
-
-static int get_numeric_value_or_default(cJSON *cjson, const char *value_name, int default_value) {
-    cJSON* tmp_value = cJSON_GetObjectItem(cjson, value_name);
-    if (!tmp_value || !cJSON_IsNumber(tmp_value)) {
-        return default_value;
-    }
-    return tmp_value->valueint;
-}
 
 static char *safe_get_string_and_strdup(cJSON *cjson, const char *value_name) {
     cJSON *value = cJSON_GetObjectItem(cjson, value_name);
@@ -73,13 +67,7 @@ IotclDiscoveryResponse *iotcl_discovery_parse_discovery_response(const char *res
         return NULL;
     }
 
-    cJSON *dcJSON = cJSON_GetObjectItem(json_root, "d");
-    if (!dcJSON) {
-        cJSON_Delete(json_root);
-        return NULL;
-    }
-
-    cJSON *base_urlcJSON = cJSON_GetObjectItem(dcJSON, "bu");
+    cJSON *base_urlcJSON = cJSON_GetObjectItem(json_root, "baseUrl");
     if (!base_urlcJSON) {
         cJSON_Delete(json_root);
         IOTC_ERROR("missing baseurl\n");
@@ -129,76 +117,75 @@ void iotcl_discovery_free_discovery_response(IotclDiscoveryResponse *response) {
 }
 
 IotclSyncResponse *iotcl_discovery_parse_sync_response(const char *response_data) {
+    IOTC_DEBUG("%s: response_data is %ld bytes in length\n", __func__, strlen(response_data));
 
+    cJSON *tmp_value = NULL;
     IotclSyncResponse *response = (IotclSyncResponse *) calloc(1, sizeof(IotclSyncResponse));
     if (NULL == response) {
+        IOTC_ERROR("calloc failed\n");
         return NULL;
     }
+
     cJSON *sync_json_root = cJSON_Parse(response_data);
     if (!sync_json_root) {
         response->ds = IOTCL_SR_PARSING_ERROR;
+        IOTC_ERROR("cJSON_Parse failed\n");
         return response;
     }
+
     cJSON *sync_res_json = cJSON_GetObjectItemCaseSensitive(sync_json_root, "d");
     if (!sync_res_json) {
         cJSON_Delete(sync_json_root);
         response->ds = IOTCL_SR_PARSING_ERROR;
+        IOTC_ERROR("missing \"d\"\n");
         return response;
     }
-
-    if (response->ds == IOTCL_SR_PARSING_ERROR) {
+    tmp_value = cJSON_GetObjectItem(sync_res_json, "ds");
+    if (!tmp_value) {
         response->ds = IOTCL_SR_PARSING_ERROR;
+        IOTC_ERROR("missing \"ds\"\n");
     } else {
-        response->ds = IOTCL_SR_OK;
+        response->ds = cJSON_GetNumberValue(tmp_value);
     }
-
     if (response->ds == IOTCL_SR_OK) {
-        cJSON *meta_json = cJSON_GetObjectItemCaseSensitive(sync_res_json, "meta");
-		if (!meta_json) {
-		    cJSON_Delete(sync_json_root);
-		    response->ds = IOTCL_SR_PARSING_ERROR;
-		    return response;
-		}
-
-		response->cd = safe_get_string_and_strdup(meta_json, "cd");
-
-		if (!response->cd) {
-            cJSON_Delete(sync_json_root);
-            response->ds = IOTCL_SR_PARSING_ERROR;
-            return response;
-		}
-
+        response->cpid = safe_get_string_and_strdup(sync_res_json, "cpId");
+        response->dtg = safe_get_string_and_strdup(sync_res_json, "dtg");
+        tmp_value = cJSON_GetObjectItem(sync_res_json, "ee");
+        if (!tmp_value) {
+            IOTC_ERROR("missing \"ee\"\n");
+            response->ee = -1;
+        }
+        tmp_value = cJSON_GetObjectItem(sync_res_json, "rc");
+        if (!tmp_value) {
+            IOTC_ERROR("missing \"rc\"\n");
+            response->rc = -1;
+        }
+        tmp_value = cJSON_GetObjectItem(sync_res_json, "at");
+        if (!tmp_value) {
+            IOTC_ERROR("missing \"at\"\n");
+            response->at = -1;
+        }
         cJSON *p = cJSON_GetObjectItemCaseSensitive(sync_res_json, "p");
-
         if (p) {
-
             response->broker.name = safe_get_string_and_strdup(p, "n");
             response->broker.client_id = safe_get_string_and_strdup(p, "id");
             response->broker.host = safe_get_string_and_strdup(p, "h");
             response->broker.user_name = safe_get_string_and_strdup(p, "un");
-            response->broker.port = get_numeric_value_or_default(p, "p", 8883);
-
-#if 0
             response->broker.pass = safe_get_string_and_strdup(p, "pwd");
-
-            cJSON *topics = cJSON_GetObjectItemCaseSensitive(p, "topics");
-
-            response->broker.sub_topic = safe_get_string_and_strdup(topics, "c2d");
-            response->broker.pub_topic = safe_get_string_and_strdup(topics, "rpt");
-#endif
-
+            response->broker.sub_topic = safe_get_string_and_strdup(p, "sub");
+            response->broker.pub_topic = safe_get_string_and_strdup(p, "pub");
             if (
                     !response->cpid ||
+                    !response->dtg ||
                     !response->broker.host ||
                     !response->broker.client_id ||
-#if 0
-					!response->broker.pass ||   // FIXME: password field in discovery response, not sync response.  password may actually be null or empty
-					!response->broker.sub_topic ||
-                    !response->broker.pub_topic ||
-#endif
-					!response->broker.user_name
-            ) {
-                // Assume parsing error, but it could also be (unlikely) allocation error
+                    !response->broker.user_name ||
+                    // !response->broker.pass || << password may actually be null or empty
+                    !response->broker.sub_topic ||
+                    !response->broker.pub_topic
+                    ) {
+                // Assume parsing eror, but it could alo be (unlikely) allocation error
+                IOTC_ERROR("missing lots of reasons\n");
                 response->ds = IOTCL_SR_PARSING_ERROR;
             }
         } else {
@@ -230,7 +217,6 @@ void iotcl_discovery_free_sync_response(IotclSyncResponse *response) {
         return;
     }
     free(response->cpid);
-    free(response->cd);
     free(response->dtg);
     free(response->broker.host);
     free(response->broker.client_id);
@@ -242,3 +228,4 @@ void iotcl_discovery_free_sync_response(IotclSyncResponse *response) {
     free(response);
 }
 
+#endif
