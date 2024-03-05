@@ -4,9 +4,6 @@
  * Authors: Nikola Markovic <nikola.markovic@avnet.com> et al.
  */
 
-#if AZURE_VERSION
-/* do not compile AWS version... */
-#else 
 
 #include <stdlib.h>
 #include <string.h>
@@ -418,5 +415,3 @@ void iotcl_destroy_event(IotclEventData data) {
     cJSON_Delete(data->root);
     free(data);
 }
-
-#endif

@@ -44,25 +44,15 @@ The IoTConnect application is at apps/common/examples/Network/IoTConnect_Client.
 
 ### Building for AWS or Azure
 
-The application supports both Azure and AWS 2.1 at this time.
+The application supports both Azure and AWS 2.1 at this time, subject to change when further modifications to the `iotc-c-lib` library are made.
 
 It compiles for AWS by default.
 
-To build it for Azure, the `AZURE_VERSION` preprocessor define must be added to the project.
+To build it for Azure, the `AZURE_VERSION=1` preprocessor define is used.
 
-To do this, right click the project in e² studio and select *C/C++ Project Settings*.
+To activate it, you must simply choose the appropriate build configuration in e² Studio by right-clicking the project and following the `Build Configurations` menu:
 
-![azure1](assets/azure1.png)
-
-Then, under *GNU ARM Cross C Compiler*, go to *Preprocessor* and add a new definition.
-
-![azure2](assets/azure2.png)
-
-Enter `AZURE_VERSION=1`, click *OK*, and then *Apply and Close*.
-
-![azure3](assets/azure3.png)
-
-Rebuild the application as normal.
+![Azure build config](assets/azure1.png)
 
 ### DA16200
 

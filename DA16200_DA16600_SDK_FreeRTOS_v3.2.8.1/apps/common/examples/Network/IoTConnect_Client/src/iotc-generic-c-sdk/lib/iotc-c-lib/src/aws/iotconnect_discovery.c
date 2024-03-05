@@ -4,10 +4,6 @@
  * Authors: Nikola Markovic <nikola.markovic@avnet.com> et al.
  */
 
-#if AZURE_VERSION
-/* do not compile AWS version... */
-#else 
-
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -245,5 +241,3 @@ void iotcl_discovery_free_sync_response(IotclSyncResponse *response) {
     free(response->broker.pub_topic);
     free(response);
 }
-
-#endif
