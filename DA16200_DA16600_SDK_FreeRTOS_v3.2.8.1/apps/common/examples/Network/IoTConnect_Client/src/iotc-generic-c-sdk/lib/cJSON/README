@@ -1,0 +1,4 @@
+This is the version of cJSON as used in iotc-generic-c-sdk.
+
+
+Note: DA16200 seems to have issues with sprintf() floating point numbers, so the code to write (floating point) numbers has been modified to work around this issue.
