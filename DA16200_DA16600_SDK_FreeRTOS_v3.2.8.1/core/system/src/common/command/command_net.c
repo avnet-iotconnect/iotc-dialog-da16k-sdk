@@ -82,9 +82,9 @@
 
 #if 1
 #include "iotconnect.h"
-#include "iotconnect_telemetry.h"
-#include "iotconnect_event.h"
-#include "basic_sample.h"
+#include "iotcl.h"
+#include "iotcl_telemetry.h"
+#include "iotc_app.h"
 #endif
 
 extern UINT isVaildDomain(char *domain);
@@ -1811,23 +1811,23 @@ static void cmd_iotconnect_config_status(void)
     char string[256]; // max size of DA16X_CONF_STR_IOTCONNECT_XXX options see user_nvram_cmd_table.c
 
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      env:           %s\n", string);
+    PRINTF("      env:           	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      cpid:          %s\n", string);
+    PRINTF("      cpid:          	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CD, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      cd:          %s\n", string);
+    PRINTF("      cd:          		%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      duid:          %s\n", string);
+    PRINTF("      duid:          	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      symmetric_key: %s\n", string);
+    PRINTF("      symmetric_key: 	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      auth_type:     %s\n", string);
+    PRINTF("      auth_type:     	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      use cmd ack:   %s\n", string);
+    PRINTF("      use cmd ack:   	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      use OTA ack:   %s\n", string);
-    if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      DTG (get) :    %s\n", string);
+    PRINTF("      use OTA ack:   	%s\n", string);
+    if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE, string) != CC_SUCCESS) { *string = '\0'; }
+    PRINTF("      Connection Type:  %s\n", string);
     PRINTF("\n");
     PRINTF("To set and get MQTT variables use mqtt_config directly\n");
 }
@@ -1835,7 +1835,7 @@ static void cmd_iotconnect_config_status(void)
 static void cmd_iotconnect_config_usage(void)
 {
     PRINTF("- iotconnect_config\n\n");
-    PRINTF("  Usage : iotconnect_config [status | reset | env | cpid | cd | duid | symmetric_key | auth_type | use_cmd_ack | use_ota_ack] [value]\n");
+    PRINTF("  Usage : iotconnect_config [status | reset | connection_type | env | cpid | cd | duid | symmetric_key | auth_type | use_cmd_ack | use_ota_ack] [value]\n");
 }
 
 void cmd_iotconnect_config(int argc, char *argv[])
@@ -1880,15 +1880,21 @@ void cmd_iotconnect_config(int argc, char *argv[])
             {
                 PRINTF("Failed to reset use OTA acknowledgement");
             }
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, "") != CC_SUCCESS)
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE, "") != CC_SUCCESS)
             {
-                PRINTF("Failed to reset DTG");
+                PRINTF("Failed to reset Connection Type");
             }
         } else {
             goto usage;
         }
     } else if (argc == 3) {
-        if(strcmp(argv[1], "env") == 0) {
+		if(strcmp(argv[1], "connection_type") == 0) {
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE, argv[2]) != CC_SUCCESS)
+            {
+                PRINTF("Failed to set connection type");
+            }
+
+		} else if(strcmp(argv[1], "env") == 0) {
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, argv[2]) != CC_SUCCESS)
             {
                 PRINTF("Failed to set env");
@@ -1960,52 +1966,52 @@ void cmd_iotconnect_client(int argc, char *argv[])
                 return;
             }
 
-            char **names = (char **) malloc(sizeof(char *) * half_argc);
-            char **values = (char **) malloc(sizeof(char *) * half_argc);
+            IotclMessageHandle tmp_msg = iotcl_telemetry_create();
+			bool success = true;
 
-            if(names && values) {
-                const char *str = NULL;
-    
-                // shuffle around the names/values
-                for(int i = 0;i < half_argc;i++)
-                {
-                    names[i] = argv[2 + (i * 2)];
-                    values[i] = argv[3 + (i * 2)];
-                }
+            // shuffle around the names/values
+            for(int i = 0;i < half_argc;i++)
+            {
+                const char *name = argv[2 + (i * 2)];
+                const char *value = argv[3 + (i * 2)];
 
-                str = iotcl_serialise_telemetry_strings(half_argc, names, values,
-                                                        0, NULL, NULL,
-                                                        0, NULL, NULL,
-                                                        0, NULL);
-                if(str == NULL) {
-                    MQTT_DBG_PRINT("iotcl_serialise_telemetry_strings() failed\n");
-                    return;
-                } 
-
-                iotconnect_sdk_send_packet(str); // underlying code will report an error
-                iotcl_destroy_serialized(str);
-            } else {
-                MQTT_DBG_PRINT("malloc() failed\n");
+                success &= iotcl_telemetry_set_string(tmp_msg, name, value) == IOTCL_SUCCESS;
             }
 
-            free(names);
-            free(values);
+			if (!success) {
+				PRINTF("ERROR in iotcl_telemetry_set_string!\n");
+			} else {
+				if (iotcl_mqtt_send_telemetry(tmp_msg, false) != IOTCL_SUCCESS) {
+					PRINTF("ERROR in iotcl_mqtt_send_telemetry!}\n");
+				}
+			}
+
+            iotcl_telemetry_destroy(tmp_msg);
+
         } else {
             MQTT_DBG_PRINT("\"iotconnect_client msg\" needs at least one 'name' 'value' pair as its argument\n");
         }
     } else if (argc == 6 && strcmp(argv[1], "cmd_ack") == 0) {
-        IotConnectEventType type = (IotConnectEventType) atoi(argv[2]);
+        /*
+		TODO FIXME - Reimplement this for new clib
+
+		IotConnectEventType type = (IotConnectEventType) atoi(argv[2]);
         char *ack_id = argv[3];
         bool cmd_status = (bool) atoi(argv[4]);
         char *message = argv[5];
 
         iotconnect_command_status(type, ack_id, cmd_status, message);
+		*/
     } else if (argc == 5 && strcmp(argv[1], "ota_ack") == 0) {
-        char *ack_id = argv[2];
+		/*      
+		TODO FIXME - Reimplement this for new clib
+		
+		char *ack_id = argv[2];
         bool ota_status = (bool) atoi(argv[3]);
         char *message = argv[4];
 
         iotconnect_ota_status(ack_id, ota_status, message);
+		*/
     } else {
         goto usage;
     }

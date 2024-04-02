@@ -632,23 +632,13 @@ finish:
         return (int) ERR_UNKNOWN;
     }
 
-    response->original = total_payload; // might be some leading "cruft" before/after the JSON? response->original != response_data
-    response->original_len = total_payload_len; // might be some leading "cruft" before/after the JSON? total_payload_len != strlen(response->data)
     return (int) ERR_OK;
 }
 
 void iotconnect_free_https_response(IotConnectHttpResponse *response)
 {
-    if(response->original) {
-        if(response->original != total_payload) {
-            HTTP_WARN("response->original != total_payload\n");
-        }
-    }
     memset(response, 0, sizeof(*response));
 
-    if(total_payload) {
-        free(response->original);
-    }
     total_payload = NULL;
     total_payload_len = 0;
 }
@@ -717,6 +707,14 @@ finish:
     }
     return;
 }
+
+/* The header declares this, we don't have it... */
+int curl_test(void) {
+    return 0;
+}
+
 #endif // (__HTTP_CLIENT_SAMPLE__)
 
 /* EOF */
+
+

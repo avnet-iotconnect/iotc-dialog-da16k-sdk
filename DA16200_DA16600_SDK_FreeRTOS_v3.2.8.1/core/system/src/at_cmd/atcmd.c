@@ -46,9 +46,9 @@
 
 #if 1
 #include "iotconnect.h"
-#include "iotconnect_telemetry.h"
-#include "iotconnect_event.h"
-#include "basic_sample.h"
+#include "iotcl.h"
+#include "iotcl_telemetry.h"
+#include "iotc_app.h"
 #endif
 
 #pragma GCC diagnostic ignored "-Wrestrict"
@@ -535,12 +535,12 @@ static const command_t commands[] = {
   { (char *)"AT+NWICCD",          atcmd_network,        1, (char *) "<set_iotconnect_cd>",                        "Set IoTConnect CD"                                     },
   { (char *)"AT+NWICENV",         atcmd_network,        1, (char *) "<set_iotconnect_env>",                       "Set IoTConnect ENV"                                    },
   { (char *)"AT+NWICAT",          atcmd_network,        1, (char *) "<set_iotconnect_at>",                        "Set IoTConnect AUTH TYPE"                              },
+  { (char *)"AT+NWICCT",          atcmd_network,        1, (char *) "<set_iotconnect_ct>",                        "Set IoTConnect CONNECTION TYPE"                        },
   { (char *)"AT+NWICSK",          atcmd_network,        1, (char *) "<set_iotconnect_sk>",                        "Set IoTConnect SYMMETRIC KEY"                          },
   { (char *)"AT+NWICSETUP",       atcmd_network,        0, (char *) "<setup iotconnect config>",                  "Setup the IoTConnect configuration"                    },
   { (char *)"AT+NWICSTART",       atcmd_network,        0, (char *) "<start iotconnect connection>",              "Start the IoTConnect connection"                       },
   { (char *)"AT+NWICSTOP",        atcmd_network,        0, (char *) "<stop iotconnect connection>",               "Stop the IoTConnect connection"                        },
   { (char *)"AT+NWICRESET",       atcmd_network,        0, (char *) "<stop iotconnect connection and reset>",     "Stop the IoTConnect connection and reset any configuration" },
-  { (char *)"AT+NWICDTG",         atcmd_network,        0, (char *) "<get_iotconnect_dtg>",                       "Get IoTConnect DTG (saved from discovery process)"     },
   { (char *)"AT+NWICMSG",         atcmd_network,        15, (char *) "<name1>,<value1>,<name2>,<value2>,...",     "Send an IoTConnect format MQTT message, using name/value pairs"    },
 // might also relect device message version here?
   { (char *)"AT+NWICVER",         atcmd_network,        0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
@@ -7928,15 +7928,6 @@ int atcmd_network(int argc, char *argv[])
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
-    // AT+NWICDTG
-    else if (strcasecmp(argv[0] + 5, "ICDTG") == 0) {
-        if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
-            /* AT+NWICDTG=? */
-            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, result_str);
-        } else {
-            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
-        }
-    }
     // AT+NWICENV
     else if (strcasecmp(argv[0] + 5, "ICENV") == 0) {
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
@@ -7990,6 +7981,19 @@ int atcmd_network(int argc, char *argv[])
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
+    else if (strcasecmp(argv[0] + 5, "ICCT") == 0) {
+        if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
+            /* AT+NWICCT=? */
+            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE, result_str);
+        } else if (argc == 2) {
+            /* AT+NWICCT=<connection_type> */
+            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE, argv[1]) != CC_SUCCESS) {
+                err_code = AT_CMD_ERR_COMMON_ARG_LEN;
+            }
+        } else {
+            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+        }
+    }
     // AT+NWICMSG
     else if (strcasecmp(argv[0] + 5, "ICMSG") == 0) {
         if (argc == 3 || argc == 5 || argc == 7 || argc == 9 || argc == 11 || argc == 13 || argc == 15) {
@@ -7998,26 +8002,30 @@ int atcmd_network(int argc, char *argv[])
             char **values = (char **) malloc(sizeof(char *) * half_argc);
 
             if(names && values) {
-                const char *str = NULL;
+
+                IotclMessageHandle tmp_msg = iotcl_telemetry_create();
+                bool success = true;
     
                 // shuffle around the names/values
                 for(int i = 0;i < half_argc;i++)
                 {
-                    names[i] = argv[1 + (i * 2)];
-                    values[i] = argv[2 + (i * 2)];
+                    const char *name = argv[1 + (i * 2)];
+                    const char *value = argv[2 + (i * 2)];
+
+                    PRINTF("name %s value %s \n", name, value);
+    
+                    success &= iotcl_telemetry_set_string(tmp_msg, name, value) == IOTCL_SUCCESS; 
                 }
 
-                str = iotcl_serialise_telemetry_strings(half_argc, names, values,
-                                                        0, NULL, NULL,
-                                                        0, NULL, NULL,
-                                                        0, NULL);
-                if(str == NULL) {
-                    ATCMD_DBG("iotcl_serialise_telemetry_strings() failed\n");
+                if (!success) {
+                    ATCMD_DBG("ERROR in iotcl_telemetry_set_string!\n");
                     err_code = AT_CMD_ERR_UNKNOWN;
-                } else {
-                    iotconnect_sdk_send_packet(str); // underlying code will report an error
-                    iotcl_destroy_serialized(str);
+                } else if (iotcl_mqtt_send_telemetry(tmp_msg, false) != IOTCL_SUCCESS) {
+                    ATCMD_DBG("ERROR in iotcl_mqtt_send_telemetry!}\n");
+                    err_code = AT_CMD_ERR_UNKNOWN;
                 }
+
+                iotcl_telemetry_destroy(tmp_msg);
             } else {
                 err_code = AT_CMD_ERR_UNKNOWN;
             }
@@ -8045,12 +8053,13 @@ int atcmd_network(int argc, char *argv[])
     else if (strcasecmp(argv[0] + 5, "ICCMDACK") == 0) {
         if (argc == 5) {
            /* AT+NWICCMDACK status, type, ack_id, command_name, message */
-           IotConnectEventType type = (IotConnectEventType) atoi(argv[1]);
-           const char *ack_id = (const char *) argv[2];
-           bool cmd_status = (bool) atoi(argv[3]);
-           const char *message = (const char *) argv[4];
+/*          TODO: IMPLEMENT THIS FOR 2.1 VERSION
+            IotConnectEventType type = (IotConnectEventType) atoi(argv[1]);
+            const char *ack_id = (const char *) argv[2];
+            bool cmd_status = (bool) atoi(argv[3]);
+            const char *message = (const char *) argv[4];
 
-           iotconnect_command_status(type, ack_id, cmd_status, message);
+            iotconnect_command_status(type, ack_id, cmd_status, message);*/
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
@@ -8060,11 +8069,12 @@ int atcmd_network(int argc, char *argv[])
         PRINTF("ICOTAACK %d\n", argc);
         if (argc == 4) {
            /* AT+NWICOTAACK status, type, ack_id, command_name, message */
-           const char *ack_id = (const char *) argv[1];
-           bool ota_status = (bool) atoi(argv[2]);
-           const char *message = (const char *) argv[3];
+/*          TODO: IMPLEMENT THIS FOR 2.1 VERSION
+            const char *ack_id = (const char *) argv[1];
+            bool ota_status = (bool) atoi(argv[2]);
+            const char *message = (const char *) argv[3];
 
-           iotconnect_ota_status(ack_id, ota_status, message);
+            iotconnect_ota_status(ack_id, ota_status, message);*/
         } else {
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }

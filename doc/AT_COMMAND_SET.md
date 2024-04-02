@@ -84,6 +84,23 @@ On command-line: `[/DA16200/NET] # cert write key1`
 In Table 16: this is certificate 2.
 
 ## IoTConnect parameter setup
+### Connection Type (Azure / AWS)
+#### Set Connection Type
+To set the connection type send an `AT+NWICCT` command with the connection type, e.g.
+```
+AT+NWICCT 1
+```
+#### Get Connection Type
+To get the conneciton type send an empty `AT+NWICCT` command, i.e.
+```
+AT+NWICCT
+```
+Successful completion should report, e.g.
+```
++NWICCT:1
+OK
+```
+
 ### DUID (device ID)
 #### Set DUID
 
@@ -507,7 +524,7 @@ IOTC_ENV (STR,09) ............ avnetpoc
 IOTC_AUTH_TYPE (STR,02) ...... 1
 IOTC_DUID (STR,11) ........... justatoken
 IOTC_SYMMETRIC_KEY (STR,01) ..
-IOTC_DTG (STR,37) ............ 9e70b352-7572-43fa-9a1f-445b2994c478
+IOTC_CONNECTION_TYPE (STR,02)  1
 MQTT_BROKER (STR,48) ......... poc-iotconnect-iothub-030-eu2.azure-devices.net
 MQTT_PORT (STR,05) ........... 8883
 MQTT_USERNAME (STR,89) ....... poc-iotconnect-iothub-030-eu2.azure-devices.net/avtds-justatoken/?api-version=2018-06-30
@@ -600,35 +617,6 @@ On command line:
 ```
 
 Note: IoTConnect interfaces to the mqtt_client - so stopping/starting the MQTT client outside of IoTConnect can affect the IoTConnect connection.
-
-### Using IoTConnect with “basic” mqtt_client
-
-It is possible to connect to IoTConnect with the underlying mqtt_client and avoid having IoTConnect driving the mosquitto_client.
-
-Effectively, can use IoTConnect discovery/sync process to setup the MQTT values in NVRAM, and stop the IoTConnect process – since mqtt_client should now be configured correctly.
-
-There are however a number of important caveats:
-- IoTConnect MQTT messages require a specialized form of JSON – but it should be possible to use the DTG value to generate those messages directly if required, e.g. if the format changes in the future.
-- need to consider how to respond to C2D commands appropriately.
-- need to consider how to respond to C2D OTA appropriately.
-
-For these reasons it is normally recommended to use iotconnect_client.
-
-#### DTG
-The last received "dtg" value is cached, so that it is possible to format a message response "by-hand".
-
-##### Get DTG
-To get the dtg value from a successful discovery/sync, send an empty AT+NWICDTG command, i.e.
-```
-AT+NWICDTG
-```
-Successful completion should report, e.g.
-```
-+NWICDTG:0123456789abcdef
-OK
-```
-##### NVRAM
-The last received DTG value is stored in nvram in IOTC_DTG
 
 ### Writing certificates programmatically
 

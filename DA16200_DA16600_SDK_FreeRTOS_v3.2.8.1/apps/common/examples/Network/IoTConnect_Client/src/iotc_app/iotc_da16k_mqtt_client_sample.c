@@ -1,9 +1,12 @@
 /**
  ****************************************************************************************
  *
- * @file mqtt_client_sample.c
+ * @file iotc_da16k_mqtt_client
  *
- * @brief MQTT Client Sample Application
+ * @brief MQTT Client, based on MQTT Client Sample Application
+ *
+ * Based on mqtt_client_sample.c from 
+ * DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1 in apps/common/examples/Network/Http_Client/src
  *
  * Copyright (c) 2016-2022 Renesas Electronics. All rights reserved.
  *
@@ -35,25 +38,19 @@
 #if defined (__MQTT_CLIENT_SAMPLE__)
 
 #include "sdk_type.h"
-#include "da16x_system.h"
 #include "task.h"
 #include "net_bsd_sockets.h"
 #include "da16x_network_common.h"
 #include "user_dpm.h"
 #include "user_dpm_api.h"
 #include "common_def.h"
-#include "da16200_ioconfig.h"
 #include "command_net.h"
 #include "mqtt_client.h"
-#include "user_nvram_cmd_table.h"
 #include "util_api.h"
 #include "da16x_cert.h"
-#include "mqtt_client_sample.h"
 
-// or specify as functions
-#define MQTT_DEBUG(...) do{ PRINTF(GREEN_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
-#define MQTT_WARN(...) do{ PRINTF(YELLOW_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
-#define MQTT_ERROR(...) do{ PRINTF(RED_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
+#include "iotc_da16k_mqtt_client_sample.h"
+#include "iotc_da16k_util.h"
 
 #define	SAMPLE_MQTT_CLIENT		"MQTT_CLIENT"
 #define	NAME_MY_APP_EVENT_HANDLER	"MY_APP_EVENT_HANDLER"
@@ -85,36 +82,49 @@ static disconn_cb_t g_disconn_cb = NULL;
 static sub_cb_t g_sub_cb = NULL;
 static unsub_cb_t g_unsub_cb = NULL;
 
-static BaseType_t _mqtt_send_to_q(const char *buf, bool copy)
+/* For the message queues. Items enqueued contain a topic string and a message string. */
+
+typedef struct {
+    const char *topic;
+    const char *message;
+} MqttQueueItem;
+
+static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool copy)
 {
     BaseType_t status;
+    MqttQueueItem item = { NULL, NULL };
 
     if (!_mqtt_q) {
         MQTT_ERROR("[%s] Msg Q doesn't exist!", __func__);
 	return -1;
     }
 
-    int user_msg_buf_size = strlen(buf) + 1;
-    char *user_msg_buf = NULL;
     if(copy) {
         /* Take a copy of the message, as the original may be freed before the Q entry is dealt with? */
-        user_msg_buf = malloc(user_msg_buf_size);
+        item.topic = strdup(topic);
+        item.message = strdup(message);
     } else {
         // assume buf can use free() on buf once it has been sent - original argument should not be deallocated
-        user_msg_buf = (char *) buf;
+        item.topic = topic;
+        item.message = message;        
     }
 
-    if (!user_msg_buf) {
-        MQTT_ERROR("[%s] failed to allocate user_msg_buf!", __func__);
+    if (!item.topic || !item.message) {
+        MQTT_ERROR("[%s] failed to allocate topic or message string!", __func__);
     	return -1;
     }
 
-    sprintf(user_msg_buf, "%s", buf);
+    MQTT_ERROR("[%s] topic %s, message %s!", __func__, item.topic ? item.topic : "NULL", item.message ? item.message : "NULL");
     tx_publish++;
 
-    status = xQueueSendToBack(_mqtt_q, &user_msg_buf, 10);
+    status = xQueueSendToBack(_mqtt_q, &item, 10);
+
     if(status != pdTRUE) {
-        free(user_msg_buf);
+        MQTT_ERROR("[%s] failed to enqueue message!", __func__);
+        if (copy) {
+            free((void*) item.topic);
+            free((void*) item.message);
+        }
     }
 
     return status;
@@ -190,7 +200,7 @@ static void _mqtt_unsub_cb(void)
     }
 }
 
-int mqtt_sample_client_pub_send(const char *pub_message, bool copy)
+int mqtt_sample_client_send(const char *topic, const char *message, bool copy)
 {
     BaseType_t ret;
 
@@ -206,7 +216,7 @@ int mqtt_sample_client_pub_send(const char *pub_message, bool copy)
         return -1;
     } 
 
-    if ((ret = _mqtt_send_to_q(pub_message, copy)) != pdPASS ) {
+    if ((ret = _mqtt_send_to_q(topic, message, copy)) != pdPASS ) {
         MQTT_ERROR("[%s] Failed to add a message to Q (%d)\r\n", __func__, ret);
         return -1;
     }
@@ -214,14 +224,14 @@ int mqtt_sample_client_pub_send(const char *pub_message, bool copy)
     return 0;
 }
 
-static int _mqtt_pub_msg(const char *buffer)
+static int _mqtt_pub_msg(const char *topic, const char *buffer)
 {
     int ret;
 #if !defined (USE_MQTT_SEND_WITH_QOS_API)
     int wait_cnt = 0;
 
 LBL_SEND_RETRY:
-    ret = mqtt_client_send_message(NULL, (char *) buffer);
+    ret = mqtt_client_send_message((char *) topic, (char *) buffer);
     if (ret != 0) {
         if (ret == -2) { // previous message Tx is not finished
             vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -235,7 +245,7 @@ LBL_SEND_RETRY:
         }
     }
 #else
-    ret = mqtt_client_send_message_with_qos(NULL, buffer, MQTT_PUB_MAX_WAIT_CNT);
+    ret = mqtt_client_send_message_with_qos((char *) topic, (char *) buffer, MQTT_PUB_MAX_WAIT_CNT);
     if (ret != 0) {
         if (ret == -2) {
             MQTT_ERROR("[MQTT_SAMPLE] Mqtt send not successfully delivered, timtout=%d\n", MQTT_PUB_MAX_WAIT_CNT);
@@ -250,7 +260,7 @@ static void _mqtt_q_handler(void *arg)
     DA16X_UNUSED_ARG(arg);
 
     int ret;
-    char *user_msg_buf;
+    MqttQueueItem item = { NULL, NULL };
     BaseType_t xStatus;
 
     // message queue init
@@ -260,15 +270,15 @@ static void _mqtt_q_handler(void *arg)
     	    break;
         }
 
-        xStatus = xQueueReceive(_mqtt_q, &user_msg_buf, portMAX_DELAY);
+        xStatus = xQueueReceive(_mqtt_q, &item, portMAX_DELAY);
         if (xStatus != pdPASS) {
             MQTT_ERROR("[%s] Q recv error (%d)\r\n", __func__, xStatus);
             vTaskDelete(NULL);
             break;
         }
 
-        if (user_msg_buf) {
-            ret = _mqtt_pub_msg(user_msg_buf);
+        if (item.topic && item.message) {
+            ret = _mqtt_pub_msg(item.topic, item.message);
             if (ret != 0) {
 #if !defined (USE_MQTT_SEND_WITH_QOS_API)
                 MQTT_ERROR("[MQTT_SAMPLE] Sending a message failed, refer to mqtt_client_send_message()\n");
@@ -276,12 +286,13 @@ static void _mqtt_q_handler(void *arg)
                 MQTT_ERROR("[MQTT_SAMPLE] Sending a message failed, refer to mqtt_client_send_message_with_qos()\n");
 #endif
             }
-
-            // allocated in _mqtt_send_to_q()
-            free(user_msg_buf);
         } else {
-            MQTT_ERROR("[%s] can't send a NULL user_msg_buf\r\n", __func__);
+            MQTT_ERROR("[%s] Queue message or topic is NULL!\r\n", __func__);
         }
+
+        // allocated in _mqtt_send_to_q()
+        free((void*) item.topic);
+        free((void*) item.message);
     }
 
     // shouldn't get here -- mqtt_sample_deinit() should kill the task
@@ -350,7 +361,7 @@ int mqtt_sample_client_init(msg_cb_t msg_cb, pub_cb_t pub_cb, conn_cb_t conn_cb,
     }
 
     // message queue init
-    _mqtt_q = xQueueCreate(MSG_Q_SIZE, sizeof(char *));
+    _mqtt_q = xQueueCreate(MSG_Q_SIZE, sizeof(MqttQueueItem ));
     if (_mqtt_q == NULL) {
         MQTT_ERROR("[%s] Msg Q Create Error!", __func__);
         goto cleanup;
@@ -392,345 +403,14 @@ cleanup:
     return -1;
 }
 
-/**
- ****************************************************************************************
- * @brief MQTT Basic Configuration Function
- * @subsection Parameters
- * - Broker IP Address
- * - Broker Port Number
- * - Qos
- * - Subscriber Topic
- * - Publisher Topic
- * - SNTP Use (for TLS valid time)
- * - TLS Use
- * - TLS Root CA
- * - TLS Client Certificate
- * - TLS Client Private Key
- ****************************************************************************************
- */
-
-int set_nvcache_int(int key, int value) {
-    int test_int;
-    if(da16x_get_config_int(key, &test_int) != CC_SUCCESS || test_int != value) {
-        if(da16x_set_nvcache_int(key, value) != CC_SUCCESS) {
-            MQTT_ERROR("da16x_set_nvcache_int(%d, %d) failed\n", key, value);
-	}
-	return 1;
-    }
-    return 0;
-}
-
-int set_nvcache_str(int key, const char *value) {
-    if(value != NULL) {
-        char test_str[MQTT_PASSWORD_MAX_LEN] = {0, }; // password has the max length in str type
-        if(da16x_get_config_str(key, test_str) != CC_SUCCESS || strcmp(test_str, value) != 0) {
-            if(da16x_set_nvcache_str(key, (char *) value) != CC_SUCCESS) {
-                MQTT_ERROR("da16x_set_nvcache_str(%d, %s) failed\n", key, value);
-	    }
-            return 1;
-        }
-    } else {
-        if(da16x_set_nvcache_str(key, NULL) != CC_SUCCESS) {
-            MQTT_ERROR("da16x_set_nvcache_str(%d, NULL) failed\n", key);
-	}
-        return 1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_use_cmdack(int *value) {
-    int status;
-    char string[8];
-
-    *value = 0;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK value is empty\n");
-        return -1;
-    }
-    *value = atoi(string);
-
-    return 0;
-}
-
-int platform_set_iotconnect_use_cmdack(void) {
-    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, "0");
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-int platform_get_iotconnect_use_otaack(int *value) {
-    int status;
-    char string[8];
-
-    *value = 0;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK value is empty\n");
-        return -1;
-    }
-    *value = atoi(string);
-
-    return 0;
-}
-
-int platform_set_iotconnect_use_otaack(void) {
-    int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, "0");
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-int platform_get_iotconnect_cpid(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_CPID\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_CPID value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_cd(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CD, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_CD\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_CD value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_env(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_ENV\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_ENV value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_duid(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_DUID\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_DUID value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_auth_type(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_set_iotconnect_dtg(char *string) {
-    int status;
-    status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_DTG\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_dtg(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DTG, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_DTG\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_DTG value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_iotconnect_symmetric_key(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_mqtt_broker_ip(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_MQTT_BROKER_IP, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_BROKER_IP\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_MQTT_BROKER_IP value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_mqtt_broker_username(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_MQTT_USERNAME, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_USERNAME\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_MQTT_USERNAME value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
-int platform_get_mqtt_broker_password(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_MQTT_PASSWORD, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_PASSWORD\n");
-        return -1;
-    }
-    /* note broker password can be empty */
-    return 0;
-}
-
-int platform_get_mqtt_sub_topic0(char *string) {
-    char topics[16] = {0, };
-    char *tmp_str;
-
-    *string = '\0';
-
-    sprintf(topics, "%s%d", MQTT_NVRAM_CONFIG_SUB_TOPIC, 0);
-    tmp_str = read_nvram_string(topics);
-
-    if(tmp_str == NULL)
-    {
-        MQTT_ERROR("Failed to get %s\n", topics);
-        return -1;
-    }
-
-    if(*tmp_str == '\0')
-    {
-        MQTT_ERROR("Failed to get %s\n", topics);
-        return -1;
-    }
-
-    strcpy(string, tmp_str);
-    return 0;
-}
-
-int platform_get_mqtt_pub_topic(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_MQTT_PUB_TOPIC, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_PUB_TOPIC\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_MQTT_PUB_TOPIC value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
 void mqtt_sample_client_nvram_config(const char *broker,
-		              int port,
-			      const char *username,
-			      const char *password,
-			      const char *clientid, 
-			      const char *pub,
-			      const char *sub,
-                              int qos)
+		                             int port,
+			                         const char *username,
+			                         const char *password,
+			                         const char *clientid, 
+			                         const char *pub,
+			                         const char *sub,
+                                     int qos)
 {
     int running_state = mqtt_client_is_running();
 
@@ -740,26 +420,26 @@ void mqtt_sample_client_nvram_config(const char *broker,
         mqtt_client_stop();
     }
 
-    set_nvcache_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
 
     /*
      * I think DA16X_CONF_INT_MQTT_AUTO will get modified by mqtt_client_start()
      */
-    set_nvcache_str(DA16X_CONF_STR_MQTT_BROKER_IP,     broker);
-    set_nvcache_int(DA16X_CONF_INT_MQTT_PORT,          port);
-    set_nvcache_str(DA16X_CONF_STR_MQTT_USERNAME,      username);
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_BROKER_IP,     broker);
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_PORT,          port);
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_USERNAME,      username);
     /*
      * password can be NULL
      */
-    set_nvcache_str(DA16X_CONF_STR_MQTT_PASSWORD,      password);
-    set_nvcache_str(DA16X_CONF_STR_MQTT_SUB_CLIENT_ID, clientid);
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_PASSWORD,      password);
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_SUB_CLIENT_ID, clientid);
 
-    set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_TOPIC,     pub);
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_TOPIC,     pub);
     // set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_CID,       clientid);
-    set_nvcache_int(DA16X_CONF_INT_MQTT_QOS,           qos);
-    set_nvcache_int(DA16X_CONF_INT_MQTT_TLS,           1);
-    set_nvcache_int(DA16X_CONF_INT_MQTT_PING_PERIOD,   60);
-    set_nvcache_int(DA16X_CONF_INT_MQTT_VER311,        1);
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_QOS,           qos);
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_TLS,           1);
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_PING_PERIOD,   60);
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_VER311,        1);
 
     //
     // Generally "nuke" any subscriptions.
