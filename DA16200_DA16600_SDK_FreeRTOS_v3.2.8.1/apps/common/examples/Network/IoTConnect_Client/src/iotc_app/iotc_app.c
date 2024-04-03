@@ -25,6 +25,50 @@ static EventGroupHandle_t my_app_event_group = NULL;
 
 static IotConnectClientConfig s_client_cfg = {0};
 
+static bool setupOK = false;
+
+static err_t network_ok(void) 
+{
+    int iface = WLAN0_IFACE;
+    int wait_cnt = 0;
+
+    while (chk_network_ready(iface) != pdTRUE) {
+        vTaskDelay( 100 / portTICK_PERIOD_MS );
+        wait_cnt++;
+
+        if (wait_cnt == 100) {
+            IOTC_ERROR("\r\n [%s] ERR : No network connection\r\n", __func__);
+            return ERR_UNKNOWN;
+        }
+    }
+
+    /*
+     * (Mostly) borrowed from MQTT client sample code
+     */
+    if (!dpm_mode_is_wakeup()) {
+        int ret;
+
+        // Non-DPM or DPM POR ...
+
+        // check that SNTP has sync'd successfully.
+        ret = sntp_wait_sync(10);
+        if (ret != 0) {
+            if (ret == -1) { // timeout
+                IOTC_ERROR("SNTP sync timed out - check Internet conenction. Reboot to start over \n");
+            } else {
+                if (ret == -2) { // timeout
+                	IOTC_WARN("SNTP was disabled. Reboot to start over \n");
+    
+                    da16x_set_config_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
+                }
+            }
+            return ERR_UNKNOWN;
+       }
+   }
+    
+    return ERR_OK;
+}
+
 void stop_iotconnect(void) {
     if(my_app_event_group == NULL) {
         return;
@@ -114,17 +158,11 @@ cleanup:
 //
 // a wrapper to send +NWICSTARTBEGIN / +NWICSTARTEND messages
 //
-int start_wrapper(IotConnectClientConfig *config)
+int start_wrapper()
 {
     int ret = -1;
 
     atcmd_asynchony_event_for_icstart_begin();
-
-    if(config == NULL) {
-        IOTC_ERROR("start_wrapper() failed - no config available\n");
-        IOTC_INFO("Did you run: iotconnect_client setup?\n");
-        goto end;
-    }
 
     //
     // Try a small number of times - in case of an intermitent failure
@@ -149,7 +187,6 @@ int start_wrapper(IotConnectClientConfig *config)
         vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 
-end:
     if (ret != 0) {
         IOTC_ERROR("start_wrapper() failed: %d", ret);
     }
@@ -214,8 +251,6 @@ int iotconnect_basic_sample_main(void)
      * Certificates can be set see: Table 16, Page 50, "UM-WI-003 DA16200 DA16600 Host Interface and AT Command User Manual" 
      */
 
-    IotConnectClientConfig *config = NULL;
-
     my_app_event_group = xEventGroupCreate();
     if (my_app_event_group == NULL) {
         IOTC_ERROR("[%s] Event group Create Error!", __func__);
@@ -250,13 +285,18 @@ int iotconnect_basic_sample_main(void)
             continue;
         }
 
+        if(network_ok() != ERR_OK) {
+        	IOTC_ERROR("Command ignored - Network interface is down!");
+            continue;
+        }
+
         //
         // disconnect from iotconnect, 
         // teardown the current config and deallocate any memory
         //
         if(reset) {
             reset_wrapper();
-            config = NULL; // config will no longer be valid after reset_wrapper();
+            setupOK = false;
             continue;
         }
 
@@ -269,11 +309,16 @@ int iotconnect_basic_sample_main(void)
         }
 
         if(setup) {
-            config = setup_wrapper();
+            setupOK = (0 == setup_wrapper());
         }
 
         if(start) {
-            start_wrapper(config);
+            if (setupOK == false) {
+                IOTC_ERROR("Cannot start wrapper - config setup failed.\n");
+                IOTC_INFO("Did you run: iotconnect_client setup?\n");
+            } else {
+                start_wrapper();
+            }
         }
     }
 
@@ -282,8 +327,7 @@ int iotconnect_basic_sample_main(void)
         my_app_event_group = NULL;
     }
     
-    iotc_da16k_reset_config(config);
-    config = NULL;
+    iotc_da16k_reset_config(&s_client_cfg);
     
     IOTC_INFO("exiting basic_sample()\n" );
     return 0;

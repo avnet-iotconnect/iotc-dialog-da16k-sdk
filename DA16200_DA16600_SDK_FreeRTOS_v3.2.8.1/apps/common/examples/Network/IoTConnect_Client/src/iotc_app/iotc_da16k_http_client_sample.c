@@ -643,61 +643,14 @@ void iotconnect_free_https_response(IotConnectHttpResponse *response)
     total_payload_len = 0;
 }
 
-err_t network_ok(void) 
-{
-    int iface = WLAN0_IFACE;
-    int wait_cnt = 0;
-
-    while (chk_network_ready(iface) != pdTRUE) {
-        vTaskDelay( 100 / portTICK_PERIOD_MS );
-        wait_cnt++;
-
-        if (wait_cnt == 100) {
-            HTTP_ERROR("\r\n [%s] ERR : No network connection\r\n", __func__);
-            return ERR_UNKNOWN;
-        }
-    }
-
-    /*
-     * (Mostly) borrowed from MQTT client sample code
-     */
-    if (!dpm_mode_is_wakeup()) {
-        int ret;
-
-        // Non-DPM or DPM POR ...
-
-        // check that SNTP has sync'd successfully.
-        ret = sntp_wait_sync(10);
-        if (ret != 0) {
-            if (ret == -1) { // timeout
-                HTTP_ERROR("SNTP sync timed out - check Internet conenction. Reboot to start over \n");
-            } else {
-                if (ret == -2) { // timeout
-                    HTTP_WARN("SNTP was disabled. Reboot to start over \n");
-    
-                    da16x_set_config_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
-                }
-            }
-            return ERR_UNKNOWN;
-       }
-   }
-    
-    return ERR_OK;
-}
-
 void http_client_sample_entry(void *param)
 {
     DA16X_UNUSED_ARG(param);
     // slight delay before starting up -- just to give us a chance to type at the prompt, if required.
     vTaskDelay( 5000 / portTICK_PERIOD_MS );
 
-    if(network_ok() != ERR_OK) {
-        goto finish;
-    }
-
     iotconnect_basic_sample_main();
 
-finish:
     /*
      * TASK HAS FINISHED BUT CANNOT RETURN - SO JUST WAIT IN A LOOP!
      */
