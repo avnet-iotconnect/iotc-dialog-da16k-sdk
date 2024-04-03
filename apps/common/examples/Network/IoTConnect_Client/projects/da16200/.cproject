@@ -80,7 +80,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/customer_app/src/user_main/iotc-generic-c-sdk/iotc-generic-c-sdk/curl-http-impl/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/customer_app/src/user_main/iotc-generic-c-sdk/lib/iotc-c-lib/lib/cJSON}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/customer_app/src/user_main/iotc_app}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/customer_app/src/user_main/samples}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/customer_app/src/user_main/renesas_system}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/customer_app/include/user_main}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/app_common/include/provisioning}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/app_common/include/system}&quot;"/>
