@@ -4,7 +4,12 @@ tools/
 utility/
 
 apps/*
-!apps/IoTConnect_Client/
+!apps/app_common/
+apps/app_common/*
+apps/common/examples/*
+!apps/common/examples/Network/
+apps/common/examples/Network/*
+!apps/common/examples/Network/IoTConnect_Client/
 
 apps/da16*/get_started/*
 !apps/da16*/get_started/include/
