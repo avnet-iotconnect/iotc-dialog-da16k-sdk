@@ -109,6 +109,8 @@ const user_conf_str user_config_str_with_nvram_name[] = {
   { DA16X_CONF_STR_ATCMD_NW_TR_PEER_IPADDR_9, ATCMD_NVR_NW_TR_PEER_IPADDR_9,  ATCMD_NVR_NW_TR_PEER_IPADDR_LEN  },
 #endif // (__SUPPORT_ATCMD_MULTI_SESSION__)
 
+#if defined (__SUPPORT_IOTCONNECT__)
+
   { DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK,      "IOTC_USE_CMD_ACK", 8},
   { DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK,      "IOTC_USE_OTA_ACK", 8},
 
@@ -122,6 +124,8 @@ const user_conf_str user_config_str_with_nvram_name[] = {
   { DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY,    "IOTC_SYMMETRIC_KEY", 256},
 
   { DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE,  "IOTC_CONNECTION_TYPE", 8},
+
+#endif
 
   { 0, "", 0 }
 };
