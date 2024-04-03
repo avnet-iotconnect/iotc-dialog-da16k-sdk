@@ -285,7 +285,7 @@ Connection COMPLETE to cc:40:d0:ef:b4:57
 
 ### DPM
 
-Note at present need to have DPM support selected as No during setup.
+Currently, DPM is not supported, so select **No** during setup.
 
 ## Flashing images using uart_program_da16200
 
@@ -334,13 +334,9 @@ Please follow the guide for the instance type (AWS / Azure) you wish to connect 
 ***NOTE***: It is impossible for the  DA16xxx to process multiple possible certificates for a Root CA – all testing has used a single certificate. Obviously, if a certificate doesn’t allow a connection, then it may be required to manually swap to an alternative certificate.
 
 
-## AWS
+## Configuring Certificates & IoTConnect Application Config
 
-Refer to the [AWS Setup Guide](SETUP_AWS.md).
-
-## Azure 
-
-Refer to the [Azure Setup Guide](SETUP_AZURE.md).
+Refer to the [Application Setup Guide](SETUP_APP.md).
 
 ## Running `iotconnect_client`
 
