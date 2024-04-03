@@ -21,7 +21,7 @@ int iotc_da16k_read_config(IotConnectClientConfig *c) {
 
     if(platform_get_iotconnect_connection_type(temp_str) != 0)
     {
-        PRINTF("platform_get_iotconnect_auth_type() failed\n");
+        PRINTF("platform_get_iotconnect_connection_type() failed\n");
         goto cleanup;
     }
     if(sscanf(temp_str, "%d", &temp_int) != 1)
