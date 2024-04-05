@@ -32,8 +32,9 @@ Other versions may work, but cannot be guaranteed.
 
 The IoTConnect example application and modifications to the FreeRTOS package can be accessed at [IoTConnect dialog github](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk).
 
+* If you do not have a Dialog DA16K FreeRTOS SDK directory already, download and upnzip the SDK file (e.g. DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip) to an arbitrary directory (e.g. `sdk_dir`)
 * Clone the git repo.
-* ***Run the setup script:*** `./setup.sh`
+* ***Run the setup script:*** `./setup.sh sdk_dir`
 
 ## Compiling the IoTConnect application
 
