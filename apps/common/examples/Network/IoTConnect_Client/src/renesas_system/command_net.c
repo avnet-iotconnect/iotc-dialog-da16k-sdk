@@ -1805,7 +1805,6 @@ void cmd_mqtt_client(int argc, char *argv[])
 	}
 }
 
-#if 1 // may need to split this out if it gets too large...
 static void cmd_iotconnect_config_status(void)
 {
     char string[256]; // max size of DA16X_CONF_STR_IOTCONNECT_XXX options see user_nvram_cmd_table.c
@@ -1814,8 +1813,6 @@ static void cmd_iotconnect_config_status(void)
     PRINTF("      env:           	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, string) != CC_SUCCESS) { *string = '\0'; }
     PRINTF("      cpid:          	%s\n", string);
-    if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CD, string) != CC_SUCCESS) { *string = '\0'; }
-    PRINTF("      cd:          		%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, string) != CC_SUCCESS) { *string = '\0'; }
     PRINTF("      duid:          	%s\n", string);
     if (da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, string) != CC_SUCCESS) { *string = '\0'; }
@@ -1855,10 +1852,6 @@ void cmd_iotconnect_config(int argc, char *argv[])
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, "") != CC_SUCCESS)
             {
                 PRINTF("Failed to reset cpid");
-            }
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CD, "") != CC_SUCCESS)
-            {
-                PRINTF("Failed to reset cd");
             }
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, "") != CC_SUCCESS)
             {
@@ -1904,13 +1897,6 @@ void cmd_iotconnect_config(int argc, char *argv[])
             {
                 PRINTF("Failed to set cpid");
             }
-/* 	You're not supposed to set this by hand - it is set via discovery/sync.
-	    } else if(strcmp(argv[1], "cd") == 0) {
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CD, argv[2]) != CC_SUCCESS)
-            {
-                PRINTF("Failed to set cd");
-            }
-*/
         } else if(strcmp(argv[1], "duid") == 0) {
             if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, argv[2]) != CC_SUCCESS)
             {
@@ -2033,7 +2019,6 @@ usage:
     PRINTF("          iotconnect_client ota_ack ack_id 0 message\n");
     PRINTF("          iotconnect_client ota_ack ack_id 1 message\n");
 }
-#endif
 
 #if defined ( __USER_DHCP_HOSTNAME__ )
 void cmd_dhcp_hostname(int argc, char *argv[])

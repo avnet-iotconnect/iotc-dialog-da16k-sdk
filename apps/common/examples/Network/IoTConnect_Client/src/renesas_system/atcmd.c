@@ -7916,23 +7916,6 @@ int atcmd_network(int argc, char *argv[])
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
-
-/* 	You're not supposed to set this by hand - it is set via discovery/sync.    
-    // AT+NWICCD
-    else if (strcasecmp(argv[0] + 5, "ICCD") == 0) {
-        if (argc == 1 || is_correct_query_arg(argc, argv[1])) {
-            // AT+NWICCD=?
-            da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CD, result_str);
-        } else if (argc == 2) {
-            // AT+NWICCPID=<cd>
-            if (da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_CD, argv[1]) != CC_SUCCESS) {
-                err_code = AT_CMD_ERR_COMMON_ARG_LEN;
-            }
-        } else {
-            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
-        }
-    }
-*/
     // AT+NWICENV
     else if (strcasecmp(argv[0] + 5, "ICENV") == 0) {
         if (argc == 1 || is_correct_query_arg(argc, argv[1])) {

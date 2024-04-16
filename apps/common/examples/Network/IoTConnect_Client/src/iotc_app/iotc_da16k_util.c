@@ -278,23 +278,6 @@ int platform_get_iotconnect_cpid(char *string) {
     return 0;
 }
 
-int platform_get_iotconnect_cd(char *string) {
-    int status;
-    *string = '\0';
-    status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CD, string);
-    if(status != CC_SUCCESS)
-    {
-        MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_CD\n");
-        return -1;
-    }
-    if(*string == '\0')
-    {
-        MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_CD value is empty\n");
-        return -1;
-    }
-    return 0;
-}
-
 int platform_get_iotconnect_env(char *string) {
     int status;
     *string = '\0';
