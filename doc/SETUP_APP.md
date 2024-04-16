@@ -43,7 +43,7 @@ You require the following:
 
 * IoTConnect Device **CPID** (Key Vault)
 
-* IoTConnect Environment **ENV**
+* IoTConnect Environment **ENV** (Key Vault)
 
 ## Certificate setup
 

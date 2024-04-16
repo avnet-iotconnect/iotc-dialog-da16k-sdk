@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "Avnet IoTConnect Dialog DA16K AT SDK"
 
 if [ "$#" -ne 1 ]; then
