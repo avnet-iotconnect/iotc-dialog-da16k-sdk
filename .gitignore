@@ -40,3 +40,4 @@ apps/**/projects/**/Debug
 apps/**/projects/**/Release
 apps/**/projects/**/img
 apps/**/projects/**/*.launch
+apps/**/projects/**/.settings
