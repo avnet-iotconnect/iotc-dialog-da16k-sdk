@@ -16,8 +16,6 @@
 #include "iotc_algorithms.h"
 #include "iotc_log.h"
 
-#define HOST_URL_FORMAT "ssl://%s:8883"
-
 #ifndef MQTT_PUBLISH_TIMEOUT_MS
 #define MQTT_PUBLISH_TIMEOUT_MS     10000L
 #endif
@@ -120,9 +118,7 @@ static void __mqtt_on_unsubscribe(void)
     IOTC_ERROR("\n\n[%s] topic unsubscribed unexpectedly!\n\n" CLEAR_COLOR, __func__);
 }
 
-//
 // setup the MQTT client configuration
-//
 
 int iotc_device_client_connect(IotConnectDeviceClientConfig *c) {
     
@@ -144,7 +140,7 @@ int iotc_device_client_connect(IotConnectDeviceClientConfig *c) {
 
     int ret;
 
-    /* set the callbacks "early" */
+    // Set the callbacks early
     c2d_msg_cb = c->c2d_msg_cb;
     if(c2d_msg_cb == NULL)
     {
