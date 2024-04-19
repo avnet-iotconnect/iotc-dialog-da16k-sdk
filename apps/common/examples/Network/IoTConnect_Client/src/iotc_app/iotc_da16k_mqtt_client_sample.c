@@ -89,8 +89,7 @@ typedef struct {
     const char *message;
 } MqttQueueItem;
 
-static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool copy)
-{
+static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool copy) {
     BaseType_t status;
     MqttQueueItem item = { NULL, NULL };
 
@@ -139,8 +138,7 @@ static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool c
  * @param[in] topic the topic this mqtt_client subscribed to
  ****************************************************************************************
  */
-static void _mqtt_msg_cb(const char *buf, int len, const char *topic)
-{
+static void _mqtt_msg_cb(const char *buf, int len, const char *topic) {
     MQTT_DEBUG("\n\n[MQTT_SAMPLE] Msg Recv: topic=%s, msg=%s, len = %d\n\n", topic, buf, len);
 
     if(g_msg_cb) {
@@ -148,8 +146,7 @@ static void _mqtt_msg_cb(const char *buf, int len, const char *topic)
     }
 }
 
-static void _mqtt_pub_cb(int mid)
-{
+static void _mqtt_pub_cb(int mid) {
     MQTT_DEBUG("\n\n[%s] message id %d is being published!\n\n", __func__, mid);
 
     if (tx_publish > 0) {
@@ -164,8 +161,7 @@ static void _mqtt_pub_cb(int mid)
     }
 }
 
-static void _mqtt_conn_cb(void)
-{
+static void _mqtt_conn_cb(void) {
     MQTT_DEBUG("\n\n[%s] MQTT connection callback!\n\n", __func__);
 
     if(g_conn_cb) {
@@ -173,8 +169,7 @@ static void _mqtt_conn_cb(void)
     }
 }
 
-static void _mqtt_disconn_cb(void)
-{
+static void _mqtt_disconn_cb(void) {
     MQTT_DEBUG("\n\n[%s] MQTT disconnection callback!\n\n", __func__);
 
     if(g_disconn_cb) {
@@ -182,8 +177,7 @@ static void _mqtt_disconn_cb(void)
     }
 }
 
-static void _mqtt_sub_cb(void)
-{
+static void _mqtt_sub_cb(void) {
     MQTT_DEBUG("\n\n[%s] topic subscribed!\n\n", __func__);
 
     if(g_sub_cb) {
@@ -191,8 +185,7 @@ static void _mqtt_sub_cb(void)
     }
 }
 
-static void _mqtt_unsub_cb(void)
-{
+static void _mqtt_unsub_cb(void) {
     MQTT_DEBUG("\n\n[%s] topic unsubscribed!\n\n", __func__);
 
     if(g_unsub_cb) {
@@ -200,8 +193,7 @@ static void _mqtt_unsub_cb(void)
     }
 }
 
-int mqtt_sample_client_send(const char *topic, const char *message, bool copy)
-{
+int mqtt_sample_client_send(const char *topic, const char *message, bool copy) {
     BaseType_t ret;
 
     if (!mqtt_client_is_running()) {
@@ -224,8 +216,7 @@ int mqtt_sample_client_send(const char *topic, const char *message, bool copy)
     return 0;
 }
 
-static int _mqtt_pub_msg(const char *topic, const char *buffer)
-{
+static int _mqtt_pub_msg(const char *topic, const char *buffer) {
     int ret;
 #if !defined (USE_MQTT_SEND_WITH_QOS_API)
     int wait_cnt = 0;
@@ -255,8 +246,7 @@ LBL_SEND_RETRY:
     return ret;
 }
 
-static void _mqtt_q_handler(void *arg)
-{
+static void _mqtt_q_handler(void *arg) {
     DA16X_UNUSED_ARG(arg);
 
     int ret;
@@ -300,8 +290,7 @@ static void _mqtt_q_handler(void *arg)
     return;
 }
 
-void mqtt_sample_client_deinit(void)
-{
+void mqtt_sample_client_deinit(void) {
     if (mqtt_client_is_running() == TRUE) {
         mqtt_client_force_stop();
         mqtt_client_stop();
@@ -318,8 +307,7 @@ void mqtt_sample_client_deinit(void)
     }
 }
 
-static int _mqtt_chk_connection(int timeout)
-{
+static int _mqtt_chk_connection(int timeout) {
     int wait_cnt = 0;
     for (wait_cnt = 0; wait_cnt < timeout; wait_cnt++) {
         if (mqtt_client_check_conn()) {
@@ -343,8 +331,7 @@ static int _mqtt_chk_connection(int timeout)
  *   See Example UM-WI-055_DA16200_FreeRTOS_Example_Application_Manual
  ****************************************************************************************
  */
-int mqtt_sample_client_init(msg_cb_t msg_cb, pub_cb_t pub_cb, conn_cb_t conn_cb, disconn_cb_t disconn_cb, sub_cb_t sub_cb, unsub_cb_t unsub_cb)
-{
+int mqtt_sample_client_init(msg_cb_t msg_cb, pub_cb_t pub_cb, conn_cb_t conn_cb, disconn_cb_t disconn_cb, sub_cb_t sub_cb, unsub_cb_t unsub_cb) {
     g_msg_cb = msg_cb;
     g_pub_cb = pub_cb;
     g_conn_cb = conn_cb;
@@ -447,8 +434,7 @@ void mqtt_sample_client_nvram_config(const char *broker,
     // try to delete any "top" topic - may fail
     delete_nvram_env(MQTT_NVRAM_CONFIG_SUB_TOPIC);
     int ret_num;
-    if (read_nvram_int(MQTT_NVRAM_CONFIG_SUB_TOPIC_NUM, &ret_num) == 0)
-    {
+    if (read_nvram_int(MQTT_NVRAM_CONFIG_SUB_TOPIC_NUM, &ret_num) == 0) {
         // MQTT_NVRAM_CONFIG_SUB_TOPIC_NUM exists, so delete "sub" topics
         for (int i = 0; i < ret_num; i++)
         {

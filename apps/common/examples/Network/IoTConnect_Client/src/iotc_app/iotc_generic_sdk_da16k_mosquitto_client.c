@@ -142,14 +142,12 @@ int iotc_device_client_connect(IotConnectDeviceClientConfig *c) {
 
     // Set the callbacks early
     c2d_msg_cb = c->c2d_msg_cb;
-    if(c2d_msg_cb == NULL)
-    {
+    if(c2d_msg_cb == NULL) {
         IOTC_INFO("%s: c2d_msg_cb == NULL\n" CLEAR_COLOR, __func__);
     }
 
     status_cb = c->status_cb;
-    if(status_cb == NULL)
-    {
+    if(status_cb == NULL) {
         IOTC_INFO("%s: status_cb == NULL\n" CLEAR_COLOR, __func__);
     }
 

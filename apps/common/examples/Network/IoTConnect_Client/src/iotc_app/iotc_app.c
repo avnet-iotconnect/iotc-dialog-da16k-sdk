@@ -27,8 +27,7 @@ static IotConnectClientConfig s_client_cfg = {0};
 
 static bool setupOK = false;
 
-static err_t network_ok(void) 
-{
+static err_t network_ok(void) {
     int iface = WLAN0_IFACE;
     int wait_cnt = 0;
 
@@ -120,12 +119,9 @@ static void on_connection_status(IotConnectMqttStatus status) {
 //
 // a wrapper to send +NWICSETUPBEGIN / +NWICSETUPEND messages
 //
-int setup_wrapper(void)
-{
+int setup_wrapper(void) {
     atcmd_asynchony_event_for_icsetup_begin();
 
-    
-    
     iotconnect_sdk_init_config(&s_client_cfg);
 
     if (iotc_da16k_read_config(&s_client_cfg) != 0) {
@@ -210,8 +206,7 @@ static void stop_wrapper(void)
 //
 // a wrapper to send +NWICRESETBEGIN / +NWICRESETEND messages
 //
-static void reset_wrapper(void)
-{
+static void reset_wrapper(void) {
     atcmd_asynchony_event_for_icreset_begin();
         
     if(iotconnect_sdk_is_connected() == true) {
@@ -241,8 +236,7 @@ static void reset_wrapper(void)
 // 
 // AT commands to set the HTTP / MQQT certificates [and, if required, to set the device certificate / private key] need to be sent.
 //
-int iotconnect_basic_sample_main(void)
-{
+int iotconnect_basic_sample_main(void) {
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
     /*
@@ -265,8 +259,7 @@ int iotconnect_basic_sample_main(void)
     //
     xEventGroupSetBits(my_app_event_group, (EVT_IOTC_SETUP | EVT_IOTC_START));
 
-    while(1)
-    {
+    while (1) {
         EventBits_t events = xEventGroupWaitBits(my_app_event_group,
                                      (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET),
                                      pdFALSE,

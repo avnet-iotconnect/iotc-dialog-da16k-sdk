@@ -93,8 +93,7 @@ static char g_post_data[256];
 static char g_http_url[256];
 
 // Need certificate for HTTPS to talk to the server
-void http_broker_cert_config(const char *root_ca, int root_ca_len)
-{
+void http_broker_cert_config(const char *root_ca, int root_ca_len) {
     cert_flash_write(SFLASH_ROOT_CA_ADDR2, (char *) root_ca, root_ca_len);
 }
 
@@ -102,8 +101,7 @@ void http_broker_cert_config(const char *root_ca, int root_ca_len)
 
 #define CERT_MAX_LENGTH        (1024 * 4)
 #define FLASH_WRITE_LENGTH     (1024 * 4)
-static void http_client_clear_alpn(httpc_secure_connection_t *conf)
-{
+static void http_client_clear_alpn(httpc_secure_connection_t *conf) {
     int idx = 0;
 
     if (conf->alpn) {
@@ -123,8 +121,7 @@ static void http_client_clear_alpn(httpc_secure_connection_t *conf)
     return;
 }
 
-static void http_client_clear_https_conf(httpc_secure_connection_t *conf)
-{
+static void http_client_clear_https_conf(httpc_secure_connection_t *conf) {
     if (conf) {
         if (conf->ca) {
             vPortFree(conf->ca);
@@ -154,8 +151,7 @@ static void http_client_clear_https_conf(httpc_secure_connection_t *conf)
     return;
 }
 
-static int http_client_read_cert(unsigned int addr, unsigned char **out, size_t *outlen)
-{
+static int http_client_read_cert(unsigned int addr, unsigned char **out, size_t *outlen) {
     int ret = 0;
     unsigned char *buf = NULL;
     size_t buflen = CERT_MAX_LENGTH;
@@ -182,8 +178,7 @@ static int http_client_read_cert(unsigned int addr, unsigned char **out, size_t 
     return 0;
 }
 
-static void http_client_read_certs(httpc_secure_connection_t *settings)
-{
+static void http_client_read_certs(httpc_secure_connection_t *settings) {
     int ret = 0;
 
     // To read ca certificate
@@ -236,9 +231,7 @@ err:
 }
 #endif //ENABLE_HTTPS_SERVER_VERIFY_REQUIRED
 
-static err_t httpc_cb_headers_done_fn(httpc_state_t *connection,
-                                      void *arg, struct    pbuf *hdr, u16_t hdr_len, u32_t content_len)
-{
+static err_t httpc_cb_headers_done_fn(httpc_state_t *connection, void *arg, struct pbuf *hdr, u16_t hdr_len, u32_t content_len) {
 
     DA16X_UNUSED_ARG(connection);
     DA16X_UNUSED_ARG(arg);
@@ -249,9 +242,7 @@ static err_t httpc_cb_headers_done_fn(httpc_state_t *connection,
     return ERR_OK;
 }
 
-static void httpc_cb_result_fn(void *arg, httpc_result_t httpc_result,
-                               u32_t rx_content_len, u32_t srv_res, err_t err)
-{
+static void httpc_cb_result_fn(void *arg, httpc_result_t httpc_result, u32_t rx_content_len, u32_t srv_res, err_t err) {
 
     DA16X_UNUSED_ARG(arg);
     DA16X_UNUSED_ARG(srv_res);
@@ -279,8 +270,7 @@ static void httpc_cb_result_fn(void *arg, httpc_result_t httpc_result,
     return;
 }
 
-static void add_single_payload(struct pbuf *p)
-{
+static void add_single_payload(struct pbuf *p) {
     // +1 for a NULL terminator!
     char *resize_total_payload = (total_payload == NULL) ? malloc(p->len + 1) : realloc(total_payload, total_payload_len + p->len + 1);
     if (resize_total_payload == NULL) {
@@ -302,9 +292,7 @@ static void add_single_payload(struct pbuf *p)
     HTTP_DEBUG("total_payload_len = %d \r\n", total_payload_len);
 }
 
-static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb,
-                              struct pbuf *p, err_t err)
-{
+static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
     DA16X_UNUSED_ARG(arg);
     DA16X_UNUSED_ARG(tpcb);
     DA16X_UNUSED_ARG(err);
@@ -323,8 +311,7 @@ static err_t httpc_cb_recv_fn(void *arg, struct tcp_pcb *tpcb,
     return ERR_OK;
 }
 
-static void http_client_sample(void *arg)
-{
+static void http_client_sample(void *arg) {
     err_t error = ERR_OK;
 #ifdef ENABLE_HTTPS_SERVER_VERIFY_REQUIRED
     unsigned int sni_len = 0;
@@ -468,8 +455,7 @@ finish:
     return;
 }
 
-int iotconnect_https_request(IotConnectHttpResponse *response, const char *url_buff, const char *post_data)
-{
+int iotconnect_https_request(IotConnectHttpResponse *response, const char *url_buff, const char *post_data) {
     EventBits_t events = 0;
     BaseType_t xReturned;
     DA16_HTTP_CLIENT_REQUEST request;
@@ -635,16 +621,14 @@ finish:
     return (int) ERR_OK;
 }
 
-void iotconnect_free_https_response(IotConnectHttpResponse *response)
-{
+void iotconnect_free_https_response(IotConnectHttpResponse *response) {
     memset(response, 0, sizeof(*response));
 
     total_payload = NULL;
     total_payload_len = 0;
 }
 
-void http_client_sample_entry(void *param)
-{
+void http_client_sample_entry(void *param) {
     DA16X_UNUSED_ARG(param);
     // slight delay before starting up -- just to give us a chance to type at the prompt, if required.
     vTaskDelay( 5000 / portTICK_PERIOD_MS );
