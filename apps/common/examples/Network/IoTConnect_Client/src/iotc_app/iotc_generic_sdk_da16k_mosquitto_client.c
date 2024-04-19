@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (C) 2020-2024 Avnet
+ * Authors: Neil Matthews <nmatthews@witekio.com> et al.
+ */
+
 /*
  * This implements the functionality required by iotc_device_client.h in the Generic C SDK.
  *

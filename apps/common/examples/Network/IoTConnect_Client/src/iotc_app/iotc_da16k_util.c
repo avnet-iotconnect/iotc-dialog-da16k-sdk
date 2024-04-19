@@ -15,6 +15,11 @@ int iotc_da16k_read_config(IotConnectClientConfig *c) {
     char temp_str[256];
     int temp_int;
 
+    if (c->env || c->cpid || c->duid || c->auth_info.data.symmetric_key) {
+        PRINTF("ERROR: Configuration was not reset before calling %s.\n", __func__);
+        goto cleanup;
+    }
+
     c->env = NULL;
     c->cpid = NULL;
     c->duid = NULL;
