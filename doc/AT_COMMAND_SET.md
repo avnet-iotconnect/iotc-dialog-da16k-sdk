@@ -1,28 +1,27 @@
-# Renesas DA16200 "AT" command set
+# Renesas DA16xxx IoTConnect AT Command Set
 
-## Boards
+## Accessing the AT Command Console
+
 ### DA16200MOD EVK and DA16600MOD EVK
 
-Note: on the DA16200/DA16600 dev kit, there are two consoles.
+The EVK boards provide two serial ports via the USB connector.
 
-#### Command console
-The “command console” is on the lower port (at 230400 baud). 
+The debug console is on the lower port (at 230400 baud).
 
-#### AT console
-The “AT console” is on the higher port (at 115200 baud) -- note this doesn't echo by default.
+The **AT console is on the higher port (at 115200 baud)** -- note that it **DOES NOT** echo by default.
 
-### DA16200PMOD and DA16600MOD
+### DA16200PMOD and DA16600PMOD
 Note: on the PMOD DA16200/DA16600 board there are also two consoles.
 
-#### Command console
-The “command console” at 230400 baud accessed via the breakout pins, see the [Quickstart Guide](./QUICKSTART.md).
+The debug console can be accessed via the breakout pins, see the [Quickstart Guide](QUICKSTART.md).
 
-#### AT console
+
 The “AT console” at 115200 baud accessed via the PMOD connector pins.
 
 Colors on the FTDI cable differ from the [Quickstart Guide](./QUICKSTART.md).
 
 Connecting as a Type 3A Extended UART PMOD seems to work:
+
 ![](assets/IMG_20230822_122024106.jpg)
 
 ## AT Commands
@@ -55,33 +54,35 @@ The AT commands are not normally echo’d back to the user – send the “ATE�
 
 ## Certificate Setup
 
-Certificates are set using the standard mechanisms on the DA16200, see Page 50 of “User Manual, DA16200 DA16600 Host Interface and AT Command, UM-WI-003“.
+Certificates are set using the standard mechanisms on the DA16200, see Page 50 of *User Manual, DA16200 DA16600 Host Interface and AT Command, UM-WI-003*.
 
-On command-line: `[/DA16200/NET] # cert status`
+* Status
 
-### HTTP Certificate Root CA
+  On command-line: `[/DA16200/NET] # cert status`
 
-On command-line: `[/DA16200/NET] # cert write ca2`
+* HTTP Certificate Root CA
 
-In Table 16: this is certificate 3.
+  On command-line: `[/DA16200/NET] # cert write ca2`
 
-### MQTT Certificate Root CA
+  In Table 16: this is certificate 3.
 
-On command-line: `[/DA16200/NET] # cert write ca1`
+* MQTT Certificate Root CA
 
-In Table 16: this is certificate 0.
+  On command-line: `[/DA16200/NET] # cert write ca1`
 
-### MQTT Device Certificate
+  In Table 16: this is certificate 0.
 
-On command-line: `[/DA16200/NET] # cert write cert1`
+* MQTT Device Certificate
 
-In Table 16: this is certificate 1.
+  On command-line: `[/DA16200/NET] # cert write cert1`
 
-### MQTT Device Private Key
+  In Table 16: this is certificate 1.
 
-On command-line: `[/DA16200/NET] # cert write key1`
+* MQTT Device Private Key
 
-In Table 16: this is certificate 2.
+  On command-line: `[/DA16200/NET] # cert write key1`
+
+  In Table 16: this is certificate 2.
 
 ## IoTConnect parameter setup
 ### Connection Type (Azure / AWS)
