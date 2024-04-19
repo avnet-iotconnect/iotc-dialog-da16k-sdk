@@ -28,9 +28,11 @@ Warning: the IoTConnect application is based on the FreeRTOS SDK version 3.2.8.1
 
 Other versions may work, but cannot be guaranteed.
 
-* If you do not have a Dialog DA16K FreeRTOS SDK directory already, download and upnzip the SDK file (e.g. DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip, available here: https://www.renesas.com/us/en/document/sws/da16200-da16600-freertos-sdk-v3281?language=en&r=1600096) to an arbitrary directory (e.g. `sdk_dir`)
+* If you do not have a Dialog DA16K FreeRTOS SDK directory already, download and upnzip the SDK file (e.g. [DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip, available here](https://www.renesas.com/us/en/document/sws/da16200-da16600-freertos-sdk-v3281?language=en&r=1600096)) to an arbitrary directory (e.g. `sdk_dir`)
 * Clone the git repo.
-* ***Run the setup script:*** `./setup.sh sdk_dir`
+* ***Run the setup script:*** `./scripts/setup-project.sh sdk_dir`
+
+    Note: This must be run from the repository's root directory.
 
 ## Compiling the IoTConnect application
 
