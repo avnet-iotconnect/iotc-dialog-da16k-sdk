@@ -436,8 +436,9 @@ iotconnect_client ota_ack ack_id 1 [message]
 
 **Note:** `ack_id` is printed on the terminal when the OTA request is received.
 
-## Using AT Commands
+## AT Command Console
 
-The use of AT commands is beyond this Quickstart guide.
+You may now wish to access the AT Command serial interface (for example, to send out telemetry).
 
-Instead, see the [AT Command Set](AT_COMMAND_SET.md) documentation.
+Continue with the [AT Console documentation](AT_COMMAND_SET.md) to access and use it.
+

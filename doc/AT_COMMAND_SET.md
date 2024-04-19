@@ -11,16 +11,16 @@ The debug console is on the lower port (at 230400 baud).
 The **AT console is on the higher port (at 115200 baud)** -- note that it **DOES NOT** echo by default.
 
 ### DA16200PMOD and DA16600PMOD
-Note: on the PMOD DA16200/DA16600 board there are also two consoles.
 
-The debug console can be accessed via the breakout pins, see the [Quickstart Guide](QUICKSTART.md).
+The AT console (at 115200 baud) is accessed via the PMOD connector pins.
 
+You may wish to (in a production) connect an embedded device with a PMOD connector to send commands to the DA16K.
 
-The “AT console” at 115200 baud accessed via the PMOD connector pins.
+For debugging purposes it is desirable to access the AT console to send commands by hand.
 
-Colors on the FTDI cable differ from the [Quickstart Guide](./QUICKSTART.md).
+The following example shows how to connect an FTDI-based USB-to-Serial adapter to the PMOD connector using the Type 3A Extended UART pin layout.
 
-Connecting as a Type 3A Extended UART PMOD seems to work:
+***Note: Colors on the cable differ from the [Quickstart Guide](./QUICKSTART.md).***
 
 ![](assets/IMG_20230822_122024106.jpg)
 
@@ -52,37 +52,12 @@ Note: “send” means type and hit return key (maybe carriage return / linefeed
 
 The AT commands are not normally echo’d back to the user – send the “ATE” command to enable the commands to be echo’d so that they are visible when typed into e.g. the DA16200MOD EVK second terminal.
 
-## Certificate Setup
+## Notes on certificate setup
 
-Certificates are set using the standard mechanisms on the DA16200, see Page 50 of *User Manual, DA16200 DA16600 Host Interface and AT Command, UM-WI-003*.
+Certificates are set using the standard mechanisms on the DA16xxx.
 
-* Status
+See the [Application Setup guide](SETUP_APP.md) for details.
 
-  On command-line: `[/DA16200/NET] # cert status`
-
-* HTTP Certificate Root CA
-
-  On command-line: `[/DA16200/NET] # cert write ca2`
-
-  In Table 16: this is certificate 3.
-
-* MQTT Certificate Root CA
-
-  On command-line: `[/DA16200/NET] # cert write ca1`
-
-  In Table 16: this is certificate 0.
-
-* MQTT Device Certificate
-
-  On command-line: `[/DA16200/NET] # cert write cert1`
-
-  In Table 16: this is certificate 1.
-
-* MQTT Device Private Key
-
-  On command-line: `[/DA16200/NET] # cert write key1`
-
-  In Table 16: this is certificate 2.
 
 ## IoTConnect parameter setup
 ### Connection Type (Azure / AWS)
@@ -618,7 +593,3 @@ On command line:
 ```
 
 Note: IoTConnect interfaces to the mqtt_client - so stopping/starting the MQTT client outside of IoTConnect can affect the IoTConnect connection.
-
-### Writing certificates programmatically
-
-There is (compiled out) programmatic code to write compiled in certificates to flash – but this is probably best avoided, since certificates can and do change. Code will need editing and will not necessarily be portable between devices.
