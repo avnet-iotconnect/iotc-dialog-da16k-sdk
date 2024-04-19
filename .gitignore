@@ -3,31 +3,22 @@ library/
 tools/
 utility/
 
-apps/*
-!apps/app_common/
-apps/app_common/*
-apps/common/examples/*
-!apps/common/examples/Network/
-apps/common/examples/Network/*
-!apps/common/examples/Network/IoTConnect_Client/
+apps/app_common
 
 apps/da16*/get_started/*
 !apps/da16*/get_started/include/
+apps/da16*/get_started/include/*
+!apps/da16*/get_started/include/apps/
 apps/da16*/get_started/include/apps/*
 !apps/da16*/get_started/include/apps/user_nvram_cmd_table.h
 
 !apps/da16*/get_started/src/
+apps/da16*/get_started/src/*
+!apps/da16*/get_started/src/apps/
 apps/da16*/get_started/src/apps/*
 !apps/da16*/get_started/src/apps/user_nvram_cmd_table.c
 
 core/**
-!core/system/include/at_cmd/atcmd.h
-!core/system/include/common/command_cmd.h
-!core/system/include/mqtt_client/mqtt_client.h
-!core/system/src/at_cmd/atcmd.c
-!core/system/src/common/command/command_net_cmd.c
-!core/system/src/common/command/command_net.c
-!core/system/src/common/mqtt_client/client/mqtt_client.c
 
 old_*/**/*
 
