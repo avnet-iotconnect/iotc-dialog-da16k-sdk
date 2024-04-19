@@ -132,7 +132,7 @@ This assumes that the device has an intact *BOOT* partition, as it would have fr
 
 In the unlikely event that your device does *not* have an intact *BOOT* partition, follow the [Developers Guide](DEVELOPERS_GUIDE.md) to build and flash one.
 
-sTo flash the IoTConnect firmware, follow these steps:
+To flash the IoTConnect firmware, follow these steps:
 
 * Extract and launch the downloaded Multi Download Tool.
 * Click the `Settings` Button.
