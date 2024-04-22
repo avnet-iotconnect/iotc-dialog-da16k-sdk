@@ -1,4 +1,4 @@
-# IoTConnect AWS Setup
+# IoTConnect Application Setup
 
 ## Requirements
 
