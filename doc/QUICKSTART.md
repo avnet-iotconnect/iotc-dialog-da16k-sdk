@@ -1,346 +1,346 @@
-# DA16200 Quickstart Guide
+# DA16xxx AT Interface Quickstart Guide
 
-This document and the information it contains is CONFIDENTIAL and remains the property of our company. It may not be copied or communicated to a third party or used for any purpose other than that for which it is supplied without the prior written consent of our company. This document must be destroyed with a paper shredder.
+This is the Quickstart Guide for the DA16K IoTConnect AT Command Interface Firmware.
 
-## Boards
+This document will guide you through the setup process.
 
-Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” to check that the configuration shown above is valid - in case there are changes in the future.
-Setup DA16200
+## Introduction
 
-### Using DA16200MOD EVK
+The firmware you are about to run on your DA16xxx device provides a serial UART interface that allows you to communicate with IoTConnect and its cloud services using [AT commands](https://en.wikipedia.org/wiki/Hayes_AT_command_set).
 
-Connect USB lead to board and PC.
-![](assets/IMG_20230724_180805286.jpg)
+This means that the DA16xxx acts as a gateway to IoTConnect for any embedded device that does *not* have a network interface or the resources to run a dedicated IoTConnect/MQTT client using nothing but an UART connection.
 
-### Using DA16200MOD
-![](assets/IMG_20230719_180344535.jpg)
+The device is able to configure the DA16K module and send out telemetry to IoTConnect using this serial interface.
+
+The interactions are as such:
+
+**Embedded client** &larr; *Serial/PMOD* &rarr; **DA16xxx** &larr; *WiFi* &rarr; **IoTConect**
+
+The supported **AT interface command set** is documented in the [AT Command Set Documentation](AT_COMMAND_SET.md).
+
+## Requirements
+
+* A computer running an actively supported version of Windows (10 / 11)
+* A supported DA16K
+* A terminal program, such as TeraTerm or HyperTerminal.
+* A USB-to-Serial converter. We recommend the following:
+    - [Amazon: DSD TECH SH-U09C5 USB to TTL UART Converter](https://www.amazon.de/-/en/TECH-SH-U09C5-Converter-Cable-Support-Multi-Coloured/dp/B07WX2DSVB)
+    - FTDI FT-232H-based
+    
+      ![](assets/ftdi_dongle.jpg)
+* Current drivers for the USB-to-Serial converter or EVK
+    - For FTDI-based dongles and DA16xxx EVK boards:
+    
+        FTDI D2XX Drivers [can be obtained here.](https://ftdichip.com/drivers/d2xx-drivers/)
+      
+        ![](assets/driverdownload.png)
+* Renesas DA16200 DA16600 Multi Downloader Tool
+    - Can be obtained at the [Renesas DA16200 Product Page](https://www.renesas.com/us/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16200-ultra-low-power-wi-fi-soc-battery-powered-iot-devices#design_development)
+
+        ![](assets/flasherdownload.png)
+
+
+If you are running Linux, use the **Developers Guide** to set up the firmware and image instead.
+
+
+## DA16xxx Hardware
+
+The DA16xxx hardware platforms used here broadly speaking provide two usable serial ports for this project:
+
+* The **debug console**
+    * Runs at 230400 Baud
+    * Used to configure the device and flash the firmware
+* The **AT command interface**
+    * Runs at 115200 Baud
+    * This is the serial interface that will be used by the embedded client to send data to the DA16k for transmission to IoTConnect.
+
+
+### Supported Boards
+
+The SDK is intended for and tested with the following platforms:
+
+* EVK Boards
+    * DA16200MOD EVK
+    * DA16600MOD EVK
+* PMOD Dongles
+    * DA16200MOD
+    * DA16600MOD
+
+You will be guided through the setup process below.
+
+Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” in case there are changes in the future.
+
+### DA16200MOD / DA16600MOD EVK
+
+|16200MOD EVK|16600MOD EVK|
+|-|-|
+| ![](assets/IMG_20230724_180805286.jpg) | ![](assets/IMG_20230822_110000308.jpg) |
+
+The EVK boards provide the serial connections using the.
+
+### DA16200MOD / DA16600MOD PMOD Dongle
+
+|16200MOD|16600MOD|
+|-|-|
+| ![](assets/IMG_20230719_180344535.jpg) | ![](assets/IMG_20230822_110208433.jpg) |
 
 #### FTDI connection
 
-Connect to FTDI as follows
+Connect the PMOD dongle to the FTDI dongle as follows:
+
 ![](assets/IMG_20230817_144820004.jpg)
 
-PMOD connections
-![](assets/IMG_20230720_100517916.jpg)
-
-FTDI connections
 ![](assets/IMG_20230720_100436713.jpg)
 
-Note RX/TX are crossed, TX on FTDI goes to RX on PMOD and RX on FTDI goes to TX on PMOD.
-FTDI is set to 3.3v
+|16200MOD|16600MOD|
+|-|-|
+| ![](assets/IMG_20230720_100517916.jpg) | ![](assets/IMG_20230822_093301382.jpg) |
 
-### Using DA16600MOD EVK
+Note: RX/TX need to be crossed when connecting them, i.e.:
 
-Connect USB lead to board and PC.
-![](assets/IMG_20230724_180805286.jpg)
+* The USB-Serial dongle's TX line goes to RX on the PMOD.
+* The USB-Serial dongle's RX goes to TX on the PMOD.
 
-### Using DA16600MOD
-![](assets/IMG_20230822_110208433.jpg)
+The USB-Serial dongle, if it allows such setting, should be set to 3.3V operation.
 
-#### FTDI connection
+## Finding the correct COM port for the command console
 
-Connect to FTDI as per DA16200
-![](assets/IMG_20230822_093301382.jpg)
+Both the EVK boards and the PMOD modules will show up as **USB Serial Device** in the device manager:
 
-## Connect DA16200 (or DA16600)
-![](assets/Screenshot_2023-08-14_151921.png)
+![](assets/comport.png)
 
-minicom: need to turn off software and hardware flow control and add '-c on' as console output includes color codes -- as well as setting baud rate, etc.
+* On the EVK boards, the **command console** is on the **lower port (at 230400 baud)**. 
 
-### DA16200MOD EVK and DA16600MOD EVK
+    For example, after connecting it and installing the drivers, you should see **two** new *USB Serial Device* entries, such as:
 
-Note: on the DA16200/DA16600 dev kit, there are two consoles.
+    * USB Serial Device (COM7)
+    * USB Serial Device (COM8)
 
-#### Command console
-The “command console” is on the lower port (at 230400 baud). 
+    In this case, the debug console is the **first** entry (COM7).
 
-#### AT console
-The “AT console” is on the higher port (at 115200 baud) -- note this doesn't echo by default.
+* On the PMOD modules, connect the device to the USB-Serial dongle as described above.
 
-### DA16200PMOD and DA16600MOD
-Note: on the PMOD DA16200/DA16600 board there are also two consoles.
+    The dongle will only add a single new *USB Serial Device* entry, which will then correspond to the debug console.
 
-#### Command console
-The “command console” at 230400 baud accessed via the breakout pins, as shown above.
+## Flashing the IoTConnect DA16K AT Image
 
-#### AT console
-The “command console” at 230400 baud accessed via the breakout pins, see the [AT Command Set](AT_COMMAND_SET.md).
+Before you can use the IoTConnect AT Command functions, you must flash the firmware.
 
-## Setup your DA16200 (or DA16600) as per the Renesas document
-```
-User Manual
-DA16200 DA16600 FreeRTOS Getting Started Guide
-UM-WI-056
-```
+You can either build it yourself (see the [Developers Guide](DEVELOPERS_GUIDE.md)) or use the pre-built firmware images in the `/images/` directory at the root of the repository.
+
+This assumes that the device has an intact *BOOT* partition, as it would have from the factory or if another working firmware image was deployed before.
+
+In the unlikely event that your device does *not* have an intact *BOOT* partition, follow the [Developers Guide](DEVELOPERS_GUIDE.md) to build and flash one.
+
+To flash the IoTConnect firmware, follow these steps:
+
+* Extract and launch the downloaded Multi Download Tool.
+* Click the `Settings` Button.
+
+    ![](assets/winflash1.png)
+
+* **In the `Settings` Window:**
+    * Click the check-box next to `RTOS1`
+
+    * Add the firmware image by double-clicking the grey field to the right of `RTOS1` and navigating to it.
+
+    * Set the destination address to `0x23000`
+
+    * The window should now look similar to the following graphic:
+    
+        ![](assets/winflash2.png)
+
+* Close the `Settings` window.
+
+* Select the COM port corresponding to the debug console terminal (you may have to experiment to find it) and click **Download**.
+
+    ![](assets/winflash3.png)
+
+* The image will now be downloaded on the device.
+
+    ![](assets/winflash4.png)
+
+* Once the image is finished, a message indicating the success (or failure) will be displayed.
+
+    ![](assets/winflash5.png)
+
+## DA16xxx Configuration via the command console
+
+Before setting upthe IoTConnect-specific options, you must set up the device according to the *User Manual DA16200 DA16600 FreeRTOS Getting Started Guide UM-WI-056* from **Renesas**.
+
 Currently the document can be found linked at:
 [Renesas DA16200 page](https://www.renesas.com/us/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16200mod-devkt-da16200-ultra-low-power-wi-fi-modules-development-kit?gclid=EAIaIQobChMIxKyz4qHcgAMV1oFQBh3eWQsQEAAYASAAEgLqnvD_BwE#document)
 or
 [Renesas DA16600 page](https://www.renesas.com/eu/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16600mod-devkt-da16600-ultra-low-power-wi-fi-bluetooth-low-energy-modules-development-kit#document).
 
-At the command prompt `[/DA16200] #` type `setup` to:
-- associate a WiFi access point (SSID, password, etc.)
-- set SNTP to start automatically on boot. 
-
-This setup process will write values to NVRAM that will be used when the DA16200 reboots.
-
-The following images show an example of how to configure the DA16200.
-![](assets/Screenshot_2023-08-15_123954-1.png)
-
-![](assets/Screenshot_2023-08-15_124048.png)
-
-
-Text example is shown below:
-```
-Wakeup source is 0x0
-[dpm_init_retmemory] DPM INIT CONFIGURATION(1)
-
-
-        ******************************************************
-        *             DA16200 SDK Information
-        * ---------------------------------------------------
-        *
-        * - CPU Type        : Cortex-M4 (120MHz)
-        * - OS Type         : FreeRTOS 10.4.3
-        * - Serial Flash    : 4 MB
-        * - SDK Version     : V3.2.7.1 GEN
-        * - F/W Version     : FRTOS-GEN01-01-98e58a5d3-006374
-        * - F/W Build Time  : Aug 16 2023 11:50:07
-        * - Boot Index      : 0
-        *
-        ******************************************************
 
+The following is a rough summary of the steps to be taken.
 
+* Connect to the command console (the same COM port used for flashing the firmware) using a serial terminal program of your choice.
 
-System Mode : Station Only (0)
->>> Start DA16X Supplicant ...
->>> DA16x Supp Ver2.7 - 2022_03
->>> MAC address (sta0) : d4:3d:39:39:75:00
->>> sta0 interface add OK
->>> Start STA mode...
+    **Note: It is recommended that you disable Flow Control, if your application permits it**.
 
->>> UART1 : Clock=80000000, BaudRate=115200
->>> UART1 : DMA Enabled ...
+    After establishing the serial connection, boot the device.
 
-[/DA16200] # setup
-
-Stop all services for the setting.
- Are you sure ? [Yes/No] : y
 
+* You should see a command prompt:
 
+    ```
+    [/DA16200] #
+    ```
 
-[ DA16200 EASY SETUP ]
+* Type `setup` to:
+    - Associate a WiFi access point (SSID, password, etc.)
 
-Country Code List:
-AD  AE  AF  AI  AL  AM  AR  AS  AT  AU  AW  AZ  BA  BB  BD  BE  BF  BG  BH  BL
-BM  BN  BO  BR  BS  BT  BY  BZ  CA  CF  CH  CI  CL  CN  CO  CR  CU  CX  CY  CZ
-DE  DK  DM  DO  DZ  EC  EE  EG  ES  ET  EU  FI  FM  FR  GA  GB  GD  GE  GF  GH
-GL  GP  GR  GT  GU  GY  HK  HN  HR  HT  HU  ID  IE  IL  IN  IR  IS  IT  JM  JO
-JP  KE  KH  KN  KP  KR  KW  KY  KZ  LB  LC  LI  LK  LS  LT  LU  LV  MA  MC  MD
-ME  MF  MH  MK  MN  MO  MP  MQ  MR  MT  MU  MV  MW  MX  MY  NG  NI  NL  NO  NP
-NZ  OM  PA  PE  PF  PG  PH  PK  PL  PM  PR  PT  PW  PY  QA  RE  RO  RS  RU  RW
-SA  SE  SG  SI  SK  SN  SR  SV  SY  TC  TD  TG  TH  TN  TR  TT  TW  TZ  UA  UG
-UK  US  UY  UZ  VA  VC  VE  VI  VN  VU  WF  WS  YE  YT  ZA  ZW  ALL
+    - Enable and configure SNTP to start automatically on boot.
 
- COUNTRY CODE ? [Quit] (Default KR) : uk
+    - This setup process will write values to NVRAM that will be used when the DA16200 reboots.
 
+    - The firmware might ask you if you wish to configure DPM.
+    
+        **At this point in time, DPM modes are unsupported.**
 
-SYSMODE(WLAN MODE) ?
-        1. Station
-        2. Soft-AP
-        3. Station & SOFT-AP
- MODE ?  [1/2/3/Quit] (Default Station) : 1
+        Therefore, you *must* answer this question with `No`
 
-[ STATION CONFIGURATION ]
-============================================================================
-[NO] [SSID]                                         [SIGNAL] [CH] [SECURITY]
-----------------------------------------------------------------------------
-[ 1] NETGEAR83                                          -51   1         WPA2
-[ 2] VM0423187                                          -85   6         WPA2
-[ 3] Virgin Media                                       -86   6     WPA2-ENT
-[ 4] BT-XHASKN                                          -88   1         WPA2
-[ 5] SKY40F4C                                           -88  11         WPA2
-[ 6] BTHub6-R2MK                                        -89   6         WPA2
-[ 7] SKY40F4C                                           -90   1         WPA2
-[ 8] TALKTALKD6CAFD                                     -91   6         WPA2
-[ 9] BTHub6-J563                                        -91  11         WPA2
-[10] BTHub6-6SWG                                        -93  11         WPA2
-[11] BTWi-fi                                            -88   1
-[12] BTWi-fi                                            -90   6
-[13] BTWi-fi                                            -92  11
-[14] BTWi-fi                                            -93  11
-----------------------------------------------------------------------------
-[M] Manual Input
-[Enter] Rescan
-============================================================================
+* The following is an example log of this configuration process:
 
- Select SSID ? (1~14/Manual/Quit) : 1
+    ```
+    Wakeup source is 0x0
+    [dpm_init_retmemory] DPM INIT CONFIGURATION(1)
+    
+            ******************************************************
+            *             DA16200 SDK Information
+            * ---------------------------------------------------
+            *
+            * - CPU Type        : Cortex-M4 (120MHz)
+            (...)
+            *
+            ******************************************************
 
- PSK-KEY(ASCII characters 8~63 or Hexadecimal characters 64) ? [Quit]
-[123456789|123456789|123456789|123456789|123456789|123456789|1234]
-:***********
+    (...)
 
- Do you want to set advanced WiFi configuration ? [No/Yes/Quit] (Default No) : n
+    [/DA16200] # setup
 
-============================================
-SSID        : NETGEAR83
-AUTH        : WPA/WAP2-PSK
-ENCRYPTION  : TKIP/AES(CCMP)
-PSK KEY     : ***********
-KEY TYPE    : ASCII
-PMF MODE    : Disable
-Hidden AP   : Not connect
-============================================
- WIFI CONFIGURATION CONFIRM ? [Yes/No/Quit] : y
+    Stop all services for the setting.
+     Are you sure ? [Yes/No] : y
 
- IP Connection Type ? [Automatic IP/Static IP/Quit] : a
+    [ DA16200 EASY SETUP ]
 
+    Country Code List:
+    AD  AE  AF  AI  AL  AM  AR  AS  AT  AU  AW  AZ  BA  BB  BD  BE  BF  BG  BH  BL
+    (...)
+    UK  US  UY  UZ  VA  VC  VE  VI  VN  VU  WF  WS  YE  YT  ZA  ZW  ALL
 
-IP Connection Type: Automatic IP
+     COUNTRY CODE ? [Quit] (Default KR) : DE
 
- IP CONFIGURATION CONFIRM ? [Yes/No/Quit] : y
+    SYSMODE(WLAN MODE) ?
+            1. Station
+            2. Soft-AP
+            3. Station & SOFT-AP
+     MODE ?  [1/2/3/Quit] (Default Station) : 1
 
- SNTP Client enable ? [Yes/No/Quit] : y
+    [ STATION CONFIGURATION ]
+    ============================================================================
+    [NO] [SSID]                                         [SIGNAL] [CH] [SECURITY]
+    ----------------------------------------------------------------------------
+    [ 1] AVNET_TEST                                         -51   1         WPA2
+    (...)
+    ----------------------------------------------------------------------------
+    [M] Manual Input
+    [Enter] Rescan
+    ============================================================================
 
+     Select SSID ? (1~14/Manual/Quit) : 1
 
- SNTP Period time (1 ~ 36 hours) ? (default : 36 hours) [Quit]
+     PSK-KEY(ASCII characters 8~63 or Hexadecimal characters 64) ? [Quit]
+    [123456789|123456789|123456789|123456789|123456789|123456789|1234]
+    :***********
 
- GMT Timezone +xx:xx|-xx:xx (-12:00 ~ +12:00) ? (default : 00:00) [Quit]
+     Do you want to set advanced WiFi configuration ? [No/Yes/Quit] (Default No) : n
 
- SNTP Server 0 addr ? (default : pool.ntp.org) [Quit]
-Input :
+    ============================================
+    SSID        : AVNET_TEST
+    AUTH        : WPA/WAP2-PSK
+    ENCRYPTION  : TKIP/AES(CCMP)
+    PSK KEY     : ***********
+    KEY TYPE    : ASCII
+    PMF MODE    : Disable
+    Hidden AP   : Not connect
+    ============================================
+     WIFI CONFIGURATION CONFIRM ? [Yes/No/Quit] : y
 
- SNTP Server 1 addr ? (default : 1.pool.ntp.org) [Quit]
-Input :
+     IP Connection Type ? [Automatic IP/Static IP/Quit] : a
 
- SNTP Server 2 addr ? (default : 2.pool.ntp.org) [Quit]
-Input :
-============================================
-SNTP Client      : Enable
-SNTP Period time : 36 hours
-SNTP GMT Timezone: 00:00
-SNTP Server addr : pool.ntp.org
-SNTP Server addr1: 1.pool.ntp.org
-SNTP Server addr2: 2.pool.ntp.org
-============================================
- SNTP Client CONFIRM ? [Yes/No/Quit] : y
+    IP Connection Type: Automatic IP
 
- Fast Connection Sleep 2 Mode ? [Yes/No/Quit] : y
+     IP CONFIGURATION CONFIRM ? [Yes/No/Quit] : y
 
-Configuration OK
+     SNTP Client enable ? [Yes/No/Quit] : y
 
-Reboot...
+     SNTP Period time (1 ~ 36 hours) ? (default : 36 hours) [Quit]
 
+     GMT Timezone +xx:xx|-xx:xx (-12:00 ~ +12:00) ? (default : 00:00) [Quit]
 
-Wakeup source is 0x0
-[dpm_init_retmemory] DPM INIT CONFIGURATION(1)
+     SNTP Server 0 addr ? (default : pool.ntp.org) [Quit]
+     SNTP Server 1 addr ? (default : 1.pool.ntp.org) [Quit]
+     SNTP Server 2 addr ? (default : 2.pool.ntp.org) [Quit]
+  
+    ============================================
+    SNTP Client      : Enable
+    SNTP Period time : 36 hours
+    SNTP GMT Timezone: 00:00
+    SNTP Server addr : pool.ntp.org
+    SNTP Server addr1: 1.pool.ntp.org
+    SNTP Server addr2: 2.pool.ntp.org
+    ============================================
+     SNTP Client CONFIRM ? [Yes/No/Quit] : y
 
+     Fast Connection Sleep 2 Mode ? [Yes/No/Quit] : y
 
-        ******************************************************
-        *             DA16200 SDK Information
-        * ---------------------------------------------------
-        *
-        * - CPU Type        : Cortex-M4 (120MHz)
-        * - OS Type         : FreeRTOS 10.4.3
-        * - Serial Flash    : 4 MB
-        * - SDK Version     : V3.2.7.1 GEN
-        * - F/W Version     : FRTOS-GEN01-01-98e58a5d3-006374
-        * - F/W Build Time  : Aug 16 2023 11:50:07
-        * - Boot Index      : 0
-        *
-        ******************************************************
+    Configuration OK
 
+    Reboot...
 
->>> Wi-Fi Fast_Connection mode ...
 
+    Wakeup source is 0x0
+    [dpm_init_retmemory] DPM INIT CONFIGURATION(1)
 
-System Mode : Station Only (0)
->>> Start DA16X Supplicant ...
->>> DA16x Supp Ver2.7 - 2022_03
->>> MAC address (sta0) : d4:3d:39:39:75:00
->>> sta0 interface add OK
->>> Start STA mode...
 
->>> UART1 : Clock=80000000, BaudRate=115200
->>> UART1 : DMA Enabled ...
-Fast scan(Manual=0), freq=2412, num_ssids=1
+            ******************************************************
+            *             DA16200 SDK Information
+            * ---------------------------------------------------
+            *
+            * - CPU Type        : Cortex-M4 (120MHz)
+            (...)
+            *
+            ******************************************************
 
->>> Network Interface (wlan0) : UP
->>> Associated with cc:40:d0:ef:b4:57
 
-Connection COMPLETE to cc:40:d0:ef:b4:57
+    >>> Wi-Fi Fast_Connection mode ...
 
--- DHCP Client WLAN0: SEL(6)
--- DHCP Client WLAN0: REQ(1)
--- DHCP Client WLAN0: CHK(8)
--- DHCP Client WLAN0: BOUND(10)
-         Assigned addr   : 192.168.0.12
-               netmask   : 255.255.255.0
-               gateway   : 192.168.0.1
-               DNS addr  : 192.168.0.1
 
-         DHCP Server IP  : 192.168.0.1
-         Lease Time      : 24h 00m 00s
-         Renewal Time    : 12h 00m 00s
-```
+    System Mode : Station Only (0)
+    >>> Start DA16X Supplicant ...
+    >>> DA16x Supp Ver2.7 - 2022_03
+    (...)
+    -- DHCP Client WLAN0: BOUND(10)
+             Assigned addr   : 192.168.0.12
+                   netmask   : 255.255.255.0
+                   gateway   : 192.168.0.1
+                   DNS addr  : 192.168.0.1
 
-### DPM
-
-Note at present need to have DPM support selected as No during setup.
-
-## Flashing images using uart_program_da16200
-
-Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” in case there are changes in the future - in version 8, see section 4.5 "Programming Firmware Images".
-
-For example, after building IoTConnect_client, copy appropriate Linux or Windows version of uart_program_da16200 to apps/common/examples/Network/IoTConnect_Client/projects/da16200/img and then (in Linux)
-- cd apps/common/examples/Network/IoTConnect_Client/projects/da16200/img
-- ./uart_program_da16200 -i 0 DA16200_FBOOT-GEN01-01-c7f4c6cc22_W25Q32JW.img
-- ./uart_program_da16200 -i 23000 DA16200_FRTOS-GEN01-01-f017bfdf51-006558.img
-- ./uart_program_da16200
-
-Note: the uart_program_da16200 is part of the DA16200_DA16600_SDK_FreeRTOS_v3.2.8.0.zip in:
-- utility/j-link/scripts/qspi/linux/uart_program_da16200
-- utility/j-link/scripts/qspi/win/uart_program_da16200.exe
-
-## Flashing images using Ymodem
-
-Please refer to the Renesas guide “User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056” in case there are changes in the future - in version 7, see section 4.5.1 "Firmware Update Using Commands".
-
-To flash DA16200 images use TeraTerm YModem transfer protocol (or similar) to send the images to the DA16200 using the “command console”, e.g.
-![](assets/Screenshot_2023-08-14_150336.png)
-
-Note: TeraTerm Ymodem transfer seems a little sensitive.
-- The first transfer (when the file selector is not in the correct directory) sometimes seems to upset the transfer process -- so the transfer process may have to be cancelled and restarted.
-- Subsequent transfers (when the file selection is already in the correct directory) seem much better behaved.
-- Moving TeraTerm Ymodem windows seems to adversely affect any ongoing transfer.
-
-The smaller image, e.g. DA16200_FBOOT-GEN01-01-922f1e27d_W25Q32JW.img is flashed using loady 0
-
-The larger image, e.g. DA16200_FRTOS-GEN01-01-98e58a5d3-006374.img is flashed using loady 23000
-
-Run boot_idx 0 (refer to Section 4.5.4 in User Manual mentioned above)
-```
-reboot
-```
-### Prebuilt images
-
-As there are many different device, flash and type (AWS / Azure) combinations, there are no pre-built images (yet).
+             DHCP Server IP  : 192.168.0.1
+             Lease Time      : 24h 00m 00s
+             Renewal Time    : 12h 00m 00s
+    ```
 
 # Setting up IoTConnect
 
-Please follow the guide for the instance type (AWS / Azure) you wish to connect to.
+## Configuring Certificates & IoTConnect Application Config
 
-**Note:** on Linux a more specialised terminal program may be required such as minicom, rather than uart_program_da16200 -- since entering a certicate is finised by pressing control-C or control-Z which kills/stops uart_program_da16200.
+Refer to the [Application Setup Guide](SETUP_APP.md).
 
 ***NOTE***: It is impossible for the  DA16xxx to process multiple possible certificates for a Root CA – all testing has used a single certificate. Obviously, if a certificate doesn’t allow a connection, then it may be required to manually swap to an alternative certificate.
-
-
-## AWS
-
-Refer to the [AWS Setup Guide](SETUP_AWS.md).
-
-## Azure 
-
-Refer to the [Azure Setup Guide](SETUP_AZURE.md).
 
 ## Running `iotconnect_client`
 
@@ -399,23 +399,28 @@ iotconnect_client msg [name1] [value1] [name2] [value2] (...)
 
 Verify in the dashboard that the device is shown as connected and that the message data can be seen.
 
-### Command
+### ~~Command~~
 
-To acknowledge a C2D command failure, run:
+***This chapter is not applicable at this point in time, as OTA and commands are not supported.***
 
-```
-iotconnect_client cmd_ack type ack_id 0 [message]
-```
+> To acknowledge a C2D command failure, run:
+>
+> ```
+>   iotconnect_client cmd_ack type ack_id 0 [message]
+> ```
+>
+>To acknowledge a C2D command success, run:
+>
+>```
+>iotconnect_client cmd_ack type ack_id 1 [message]
+>```
+>
+>**Note**: `type` and `ack_id` are printed on the terminal when the command request is received.
+>
 
-To acknowledge a C2D command success, run:
+### ~~OTA~~
 
-```
-iotconnect_client cmd_ack type ack_id 1 [message]
-```
-
-**Note**: `type` and `ack_id` are printed on the terminal when the command request is received.
-
-### OTA
+***This chapter is not applicable at this point in time, as OTA and commands are not supported.***
 
 To acknowledge a C2D OTA failure, run:
 
@@ -431,8 +436,9 @@ iotconnect_client ota_ack ack_id 1 [message]
 
 **Note:** `ack_id` is printed on the terminal when the OTA request is received.
 
-## Using AT Commands
+## AT Command Console
 
-The use of AT commands is beyond this Quickstart guide.
+You may now wish to access the AT Command serial interface (for example, to send out telemetry).
 
-Instead, see the [AT Command Set](AT_COMMAND_SET.md) documentation.
+Continue with the [AT Console documentation](AT_COMMAND_SET.md) to access and use it.
+

@@ -1,28 +1,27 @@
-# Renesas DA16200 "AT" command set
+# Renesas DA16xxx IoTConnect AT Command Set
 
-## Boards
+## Accessing the AT Command Console
+
 ### DA16200MOD EVK and DA16600MOD EVK
 
-Note: on the DA16200/DA16600 dev kit, there are two consoles.
+The EVK boards provide two serial ports via the USB connector.
 
-#### Command console
-The “command console” is on the lower port (at 230400 baud). 
+The debug console is on the lower port (at 230400 baud).
 
-#### AT console
-The “AT console” is on the higher port (at 115200 baud) -- note this doesn't echo by default.
+The **AT console is on the higher port (at 115200 baud)** -- note that it **DOES NOT** echo by default.
 
-### DA16200PMOD and DA16600MOD
-Note: on the PMOD DA16200/DA16600 board there are also two consoles.
+### DA16200PMOD and DA16600PMOD
 
-#### Command console
-The “command console” at 230400 baud accessed via the breakout pins, see the [Quickstart Guide](./QUICKSTART.md).
+The AT console (at 115200 baud) is accessed via the PMOD connector pins.
 
-#### AT console
-The “AT console” at 115200 baud accessed via the PMOD connector pins.
+You may wish to (in a production) connect an embedded device with a PMOD connector to send commands to the DA16K.
 
-Colors on the FTDI cable differ from the [Quickstart Guide](./QUICKSTART.md).
+For debugging purposes it is desirable to access the AT console to send commands by hand.
 
-Connecting as a Type 3A Extended UART PMOD seems to work:
+The following example shows how to connect an FTDI-based USB-to-Serial adapter to the PMOD connector using the Type 3A Extended UART pin layout.
+
+***Note: Colors on the cable differ from the [Quickstart Guide](./QUICKSTART.md).***
+
 ![](assets/IMG_20230822_122024106.jpg)
 
 ## AT Commands
@@ -53,37 +52,31 @@ Note: “send” means type and hit return key (maybe carriage return / linefeed
 
 The AT commands are not normally echo’d back to the user – send the “ATE” command to enable the commands to be echo’d so that they are visible when typed into e.g. the DA16200MOD EVK second terminal.
 
-## Certificate Setup
+## Notes on certificate setup
 
-Certificates are set using the standard mechanisms on the DA16200, see Page 50 of “User Manual, DA16200 DA16600 Host Interface and AT Command, UM-WI-003“.
+Certificates are set using the standard mechanisms on the DA16xxx.
 
-On command-line: `[/DA16200/NET] # cert status`
+See the [Application Setup guide](SETUP_APP.md) for details.
 
-### HTTP Certificate Root CA
-
-On command-line: `[/DA16200/NET] # cert write ca2`
-
-In Table 16: this is certificate 3.
-
-### MQTT Certificate Root CA
-
-On command-line: `[/DA16200/NET] # cert write ca1`
-
-In Table 16: this is certificate 0.
-
-### MQTT Device Certificate
-
-On command-line: `[/DA16200/NET] # cert write cert1`
-
-In Table 16: this is certificate 1.
-
-### MQTT Device Private Key
-
-On command-line: `[/DA16200/NET] # cert write key1`
-
-In Table 16: this is certificate 2.
 
 ## IoTConnect parameter setup
+### Connection Type (Azure / AWS)
+#### Set Connection Type
+To set the connection type send an `AT+NWICCT` command with the connection type, e.g.
+```
+AT+NWICCT 1
+```
+#### Get Connection Type
+To get the conneciton type send an empty `AT+NWICCT` command, i.e.
+```
+AT+NWICCT
+```
+Successful completion should report, e.g.
+```
++NWICCT:1
+OK
+```
+
 ### DUID (device ID)
 #### Set DUID
 
@@ -507,7 +500,7 @@ IOTC_ENV (STR,09) ............ avnetpoc
 IOTC_AUTH_TYPE (STR,02) ...... 1
 IOTC_DUID (STR,11) ........... justatoken
 IOTC_SYMMETRIC_KEY (STR,01) ..
-IOTC_DTG (STR,37) ............ 9e70b352-7572-43fa-9a1f-445b2994c478
+IOTC_CONNECTION_TYPE (STR,02)  1
 MQTT_BROKER (STR,48) ......... poc-iotconnect-iothub-030-eu2.azure-devices.net
 MQTT_PORT (STR,05) ........... 8883
 MQTT_USERNAME (STR,89) ....... poc-iotconnect-iothub-030-eu2.azure-devices.net/avtds-justatoken/?api-version=2018-06-30
@@ -600,36 +593,3 @@ On command line:
 ```
 
 Note: IoTConnect interfaces to the mqtt_client - so stopping/starting the MQTT client outside of IoTConnect can affect the IoTConnect connection.
-
-### Using IoTConnect with “basic” mqtt_client
-
-It is possible to connect to IoTConnect with the underlying mqtt_client and avoid having IoTConnect driving the mosquitto_client.
-
-Effectively, can use IoTConnect discovery/sync process to setup the MQTT values in NVRAM, and stop the IoTConnect process – since mqtt_client should now be configured correctly.
-
-There are however a number of important caveats:
-- IoTConnect MQTT messages require a specialized form of JSON – but it should be possible to use the DTG value to generate those messages directly if required, e.g. if the format changes in the future.
-- need to consider how to respond to C2D commands appropriately.
-- need to consider how to respond to C2D OTA appropriately.
-
-For these reasons it is normally recommended to use iotconnect_client.
-
-#### DTG
-The last received "dtg" value is cached, so that it is possible to format a message response "by-hand".
-
-##### Get DTG
-To get the dtg value from a successful discovery/sync, send an empty AT+NWICDTG command, i.e.
-```
-AT+NWICDTG
-```
-Successful completion should report, e.g.
-```
-+NWICDTG:0123456789abcdef
-OK
-```
-##### NVRAM
-The last received DTG value is stored in nvram in IOTC_DTG
-
-### Writing certificates programmatically
-
-There is (compiled out) programmatic code to write compiled in certificates to flash – but this is probably best avoided, since certificates can and do change. Code will need editing and will not necessarily be portable between devices.

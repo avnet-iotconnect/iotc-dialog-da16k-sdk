@@ -1,0 +1,3 @@
+iotc_da16k_http_client_sample.c is a reworked version of the original http_client_sample.c from DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1 in apps/common/examples/Network/MQTT_Client/src
+iotc_da16k_mqtt_client_sample.c is a reworked version of the original mqtt_client_sample.c from DA16200_DA16600_SDK_FreeRTOS_v3.2.7.1 in apps/common/examples/Network/Http_Client/src
+iotc_generic_sdk_da16k_mosquitto_client.c is an implementation for iotc_device_client in the generic-c-sdk

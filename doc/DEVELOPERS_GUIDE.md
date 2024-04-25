@@ -1,14 +1,6 @@
-
-
- 
-
 # DA16200 Developer's Guide
 
-## Initial Setup
-
-See [QUICKSTART](./QUICKSTART.md) for details on how to flash the images and setup IoTConnect.
-
-## Setup For FreeRTOS development
+## Development Environment Setup
 
 Setup your development environment as per the Renesas
 ```
@@ -22,11 +14,13 @@ Currently the document can be found linked at:
 or
 [Renesas DA16600 page](https://www.renesas.com/eu/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16600mod-devkt-da16600-ultra-low-power-wi-fi-bluetooth-low-energy-modules-development-kit#document).
 
-Recommended to setup so can build and flash the DA16200 – at least using YModem protocol, i.e. using `loady` commands. Need to run easy WiFi `setup` to associate a WiFi access point (SSID, password, etc.). Should also set SNTP to start automatically on boot. Check that the board is configured correctly and that can build at least one example application, e.g. apps/common/examples/Network/Http_Client using projects/da16200 (or projects/da16600).
 
-Note: DA16600 has two different flash configurations, whereas DA16200 only has a single flash configuration.
+This includes the following steps:
+* Downloading and installing the e² studio software + tool-chains
+    * The software can be downloaded at the Renesas [e² studio](https://www.renesas.com/us/en/software-tool/e-studio#downloads) page.
+* Setting up the e² Studio environment to build and flash DA16K projects.
 
-Issue: It should be possible to easily use binaries between different boards using DA16200 - may have to generate two sets of binaries to cover all DA16600 boards.
+The chapter **`5.4 Importing DA16200 FreeRTOS SDK Project into e² studio`** is easy to overlook, make sure you follow it to be able to flash the built firmware images.
 
 ## Setup for IoTConnect development
 
@@ -34,39 +28,82 @@ Warning: the IoTConnect application is based on the FreeRTOS SDK version 3.2.8.1
 
 Other versions may work, but cannot be guaranteed.
 
-The IoTConnect example application and modifications to the FreeRTOS package can be accessed at [IoTConnect dialog github](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk).
+* If you do not have a Dialog DA16K FreeRTOS SDK directory already, download and upnzip the SDK file (e.g. [DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip, available here](https://www.renesas.com/us/en/document/sws/da16200-da16600-freertos-sdk-v3281?language=en&r=1600096)) to an arbitrary directory (e.g. `sdk_dir`)
+* Clone the git repo.
+* ***Run the setup script:*** `./scripts/setup-project.sh sdk_dir`
 
-Clone the git repo and then use the downloaded files to overwrite their counterparts / add files to the original Renesas FreeRTOS package – may need to take account of different directory levels to do so.
+    Note: This must be run from the repository's root directory.
 
 ## Compiling the IoTConnect application
 
-The IoTConnect application is at apps/common/examples/Network/IoTConnect_Client.
+The IoTConnect application is at `apps/common/example/Network/IoTConnect_Client`.
 
-### Building for AWS or Azure
+Import the project as follows:
 
-The application supports both Azure and AWS 2.1 at this time, subject to change when further modifications to the `iotc-c-lib` library are made.
+* Select `File`, `Import` in the main screen of your workspace.
 
-It compiles for AWS by default.
+    ![](assets/ide1.png)
 
-To build it for Azure, the `AZURE_VERSION=1` preprocessor define is used.
+* Select `Dialog SDK Project`
 
-To activate it, you must simply choose the appropriate build configuration in e² Studio by right-clicking the project and following the `Build Configurations` menu:
+    ![](assets/ide2.png)
 
-![Azure build config](assets/azure1.png)
+* Select the repository directory as the `SDK root directory`.
 
-### DA16200
+    Seroll down to find the IoTConnect application project for your target processor (DA16200 or DA16600) and select it.
 
-A DA16200 based project should use `projects/da16200` to compile the application.
+    ![](assets/ide3.png)
 
-Once the binaries are compiled they should be in: `projects/da16200/img`.
+* Select the target device.
 
-### DA16600
+    ![](assets/ide4.png)
 
-A DA16600 based project should use `projects/da16600` to compile the application.
+* The project is now added to the workspace and you can start developing and building.
 
-Once the binaries are compiled they should be in: `projects/da16600/img`.
+    ![](assets/ide5.png)
 
-## Flashing the IoTConnect application
+### Selecting the flash configuration
+
+On your first build, you will be asked to configure the project for the 
+
+The flash chip option is dependent on the specific device you are targeting, so you must consult the datasheet / technical manual / schematics of the device.
+
+The displayed example works for the DA16600PMOD dongle.
+
+![](assets/ide6.png)
+
+## Flashing images using `uart_program_da16200`
+
+**Note: Make sure the serial port is not being used by other terminal software.**
+
+### Using e² studio
+
+As the `5.4 Importing DA16200 FreeRTOS SDK Project into e² studio` chapter adds the necessary flash tools to the IDE, you can use it to flash the built firmware from it:
+
+![](assets/ideflash1.png)
+
+The tool will ask you for the appropriate serial port device and then start the flashing process.
+
+![](assets/ideflash2.png)
+
+### Manual
+
+Please refer to the Renesas guide *User Manual DA16200 DA16600 FreeRTOS Getting Started Guide UM-WI-056* in case there are changes in the future - in version 8, see section 4.5 (*Programming Firmware Images*).
+
+For example, after building IoTConnect_client, copy appropriate Linux or Windows version of uart_program_da16200 to apps/common/examples/Network/IoTConnect_Client/projects/da16200/img and then (in Linux)
+
+```
+cd apps/common/examples/Network/IoTConnect_Client/projects/da16200/img
+./uart_program_da16200 -i 0 DA16200_FBOOT-GEN01-01-c7f4c6cc22_W25Q32JW.img
+./uart_program_da16200 -i 23000 DA16200_FRTOS-GEN01-01-f017bfdf51-006558.img
+./uart_program_da16200
+```
+
+Note: the uart_program_da16200 is part of the DA16200_DA16600_SDK_FreeRTOS_v3.2.8.0.zip in:
+- utility/j-link/scripts/qspi/linux/uart_program_da16200
+- utility/j-link/scripts/qspi/win/uart_program_da16200.exe
+
+## Setting up the IoTConnect application
 
 See [QUICKSTART](./QUICKSTART.md) for details on how to flash the images and setup IoTConnect.
 
