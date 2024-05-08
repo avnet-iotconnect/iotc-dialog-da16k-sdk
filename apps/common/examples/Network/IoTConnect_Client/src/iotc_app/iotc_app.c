@@ -141,7 +141,7 @@ static iotc_command_queue_item_t *iotc_command_queue_item_create(const char *com
     item->command = strdup(command);
     
     if (ack_id) {
-        item->ack_id = strdup(command);
+        item->ack_id = strdup(ack_id);
     }
     
     if (item->command == NULL || (ack_id && (item->ack_id == NULL))) {
