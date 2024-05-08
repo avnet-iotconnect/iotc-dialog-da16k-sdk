@@ -44,12 +44,10 @@
 
 #include "da16x_compile_opt.h"
 
-#if 1
 #include "iotconnect.h"
 #include "iotcl.h"
 #include "iotcl_telemetry.h"
 #include "iotc_app.h"
-#endif
 
 #pragma GCC diagnostic ignored "-Wrestrict"
 
@@ -546,6 +544,7 @@ static const command_t commands[] = {
   { (char *)"AT+NWICMSG",         atcmd_network,        15, (char *) "<name1>,<value1>,<name2>,<value2>,...",     "Send an IoTConnect format MQTT message, using name/value pairs"    },
 // might also relect device message version here?
   { (char *)"AT+NWICVER",         atcmd_network,        0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
+  { (char *)"AT+NWICGETCMD",      atcmd_network,        0, (char *) "",                                           "Get latest command sent by IoTConnect"                 },
   { (char *)"AT+NWICCMDACK",      atcmd_network,        5, (char *) "<type>,<ack_id>,<0/1>,<message>",            "Acknowledge IoTConnect command with <type>,<ack_id>,etc."   },
   { (char *)"AT+NWICUSECMDACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using CMD ACK, i.e. responding to async commands"   },
   { (char *)"AT+NWICOTAACK",      atcmd_network,        4, (char *) "<ack_id>,<0/1>,<message>",                   "Acknowledge IoTConnect OTA with <ack_id>,etc."   },
@@ -8037,6 +8036,25 @@ int atcmd_network(int argc, char *argv[])
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
+    // AT+NWICGETCMD
+    else if (strcasecmp(argv[0] + 5, "ICGETCMD") == 0) {
+        iotc_command_queue_item_t *item = iotc_command_queue_item_get();
+
+        if (item != NULL) {
+            if (strlen(item->command) >= sizeof(result_str)) {
+                // The command is too long and we can't copy it out :(  - not returning here because we need to dispose of the item
+                err_code = AT_CMD_ERR_TOO_LONG_RESULT;
+            } else {
+                strcpy(result_str, item->command);
+            }
+            
+            iotc_command_queue_item_destroy(item);
+
+        } else {
+            err_code = AT_CMD_ERR_NO_RESULT;
+        }
+    }
+
     // AT+NWICCMDACK
     else if (strcasecmp(argv[0] + 5, "ICCMDACK") == 0) {
         if (argc == 5) {

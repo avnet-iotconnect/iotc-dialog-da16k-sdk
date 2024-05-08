@@ -172,23 +172,9 @@ Use the `iotconnect_config` command to accomplish this.
 [/DA16600/NET] # iotconnect_config cpid 954ACBA65B4A88799FACBCDEADBEEF12
 [/DA16600/NET] # iotconnect_config env SOME_ENV
 [/DA16600/NET] # iotconnect_config auth_type 1
-[/DA16600/NET] # iotconnect_config use_cmd_ack [value] (see below)
-[/DA16600/NET] # iotconnect_config use_ota_ack [value] (see below)
 ```
 
 The MQTT Broker configuration will be set automatically after a **Discovery/Sync** cycle.
-
-### use_cmd_ack
-By default commands will fail automatically, i.e. the acknowledgement is handled implicitly.
-
-To handle the command acknowledgement explicitly set use_cmd_ack to 1.
-To revert to implicit command acknowledgement set use_cmd_ack to 0.
-
-### use_ota_ack
-By default OTA update will fail automatically, i.e. the acknowledgement is handled implicitly.
-
-To handle the OTA update acknowledgement explicitly set use_ota_ack to 1.
-To revert to implicit OTA acknowledgement set use_ota_ack to 0.
 
 ## Finalization
 

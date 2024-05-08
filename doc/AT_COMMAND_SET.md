@@ -358,116 +358,39 @@ OK
 +NWMQMSGSND:1
 ```
 
-## C2D commands and OTA messages
+## C2D commands
 
-By default C2D commands and OTA messages will be handled (as failures) automatically.
-
-## Advanced Usage
-
-### Turning on Support for AT Command handling
-
-To avoid the implementer having to react to (unexpected) asynchronous messages devices that are not interested in supporting AT commands can simply ignore them (providing that the IOTC_USE_CMDACK environment variable is not set).
-
-Devices that are interested in supporting AT commands, parsing and acting on them, and acknowledging their success/failure can use the
-```
-AT+NWICUSECMDACK 1
-```
-to indicate that support is required for IoTConnect (asynchronous) commands and command-acknowledgement, i.e. +NWICCMD.
-
-If a device is no longer interested in supporting AT commands, parsing and acting on them, and acknowledging their success/failure can use the
-```
-AT+NWICUSECMDACK 0
-```
-that ensures that a default “failure” acknowledgement is sent back to IoTConnect – and no IoTConnect asynchronous command information will be sent, i.e. no +NWICCMD will be sent.
-
-Note: can still see a “routine parameter” command on AT connection as:
-```
-+NWMQMSG:{"cmdType":"0x01","data":{"cpid":"avtds","guid":"a4bfac5f-2c07-4822-a8bc-9b7dad451d9e","uniqueId":"justatoken","command":"routine parameter","ack":true,"ackId":"aaafdaa9-005d-463f-89af-c2eddc2df368","cmdType":"0x01"}},devices/avtds-justatoken/messages/devicebound/%24.to=%2Fdevices%2Favtds-justatoken%2Fmessages%2FdeviceBound,211
-```
-i.e. via the normal mqtt_client mechanism(s).
+C2D commands will be handled as successful automatically. The commands are then stored on a queue interanally, which the connected board may then fetch using an AT command. 
 
 ### AT Command
 
-Assuming that AT+NWICUSECMDACK 1then an “AT”-friendly message will output the routine (and parameter) (swapping spaces for commas).
-Note: the type and ackId are both needed to acknowledge the command, note: type is 1, i.e. first parameter in example
-```
-+NWICCMD:1,aaafdaa9-005d-463f-89af-c2eddc2df368,routine,parameter
-```
-on success, or
-```
-+NWICCMDFAIL
-```
-on (internal) failure.
+The `AT+NWICGETCMD` command can be issued to get the oldest command from the queue.
 
-### AT Command Acknowledgement
+The response will be
 
-To acknowledge an asynchronous command:
-
-If the execution was successful, then:
 ```
-AT+NWICCMDACK type,ackId,1,message
-```
-and if unsuccessful
-```
-AT+NWICCMDACK type,ackId,0,message
++NWICGETCMD:<command> <parameters>
 ```
 
-AT+NWICCMDACK allows the implementer to react well to +NWICCMD messages.
+e.g.
 
-It’s possible that the type and ackId might get misaligned – if use wrong AT commands – but server will have to be aware.
-
-Can always send an acknowledgement.
-
-## Turning on Support for OTA handling
-
-To avoid the implementer having to react to (unexpected) asynchronous OTA requests devices that are not interested in supporting AT commands can simply ignore them (providing that the IOTC_USE_OTAACK environment variable is not set).
-
-Devices that are interested in supporting AT commands, parsing and acting on them, and acknowledging their success/failure can use the
 ```
-AT+NWICUSEOTAACK 1
++NWICGETCMD:set_red_led on
 ```
-to indicate that support is required for IoTConnect (asynchronous) OTA requests and command-acknowledgement, i.e. +NWICOTA.
 
-If a device is no longer interested in supporting AT commands, parsing and acting on them, and acknowledging their success/failure can use the
+In this case, the command is then considered as *handled* and removed from the queue.
+
+Otherwise, the response will be:
+
 ```
-AT+NWICUSEOTAACK 0
+ERROR:7
 ```
-that ensures that a default “OTA failure” acknowledgement is sent back to IoTConnect – and no IoTConnect asynchronous OTA will be sent, i.e. no +NWICOTA will be sent.
 
-Note: can still see a “routine parameter” command on AT connection as:
-```
-+NWMQMSG:{"cmdType":"0x02","data":{"cpid":"avtds","guid":"a4bfac5f-2c07-4822-a8bc-9b7dad451d9e","uniqueId":"justatoken","command":"ota","ack":false,"ackId":"59ad4c32-7de1-4de9-bb2b-a991614614db","cmdType":"0x02","ver":{"sw":"1.0","hw":"1.0"},"urls":[{"url":"https://pociotconnectblobstorage.blob.core.windows.net/firmware/3710FE82-2C21-4CDA-8EE8-A4AF34E019F5.txt?sv=2018-03-28&sr=b&sig=lLeOanorGfQ7rFerwg%2FhBF7lDUfmfBplgOMecICrvVM%3D&se=2023-07-28T13%3A36%3A32Z&sp=r","tag":""}]}},devices/avtds-justatoken/messages/devicebound/%24.to=%2Fdevices%2Favtds-justatoken%2Fmessages%2FdeviceBound,472
-```
-i.e. via the normal mqtt_client mechanism(s).
+Indicating that there is no command pending.
 
-### AT Command
+## OTA
 
-Assuming that AT+NWICUSEOTAACK 1then an “AT”-friendly message will output the ack_id, version and url information.
-Note: the ackId is needed to acknowledge the command, note: there is no type, as an OTA message only has one possible type value
-```
-+NWICOTA:59ad4c32-7de1-4de9-bb2b-a991614614db,1.0,https://pociotconnectblobstorage.blob.core.windows.net/firmware/3710FE82-2C21-4CDA-8EE8-A4AF34E019F5.txt?sv=2018-03-28&sr=b&sig=lLeOanorGfQ7rFerwg%2FhBF7lDUfmfBplgOMecICrvVM%3D&se=2023-07-28T13%3A36%3A32Z&sp=r
-```
-on success, or
-
-+NWICOTAFAIL
-
-on (internal) failure.
-
-### AT OTA Acknowledgement
-
-To acknowledge an asynchronous OTA:
-
-If the execution was successful, then:
-
-AT+NWICOTAACK ackId,1,message
-
-and if unsuccessful
-
-AT+NWICOTAACK ackId,0,message
-
-AT+NWICOTAACK allows the implementer to react well to +NWICOTA messages.
-
-Can always send an acknowledgement.
+**OTA is not yet supported.**
 
 ## Non-Standard Usage
 

@@ -16,12 +16,15 @@
 
 #include "atcmd.h"
 
-#define    EVT_IOTC_STOP      (1UL << 0x00)
-#define    EVT_IOTC_SETUP     (1UL << 0x01)
-#define    EVT_IOTC_START     (1UL << 0x02)
-#define    EVT_IOTC_RESET     (1UL << 0x03)
+#define EVT_IOTC_STOP      (1UL << 0x00)
+#define EVT_IOTC_SETUP     (1UL << 0x01)
+#define EVT_IOTC_START     (1UL << 0x02)
+#define EVT_IOTC_RESET     (1UL << 0x03)
 
-static EventGroupHandle_t my_app_event_group = NULL;
+#define COMMAND_QUEUE_SIZE (16)
+
+static EventGroupHandle_t   my_app_event_group  = NULL;
+static QueueHandle_t        command_queue       = NULL;
 
 static IotConnectClientConfig s_client_cfg = {0};
 
@@ -116,6 +119,83 @@ static void on_connection_status(IotConnectMqttStatus status) {
     atcmd_asynchony_event_for_icmqtt(status == IOTC_CS_MQTT_CONNECTED ? 1 : 0);
 }
 
+
+/* Deallocate command queue item including strings *and* structure itself */
+void iotc_command_queue_item_destroy(iotc_command_queue_item_t *item) {
+    if (item) {
+        free((void*)item->command);
+        free((void*)item->ack_id);
+    }
+    free(item);
+}
+
+/* Allocate command queue item. Duplicates strings. Needs to be free'd with command_queue_item_destroy later. */
+static iotc_command_queue_item_t *iotc_command_queue_item_create(const char *command, const char *ack_id) {
+    iotc_command_queue_item_t * item = calloc(1, sizeof(iotc_command_queue_item_t));
+
+    if (item == NULL) {
+        IOTC_ERROR("Could not allocate command queue item!");
+        return NULL;
+    }
+
+    item->command = strdup(command);
+    
+    if (ack_id) {
+        item->ack_id = strdup(command);
+    }
+    
+    if (item->command == NULL || (ack_id && (item->ack_id == NULL))) {
+        IOTC_ERROR("String allocation error (out of memory?)\n");
+        iotc_command_queue_item_destroy(item);
+        return NULL;
+    }
+
+    return item;
+}
+
+static void on_command_receive(IotclC2dEventData data) {
+    const char                  *command        = iotcl_c2d_get_command(data);
+    const char                  *ack_id         = iotcl_c2d_get_ack_id(data);
+    iotc_command_queue_item_t   *queue_entry    = NULL;
+
+    if (command) {
+        IOTC_INFO("Command %s received with %s ACK ID\n", command, ack_id ? ack_id : "no");
+
+        queue_entry = iotc_command_queue_item_create(command, ack_id);
+
+        if (queue_entry == NULL) {
+            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
+            return;
+        }
+
+        if (pdTRUE == xQueueSendToBack(command_queue, &queue_entry, 0)) {
+            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_SUCCESS, "Command added to local queue");
+        } else {
+            IOTC_ERROR("Command queue full!\n");    
+            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Command queue full");
+            iotc_command_queue_item_destroy(queue_entry);
+        }        
+    } else {
+        IOTC_ERROR("Failed to parse command\n");
+        iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
+    }
+}
+
+iotc_command_queue_item_t *iotc_command_queue_item_get() {
+    iotc_command_queue_item_t * ret = NULL;
+
+    if (command_queue == NULL) {
+        IOTC_ERROR("Queue does not exist!\n");
+        return NULL;
+    }
+
+    if (pdTRUE == xQueueReceive(command_queue, &ret, 0)) {
+        return ret;
+    } else {
+        return NULL;    // Empty queue
+    }
+}
+
 //
 // a wrapper to send +NWICSETUPBEGIN / +NWICSETUPEND messages
 //
@@ -135,12 +215,9 @@ int setup_wrapper(void) {
     IOTC_INFO("IOTC_AUTH_TYPE = %d\n", s_client_cfg.auth_info.type);
     IOTC_INFO("IOTC_AUTH_SYMMETRIC_KEY = %s\n", s_client_cfg.auth_info.data.symmetric_key ? s_client_cfg.auth_info.data.symmetric_key : "(null)");
 
-    /*
-     * TODO FIXME CHECK Haven't set up any callbacks here -- not sure how "AT command"-style reflects MQTT state changes -- ugghh!
-     */
     s_client_cfg.status_cb = on_connection_status;
     s_client_cfg.ota_cb = NULL;
-    s_client_cfg.cmd_cb = NULL;
+    s_client_cfg.cmd_cb = on_command_receive;
 
     atcmd_asynchony_event_for_icsetup_end(true);
     return 0;
@@ -239,6 +316,13 @@ static void reset_wrapper(void) {
 int iotconnect_basic_sample_main(void) {
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
+    /* Create queue to store commands in */
+    command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item_t*));
+    if (command_queue == NULL) {
+        IOTC_ERROR("[%s] Command Queue Create Error!", __func__);
+        goto cleanup;
+    }
+
     /*
      * Explicity *NOT* setting any certificates for "AT command" version
      *
@@ -248,7 +332,7 @@ int iotconnect_basic_sample_main(void) {
     my_app_event_group = xEventGroupCreate();
     if (my_app_event_group == NULL) {
         IOTC_ERROR("[%s] Event group Create Error!", __func__);
-        return -1;
+        goto cleanup;
     }
 
     /* clear wait bits here */
@@ -313,6 +397,13 @@ int iotconnect_basic_sample_main(void) {
                 start_wrapper();
             }
         }
+    }
+
+cleanup:
+
+    if (command_queue) {
+        vQueueDelete(command_queue);
+        command_queue = NULL;
     }
 
     if(my_app_event_group) {
