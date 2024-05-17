@@ -16,14 +16,11 @@ extern void start_iotconnect(void);
 extern void reset_iotconnect(void);
 
 
-void iotc_command_queue_item_destroy(iotc_command_queue_item_t *item);
+void iotc_command_queue_item_destroy(iotc_command_queue_item_t item);
 
-/*  Gets the next available command from the command queue
-
-    The pointer returned here *MUST* be dealt with by calling iotc_command_queue_item_destroy()!
-
-    Returns NULL if there is no command available.*/
-iotc_command_queue_item_t *iotc_command_queue_item_get();
+/*  Gets the next available command & parameter from the command queue.
+    Returns false if there was an error or no command was available.*/
+bool iotc_command_queue_item_get(iotc_command_queue_item_t *dst_item);
 
 #ifdef __cplusplus
 }

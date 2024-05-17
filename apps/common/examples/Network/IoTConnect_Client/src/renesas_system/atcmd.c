@@ -8038,51 +8038,20 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICGETCMD
     else if (strcasecmp(argv[0] + 5, "ICGETCMD") == 0) {
-        iotc_command_queue_item_t *item = iotc_command_queue_item_get();
+        iotc_command_queue_item_t item = {0};
 
-        if (item != NULL) {
-            if (strlen(item->command) >= sizeof(result_str)) {
+        if (iotc_command_queue_item_get(&item)) {
+            if (strlen(item.command) >= sizeof(result_str)) {
                 // The command is too long and we can't copy it out :(  - not returning here because we need to dispose of the item
                 err_code = AT_CMD_ERR_TOO_LONG_RESULT;
             } else {
-                strcpy(result_str, item->command);
+                strcpy(result_str, item.command);
             }
             
             iotc_command_queue_item_destroy(item);
 
         } else {
             err_code = AT_CMD_ERR_NO_RESULT;
-        }
-    }
-
-    // AT+NWICCMDACK
-    else if (strcasecmp(argv[0] + 5, "ICCMDACK") == 0) {
-        if (argc == 5) {
-           /* AT+NWICCMDACK status, type, ack_id, command_name, message */
-/*          TODO: IMPLEMENT THIS FOR 2.1 VERSION
-            IotConnectEventType type = (IotConnectEventType) atoi(argv[1]);
-            const char *ack_id = (const char *) argv[2];
-            bool cmd_status = (bool) atoi(argv[3]);
-            const char *message = (const char *) argv[4];
-
-            iotconnect_command_status(type, ack_id, cmd_status, message);*/
-        } else {
-            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
-        }
-    }
-    // AT+NWICOTAACK
-    else if (strcasecmp(argv[0] + 5, "ICOTAACK") == 0) {
-        PRINTF("ICOTAACK %d\n", argc);
-        if (argc == 4) {
-           /* AT+NWICOTAACK status, type, ack_id, command_name, message */
-/*          TODO: IMPLEMENT THIS FOR 2.1 VERSION
-            const char *ack_id = (const char *) argv[1];
-            bool ota_status = (bool) atoi(argv[2]);
-            const char *message = (const char *) argv[3];
-
-            iotconnect_ota_status(ack_id, ota_status, message);*/
-        } else {
-            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
 #endif

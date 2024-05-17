@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "iotcl.h"
+#include "iotcl_util.h"
 #include "iotconnect.h"
 #include "iotc_da16k_util.h"
 
@@ -120,52 +121,32 @@ static void on_connection_status(IotConnectMqttStatus status) {
 }
 
 
-/* Deallocate command queue item including strings *and* structure itself */
-void iotc_command_queue_item_destroy(iotc_command_queue_item_t *item) {
-    if (item) {
-        free((void*)item->command);
-        free((void*)item->ack_id);
-    }
-    free(item);
+/* Deallocate command queue item's strings */
+void iotc_command_queue_item_destroy(iotc_command_queue_item_t item) {
+    free((void*)item.command);
+    free((void*)item.ack_id);
 }
 
-/* Allocate command queue item. Duplicates strings. Needs to be free'd with command_queue_item_destroy later. */
-static iotc_command_queue_item_t *iotc_command_queue_item_create(const char *command, const char *ack_id) {
-    iotc_command_queue_item_t * item = calloc(1, sizeof(iotc_command_queue_item_t));
-
-    if (item == NULL) {
-        IOTC_ERROR("Could not allocate command queue item!");
-        return NULL;
-    }
-
-    item->command = strdup(command);
-    
-    if (ack_id) {
-        item->ack_id = strdup(ack_id);
-    }
-    
-    if (item->command == NULL || (ack_id && (item->ack_id == NULL))) {
-        IOTC_ERROR("String allocation error (out of memory?)\n");
-        iotc_command_queue_item_destroy(item);
-        return NULL;
-    }
-
-    return item;
-}
-
+/* Callback for received IoTC device commands */
 static void on_command_receive(IotclC2dEventData data) {
     const char                  *command        = iotcl_c2d_get_command(data);
     const char                  *ack_id         = iotcl_c2d_get_ack_id(data);
-    iotc_command_queue_item_t   *queue_entry    = NULL;
+    iotc_command_queue_item_t   queue_entry     = {0}; 
 
     if (command) {
         IOTC_INFO("Command %s received with %s ACK ID\n", command, ack_id ? ack_id : "no");
 
-        queue_entry = iotc_command_queue_item_create(command, ack_id);
+        queue_entry.command = iotcl_strdup(command);
+        queue_entry.ack_id = iotcl_strdup(ack_id);
 
-        if (queue_entry == NULL) {
+        if (queue_entry.command == NULL) {
             iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
-            return;
+            goto cleanup;
+        }
+
+        if (ack_id && (queue_entry.ack_id == NULL)) {
+            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
+            goto cleanup;
         }
 
         if (pdTRUE == xQueueSendToBack(command_queue, &queue_entry, 0)) {
@@ -173,26 +154,36 @@ static void on_command_receive(IotclC2dEventData data) {
         } else {
             IOTC_ERROR("Command queue full!\n");    
             iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Command queue full");
-            iotc_command_queue_item_destroy(queue_entry);
+            goto cleanup;
         }        
     } else {
         IOTC_ERROR("Failed to parse command\n");
         iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
+        goto cleanup;
     }
+
+    return;
+
+cleanup:
+    iotc_command_queue_item_destroy(queue_entry);
 }
 
-iotc_command_queue_item_t *iotc_command_queue_item_get() {
-    iotc_command_queue_item_t * ret = NULL;
+bool iotc_command_queue_item_get(iotc_command_queue_item_t *dst_item) {
 
     if (command_queue == NULL) {
         IOTC_ERROR("Queue does not exist!\n");
-        return NULL;
+        return false;
     }
 
-    if (pdTRUE == xQueueReceive(command_queue, &ret, 0)) {
-        return ret;
+    if (dst_item == NULL) {
+        IOTC_ERROR("Target item is NULL\n");
+        return false;
+    }
+
+    if (pdTRUE == xQueueReceive(command_queue, dst_item, 0)) {
+        return true;
     } else {
-        return NULL;    // Empty queue
+        return false;    // Empty queue
     }
 }
 
@@ -231,7 +222,7 @@ cleanup:
 //
 // a wrapper to send +NWICSTARTBEGIN / +NWICSTARTEND messages
 //
-int start_wrapper()
+int start_wrapper(void)
 {
     int ret = -1;
 
@@ -317,7 +308,7 @@ int iotconnect_basic_sample_main(void) {
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
     /* Create queue to store commands in */
-    command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item_t*));
+    command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item_t));
     if (command_queue == NULL) {
         IOTC_ERROR("[%s] Command Queue Create Error!", __func__);
         goto cleanup;
@@ -416,133 +407,3 @@ cleanup:
     IOTC_INFO("exiting basic_sample()\n" );
     return 0;
 }
-
-
-
-/*
-
-TODO FIXME Reimplement for new iotc-c-lib
-
-This is old code to handle CMD/OTA ack. Since they're currently unsupported, they must be re-implemented for the new c-library at some point.
-
-static void on_command(IotclEventData data) {
-    int iotc_cmdack;
-    platform_get_iotconnect_use_cmdack(&iotc_cmdack);
-
-    IOTC_INFO("%s\n", __func__);
-
-    IotConnectEventType type = iotcl_get_event_type(data);
-    char *ack_id = iotcl_clone_ack_id(data);
-    if(NULL == ack_id) {
-        IOTC_ERROR("%s: ack_id == NULL\n", __func__);
-        goto cleanup;
-    }
-
-    if(iotc_cmdack != 1) {
-        IOTC_INFO("iotc_cmdack %d -- ignoring command\n", iotc_cmdack);
-
-        //
-        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMD_ACK is not 1 a validly treated command will immediately respond false
-        //
-        iotconnect_command_status(type, ack_id, false, "Not implemented");
-        goto cleanup_ack_id;
-    }
-
-    //
-    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_CMD_ACK is 1, the response to a validly treated command is at the discretion of the AT user.
-    // Simply provide information.
-    //
-    char *command = iotcl_clone_command(data);
-    if (NULL == command) {
-        IOTC_ERROR("%s: command == NULL\n", __func__);
-        iotconnect_command_status(type, ack_id, false, "Internal error");
-
-        atcmd_asynchony_event_for_iccmd(UNKNOWN_EVENT, NULL, NULL);
-        goto cleanup_ack_id;
-    }
-    
-    // send command asynchronously here?
-    // replace any spaces with a comma
-    for(unsigned int i = 0;i < strlen(command);i++) {
-        command[i] = (command[i] == ' ') ? ',' : command[i];
-    }
-
-    IOTC_INFO("\n\n%s type: %d\n", __func__, type);
-    IOTC_INFO("%s ack_id: %s\n", __func__, ack_id);
-    IOTC_INFO("%s command: %s\n\n", __func__, command);
-    IOTC_INFO("iotconnect_client cmd_ack %d %s 1 \"message\" - if ok\n", type, ack_id);
-    IOTC_INFO("iotconnect_client cmd_ack %d %s 0 \"message\" - if failed\n\n", type, ack_id);
-
-    atcmd_asynchony_event_for_iccmd(type, ack_id, command);
-    free((void *) command);
-
-cleanup_ack_id:
-    free((void *) ack_id);
-cleanup:
-    iotcl_destroy_event(data);
-}*/
-
-/*
-static void on_ota(IotclEventData data) {
-    int iotc_otaack;
-    platform_get_iotconnect_use_otaack(&iotc_otaack);
-
-    IotConnectEventType type = iotcl_get_event_type(data);
-    char *ack_id = iotcl_clone_ack_id(data);
-    if(NULL == ack_id) {
-        IOTC_ERROR("%s: ack_id == NULL\n", __func__);
-        goto cleanup;
-    }
-
-    if(iotc_otaack != 1) {
-        IOTC_INFO("iotc_otaack %d -- ignoring command\n", iotc_otaack);
-
-        //
-        // If DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTA_ACK is not 1 a validly treated OTA message will immediately respond false
-        //
-        iotconnect_command_status(type, ack_id, false, "Not implemented");
-        goto cleanup_ack_id;
-    }
-
-    //
-    // When DA16X_CONF_STR_MQTT_IOTCONNECT_USE_OTA_ACK is 1, the response to a validly treated OTA message is at the discretion of the AT user.
-    // Simply provide information.
-    //
-    const char *version = iotcl_clone_sw_version(data);
-    if (NULL == version) {
-        IOTC_ERROR("%s: version == NULL\n", __func__);
-        iotconnect_command_status(type, ack_id, false, "Internal error");
-
-        atcmd_asynchony_event_for_icota(NULL, NULL, NULL);
-        goto cleanup_ack_id;
-    }
-
-    const char *url = iotcl_clone_download_url(data, 0);
-    if (NULL == url) {
-        // FIXME TODO original code had comments that "url" couuld be null, and somehoe inside a "data" item instead does that need more implementation here?
-
-
-        IOTC_ERROR("%s: url == NULL\n", __func__);
-        iotconnect_command_status(type, ack_id, false, "Internal error");
-
-        atcmd_asynchony_event_for_icota(NULL, NULL, NULL);
-        goto cleanup_version;
-    }
-
-    IOTC_INFO("\n\n%s ack_id: %s\n", __func__, ack_id);
-    IOTC_INFO("%s version: %s\n", __func__, version);
-    IOTC_INFO("%s url: %s\n\n", __func__, url);
-    IOTC_INFO("iotconnect_client ota_ack %s 1 \"message\" - if ok\n", ack_id);
-    IOTC_INFO("iotconnect_client ota_ack %s 0 \"message\" - if failed\n\n", ack_id);
-
-    atcmd_asynchony_event_for_icota(ack_id, version, url);
-
-    free((void *) url);
-cleanup_version:
-    free((void *) version);
-cleanup_ack_id:
-    free((void *) ack_id);
-cleanup:
-    iotcl_destroy_event(data);
-}
-*/
