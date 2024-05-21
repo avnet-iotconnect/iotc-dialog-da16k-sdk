@@ -268,6 +268,10 @@ static void stop_wrapper(void)
     if(iotconnect_sdk_is_connected() == true) {
         iotconnect_sdk_disconnect();
     }
+
+    // Reset so we don't start next session with leftover commands, and don't serve pending commands to connected clients inquiring.
+    xQueueReset(command_queue);
+
     atcmd_asynchony_event_for_icstop_end(true);
 }
 
@@ -283,7 +287,10 @@ static void reset_wrapper(void) {
 
     // This deinits all the allocated data in the config struct
     iotc_da16k_reset_config(&s_client_cfg);
-    
+
+    // Reset so we don't start next session with leftover commands, and don't serve pending commands to connected clients inquiring.
+    xQueueReset(command_queue);
+
     atcmd_asynchony_event_for_icreset_end(true);
 }
 
