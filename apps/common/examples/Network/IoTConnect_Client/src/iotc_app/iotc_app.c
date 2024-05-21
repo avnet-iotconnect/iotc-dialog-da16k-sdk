@@ -122,7 +122,7 @@ static void on_connection_status(IotConnectMqttStatus status) {
 
 
 /* Deallocate command queue item's strings */
-void iotc_command_queue_item_destroy(iotc_command_queue_item_t item) {
+void iotc_command_queue_item_destroy(iotc_command_queue_item item) {
     free((void*)item.command);
     free((void*)item.ack_id);
 }
@@ -131,22 +131,25 @@ void iotc_command_queue_item_destroy(iotc_command_queue_item_t item) {
 static void on_command_receive(IotclC2dEventData data) {
     const char                  *command        = iotcl_c2d_get_command(data);
     const char                  *ack_id         = iotcl_c2d_get_ack_id(data);
-    iotc_command_queue_item_t   queue_entry     = {0}; 
+    iotc_command_queue_item   queue_entry     = {0}; 
 
     if (command) {
         IOTC_INFO("Command %s received with %s ACK ID\n", command, ack_id ? ack_id : "no");
 
         queue_entry.command = iotcl_strdup(command);
-        queue_entry.ack_id = iotcl_strdup(ack_id);
 
         if (queue_entry.command == NULL) {
             iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
             goto cleanup;
         }
 
-        if (ack_id && (queue_entry.ack_id == NULL)) {
-            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
-            goto cleanup;
+        if (ack_id) {
+            queue_entry.ack_id = iotcl_strdup(ack_id);
+
+            if (queue_entry.ack_id == NULL) {
+                iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
+                goto cleanup;
+            }
         }
 
         if (pdTRUE == xQueueSendToBack(command_queue, &queue_entry, 0)) {
@@ -168,7 +171,7 @@ cleanup:
     iotc_command_queue_item_destroy(queue_entry);
 }
 
-bool iotc_command_queue_item_get(iotc_command_queue_item_t *dst_item) {
+bool iotc_command_queue_item_get(iotc_command_queue_item *dst_item) {
 
     if (command_queue == NULL) {
         IOTC_ERROR("Queue does not exist!\n");
@@ -315,7 +318,7 @@ int iotconnect_basic_sample_main(void) {
     IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
 
     /* Create queue to store commands in */
-    command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item_t));
+    command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item));
     if (command_queue == NULL) {
         IOTC_ERROR("[%s] Command Queue Create Error!", __func__);
         goto cleanup;

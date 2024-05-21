@@ -8038,7 +8038,7 @@ int atcmd_network(int argc, char *argv[])
     }
     // AT+NWICGETCMD
     else if (strcasecmp(argv[0] + 5, "ICGETCMD") == 0) {
-        iotc_command_queue_item_t item = {0};
+        iotc_command_queue_item item = {0};
 
         if (iotc_command_queue_item_get(&item)) {
             if (strlen(item.command) >= sizeof(result_str)) {
