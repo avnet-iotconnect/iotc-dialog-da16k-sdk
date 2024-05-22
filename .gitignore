@@ -1,7 +1,11 @@
 docs/
 library/
 tools/
-utility/
+
+utility/*
+!utility/cfg_generator/
+utility/cfg_generator/*
+!utility/cfg_generator/da16x_gencfg.py
 
 apps/app_common
 

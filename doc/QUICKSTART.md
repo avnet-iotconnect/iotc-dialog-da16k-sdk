@@ -399,42 +399,13 @@ iotconnect_client msg [name1] [value1] [name2] [value2] (...)
 
 Verify in the dashboard that the device is shown as connected and that the message data can be seen.
 
-### ~~Command~~
+### Commands
 
-***This chapter is not applicable at this point in time, as OTA and commands are not supported.***
+Commands are automatically acknowledged and stored in a queue upon reception. They must be fetched using an AT Command and processed by the connected device.
 
-> To acknowledge a C2D command failure, run:
->
-> ```
->   iotconnect_client cmd_ack type ack_id 0 [message]
-> ```
->
->To acknowledge a C2D command success, run:
->
->```
->iotconnect_client cmd_ack type ack_id 1 [message]
->```
->
->**Note**: `type` and `ack_id` are printed on the terminal when the command request is received.
->
+### OTA
 
-### ~~OTA~~
-
-***This chapter is not applicable at this point in time, as OTA and commands are not supported.***
-
-To acknowledge a C2D OTA failure, run:
-
-```
-iotconnect_client ota_ack ack_id 0 [message]
-```
-
-To acknowledge a C2D OTA success, run:
-
-```
-iotconnect_client ota_ack ack_id 1 [message]
-```
-
-**Note:** `ack_id` is printed on the terminal when the OTA request is received.
+**OTA is not yet supported.**
 
 ## AT Command Console
 

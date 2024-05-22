@@ -44,12 +44,10 @@
 
 #include "da16x_compile_opt.h"
 
-#if 1
 #include "iotconnect.h"
 #include "iotcl.h"
 #include "iotcl_telemetry.h"
 #include "iotc_app.h"
-#endif
 
 #pragma GCC diagnostic ignored "-Wrestrict"
 
@@ -546,6 +544,7 @@ static const command_t commands[] = {
   { (char *)"AT+NWICMSG",         atcmd_network,        15, (char *) "<name1>,<value1>,<name2>,<value2>,...",     "Send an IoTConnect format MQTT message, using name/value pairs"    },
 // might also relect device message version here?
   { (char *)"AT+NWICVER",         atcmd_network,        0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
+  { (char *)"AT+NWICGETCMD",      atcmd_network,        0, (char *) "",                                           "Get latest command sent by IoTConnect"                 },
   { (char *)"AT+NWICCMDACK",      atcmd_network,        5, (char *) "<type>,<ack_id>,<0/1>,<message>",            "Acknowledge IoTConnect command with <type>,<ack_id>,etc."   },
   { (char *)"AT+NWICUSECMDACK",   atcmd_network,        1, (char *) "<0/1>",                                      "Enable/disable using CMD ACK, i.e. responding to async commands"   },
   { (char *)"AT+NWICOTAACK",      atcmd_network,        4, (char *) "<ack_id>,<0/1>,<message>",                   "Acknowledge IoTConnect OTA with <ack_id>,etc."   },
@@ -8037,34 +8036,22 @@ int atcmd_network(int argc, char *argv[])
             err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
         }
     }
-    // AT+NWICCMDACK
-    else if (strcasecmp(argv[0] + 5, "ICCMDACK") == 0) {
-        if (argc == 5) {
-           /* AT+NWICCMDACK status, type, ack_id, command_name, message */
-/*          TODO: IMPLEMENT THIS FOR 2.1 VERSION
-            IotConnectEventType type = (IotConnectEventType) atoi(argv[1]);
-            const char *ack_id = (const char *) argv[2];
-            bool cmd_status = (bool) atoi(argv[3]);
-            const char *message = (const char *) argv[4];
+    // AT+NWICGETCMD
+    else if (strcasecmp(argv[0] + 5, "ICGETCMD") == 0) {
+        iotc_command_queue_item item = {0};
 
-            iotconnect_command_status(type, ack_id, cmd_status, message);*/
-        } else {
-            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
-        }
-    }
-    // AT+NWICOTAACK
-    else if (strcasecmp(argv[0] + 5, "ICOTAACK") == 0) {
-        PRINTF("ICOTAACK %d\n", argc);
-        if (argc == 4) {
-           /* AT+NWICOTAACK status, type, ack_id, command_name, message */
-/*          TODO: IMPLEMENT THIS FOR 2.1 VERSION
-            const char *ack_id = (const char *) argv[1];
-            bool ota_status = (bool) atoi(argv[2]);
-            const char *message = (const char *) argv[3];
+        if (iotc_command_queue_item_get(&item)) {
+            if (strlen(item.command) >= sizeof(result_str)) {
+                // The command is too long and we can't copy it out :(  - not returning here because we need to dispose of the item
+                err_code = AT_CMD_ERR_TOO_LONG_RESULT;
+            } else {
+                strcpy(result_str, item.command);
+            }
+            
+            iotc_command_queue_item_destroy(item);
 
-            iotconnect_ota_status(ack_id, ota_status, message);*/
         } else {
-            err_code = AT_CMD_ERR_INSUFFICENT_ARGS;
+            err_code = AT_CMD_ERR_NO_RESULT;
         }
     }
 #endif
