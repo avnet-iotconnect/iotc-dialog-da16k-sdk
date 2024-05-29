@@ -158,11 +158,8 @@ To set the (expected) authentication type send an `AT+NWICAT` command with the (
 AT+NWICAT 1
 ```
 Values are numeric and defined as follows:
-- TOKEN = 1,
-- X509 = 2,
-- Self signed X509 = 2 (may become 3 in the future)
-- TPM = 4 (UNSUPPORTED)
-- SYMMETRIC_KEY = 5
+- X509 = 1,
+- TOKEN = 2
 
 Note: these values should match the `IOTC_AT` enum in the code, and the "at" field in the discovery/sync response JSON.
 
