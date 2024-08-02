@@ -70,8 +70,6 @@ extern int iotconnect_basic_sample_main(void);
 #define    EVT_HTTP_DATA     (1UL << 0x01)
 #define    EVT_HTTP_ERROR     (1UL << 0x02)
 
-#undef ENABLE_HTTPS_SERVER_VERIFY_REQUIRED
-
 #define HTTP_CLIENT_SAMPLE_TASK_NAME     "http_c_sample"
 #define HTTP_CLIENT_SAMPLE_STACK_SIZE    (1024 * 6) / 4
 
@@ -151,31 +149,31 @@ static void http_client_clear_https_conf(httpc_secure_connection_t *conf) {
     return;
 }
 
-static int http_client_read_cert(unsigned int addr, unsigned char **out, size_t *outlen) {
+static int http_client_read_cert(unsigned int addr, u8 **out, size_t *outlen) {
     int ret = 0;
-    unsigned char *buf = NULL;
+    u8 *buf = NULL;
     size_t buflen = CERT_MAX_LENGTH;
 
-    buf = pvPortMalloc(CERT_MAX_LENGTH);
+    buf = (u8 *) pvPortMalloc(buflen);
+
     if (!buf) {
         HTTP_ERROR("Failed to allocate memory(%x)\r\n", addr);
         return -1;
     }
 
-    memset(buf, 0x00, CERT_MAX_LENGTH);
+    memset(buf, 0x00, buflen);
 
-    ret = cert_flash_read(addr, buf, CERT_MAX_LENGTH);
+    ret = cert_flash_read(addr, (char *) buf, buflen);
     if (ret == 0 && buf[0] != 0xFF) {
         *out = buf;
-        *outlen = strlen(buf) + 1;
+        *outlen = strnlen((char *) buf, buflen) + 1;
         return 0;
     }
 
-    if (buf) {
-        vPortFree(buf);
-    }
+    vPortFree(buf);
 
-    return 0;
+    return -1;
+}
 }
 
 static void http_client_read_certs(httpc_secure_connection_t *settings) {
