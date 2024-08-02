@@ -182,7 +182,7 @@ static char *http_client_strdup(const char *other) {
     if (!other)
         return NULL;
 
-    dup = pvPortMalloc(strlen(other));
+    dup = pvPortMalloc(strlen(other) + 1);
 
     if (!dup) 
         return NULL;
