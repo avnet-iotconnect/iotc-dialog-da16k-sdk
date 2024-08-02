@@ -58,6 +58,7 @@
 
 #include "iotc_http_request.h"
 #include "common_config.h"
+#include "ra_dynamic_ca.h"
 
 // or specify as functions
 #define HTTP_DEBUG(...) do{ PRINTF(GREEN_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
@@ -174,35 +175,61 @@ static int http_client_read_cert(unsigned int addr, u8 **out, size_t *outlen) {
 
     return -1;
 }
+
+static char *http_client_strdup(const char *other) {
+    char *dup = NULL;
+
+    if (!other)
+        return NULL;
+
+    dup = pvPortMalloc(strlen(other));
+
+    if (!dup) 
+        return NULL;
+
+    strcpy(dup, other);
+    return dup;
 }
 
 static void http_client_read_certs(httpc_secure_connection_t *settings) {
     int ret = 0;
+	const char *dynamic_http_ca = ra_dynamic_ca_http_get();
 
     // To read ca certificate
-    ret = http_client_read_cert(SFLASH_ROOT_CA_ADDR2, &settings->ca, &settings->ca_len);
-    if (ret) {
-        HTTP_ERROR("failed to read CA cert\r\n");
-        goto err;
+    
+    // If we have a dynamically configured root CA, use that, else fall back to flash
+    if (dynamic_http_ca) {
+    	settings->ca = (u8 *) http_client_strdup(dynamic_http_ca);
+    	if (!settings->ca) {
+            HTTP_ERROR("Failed to allocate memory for CA cert\r\n");
+            goto err;
+    	}
+        
+    	HTTP_DEBUG("Using Dynamic HTTP CA.\r\n");
+    	settings->ca_len = strlen((char *) settings->ca) + 1; // Includes the null terminator.
+    } else {
+        ret = http_client_read_cert(SFLASH_ROOT_CA_ADDR2, &settings->ca, &settings->ca_len);
+        if (ret) {
+            HTTP_ERROR("HTTP: failed to read CA cert\r\n");
+            goto err;
+        }
     }
 
     // To read certificate
     ret = http_client_read_cert(SFLASH_CERTIFICATE_ADDR2,
                                 &settings->cert, &settings->cert_len);
     if (ret) {
-        HTTP_ERROR("failed to read certificate\r\n");
-        goto err;
+        HTTP_WARN("HTTP: failed to read certificate\r\n");
     }
 
     // To read private key
     ret = http_client_read_cert(SFLASH_PRIVATE_KEY_ADDR2,
                                 &settings->privkey, &settings->privkey_len);
     if (ret) {
-        HTTP_ERROR("failed to read private key\r\n");
-        goto err;
+    	HTTP_WARN("HTTP: failed to read private key\r\n");
     }
 
-    return ;
+    return;
 
 err:
 

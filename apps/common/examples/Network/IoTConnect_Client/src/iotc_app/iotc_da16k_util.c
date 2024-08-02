@@ -450,14 +450,3 @@ int platform_get_mqtt_pub_topic(char *string) {
     }
     return 0;
 }
-
-int mqtt_client_preinit_certs(IotConnectClientConfig *c) {
-    // Need X509 certificate the server -- this isn't optional
-    mqtt_broker_cert_config( c->auth_info.trust_store, strlen(c->auth_info.trust_store));
-
-    // Need X509 certificate and private key for the device -- they may be NULL for some authentication types
-    mqtt_device_cert_config( c->auth_info.data.cert_info.device_cert, (c->auth_info.data.cert_info.device_cert) ? strlen(c->auth_info.data.cert_info.device_cert) : 0,
-                             c->auth_info.data.cert_info.device_key,  (c->auth_info.data.cert_info.device_cert) ? strlen(c->auth_info.data.cert_info.device_key) : 0);
-    
-    return 0;
-}

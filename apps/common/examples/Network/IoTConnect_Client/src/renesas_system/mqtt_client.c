@@ -42,6 +42,7 @@ Copyright (c) 2019-2022 Modified by Renesas Electronics.
 #include "mqtt_msg_tbl_presvd.h"
 #endif // __MQTT_CLEAN_SESSION_MODE_SUPPORT__
 #include "util_func.h"
+#include "ra_dynamic_ca.h"
 
 extern bool confirm_dpm_init_done(char *);
 extern unsigned long da16x_get_wakeup_source(void);
@@ -431,6 +432,8 @@ int mqtt_client_cert_read(void)
     int cert_err = DA16X_CERT_ERR_OK;
     int format = DA16X_CERT_FORMAT_NONE;
 
+	const char *dynamic_mqtt_ca = ra_dynamic_ca_mqtt_get();
+
 	flash_handler = flash_image_open((sizeof(UINT32) * 8),
 									 (UINT32)SFLASH_ROOT_CA_ADDR1,
 									 (VOID *)&da16x_environ_lock);
@@ -440,22 +443,29 @@ int mqtt_client_cert_read(void)
 		return pdFAIL;
 	}
 
-
     //Read ca certificate
     mqtt_cfg.cacert_len = mqtt_cfg.cacert_buflen;
 
-    cert_err = da16x_cert_read_no_fopen(flash_handler,
-                                        DA16X_CERT_MODULE_MQTT,
-                                        DA16X_CERT_TYPE_CA_CERT,
-                                        &format,
-                                        (unsigned char *)mqtt_cfg.cacert_ptr,
-                                        &mqtt_cfg.cacert_len);
-    if (cert_err == DA16X_CERT_ERR_EMPTY_CERTIFICATE) {
-        mqtt_cfg.cacert_len = 0;
-    } else if (cert_err != DA16X_CERT_ERR_OK) {
-		PRINTF("[%s:%d] CA Read error(%d)\n", __func__, __LINE__, cert_err);
-        goto end;
-    }
+	/* IoTConnect modification, dynamic CA certificate if configured */
+	if (dynamic_mqtt_ca && strlen(dynamic_mqtt_ca) < mqtt_cfg.cacert_buflen) {
+		strncpy(mqtt_cfg.cacert_ptr, dynamic_mqtt_ca, mqtt_cfg.cacert_buflen);
+		mqtt_cfg.cacert_len = strlen(mqtt_cfg.cacert_ptr) + 1; // null terminator is included!
+		format = DA16X_CERT_FORMAT_PEM;
+	} else {
+		/* Fallback, read CA from flash */
+		cert_err = da16x_cert_read_no_fopen(flash_handler,
+											DA16X_CERT_MODULE_MQTT,
+											DA16X_CERT_TYPE_CA_CERT,
+											&format,
+											(unsigned char *)mqtt_cfg.cacert_ptr,
+											&mqtt_cfg.cacert_len);
+		if (cert_err == DA16X_CERT_ERR_EMPTY_CERTIFICATE) {
+			mqtt_cfg.cacert_len = 0;
+		} else if (cert_err != DA16X_CERT_ERR_OK) {
+			PRINTF("[%s:%d] CA Read error(%d)\n", __func__, __LINE__, cert_err);
+			goto end;
+		}
+	}
 
     //Read certificate
     mqtt_cfg.cert_len = mqtt_cfg.cert_buflen;

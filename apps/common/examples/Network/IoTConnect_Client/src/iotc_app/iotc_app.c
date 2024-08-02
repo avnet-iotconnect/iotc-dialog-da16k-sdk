@@ -14,6 +14,7 @@
 #include "mqtt_client.h"
 #include "iotc_app.h"
 #include "iotc_log.h"
+#include "ra_dynamic_ca.h"
 
 #include "atcmd.h"
 
@@ -203,6 +204,10 @@ int setup_wrapper(void) {
         goto cleanup;
     }
 
+    // Set MQTT & HTTP Certs for this connection type
+    ra_dynamic_ca_set(s_client_cfg.connection_type);
+
+    IOTC_INFO("IOTC_CONNECTION_TYPE = %s\n", s_client_cfg.connection_type == IOTC_CT_AWS ? "AWS" : "AZURE");
     IOTC_INFO("IOTC_ENV = %s\n", s_client_cfg.env);
     IOTC_INFO("IOTC_CPID = %s\n", s_client_cfg.cpid);
     IOTC_INFO("IOTC_DUID = %s\n", s_client_cfg.duid);
@@ -272,6 +277,8 @@ static void stop_wrapper(void)
         iotconnect_sdk_disconnect();
     }
 
+    ra_dynamic_ca_clear();
+
     // Reset so we don't start next session with leftover commands, and don't serve pending commands to connected clients inquiring.
     xQueueReset(command_queue);
 
@@ -287,6 +294,8 @@ static void reset_wrapper(void) {
     if(iotconnect_sdk_is_connected() == true) {
         iotconnect_sdk_disconnect();
     }
+
+    ra_dynamic_ca_clear();
 
     // This deinits all the allocated data in the config struct
     iotc_da16k_reset_config(&s_client_cfg);

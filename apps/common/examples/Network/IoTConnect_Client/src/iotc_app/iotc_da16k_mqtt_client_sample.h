@@ -35,12 +35,6 @@ void mqtt_sample_client_nvram_config(const char *broker,
 			      const char *sub,
                               int qos);
 
-void mqtt_broker_cert_config(const char *root_ca, unsigned int root_ca_len);
-
-void mqtt_device_cert_config(const char *device_cert, unsigned int device_cert_len,
-			     const char *device_private_key, unsigned int device_private_key_len);
-
-
 #ifdef __cplusplus
 }
 #endif

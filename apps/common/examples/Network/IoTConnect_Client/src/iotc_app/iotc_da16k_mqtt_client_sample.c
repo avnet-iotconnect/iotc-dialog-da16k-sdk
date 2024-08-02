@@ -466,30 +466,6 @@ void mqtt_sample_client_nvram_config(const char *broker,
     }
 }
 
-// Need certificate for MQTTS to talk to the broker
-//
-// I guess we could update SFLASH_ROOT_CA_ADDR1 in case connection doesn't work and try a different root CA, since Azure has 3 potential certs?
-//
-void mqtt_broker_cert_config(const char *root_ca, unsigned int root_ca_len)
-{
-    cert_flash_write(SFLASH_ROOT_CA_ADDR1, (char *) root_ca, root_ca_len);
-}
-
-/*
- * device_cert / device_private_key can be NULL
- */
-void mqtt_device_cert_config(const char *device_cert, unsigned int device_cert_len,
-			     const char *device_private_key, unsigned int device_private_key_len)
-{
-    if(device_cert && device_private_key) {
-        cert_flash_write(SFLASH_CERTIFICATE_ADDR1, (char *) device_cert, device_cert_len);
-        cert_flash_write(SFLASH_PRIVATE_KEY_ADDR1, (char *) device_private_key, device_private_key_len);
-    } else {
-        cert_flash_delete(SFLASH_CERTIFICATE_ADDR1);
-        cert_flash_delete(SFLASH_PRIVATE_KEY_ADDR1);
-    }
-}
-
 #endif    // (__MQTT_CLIENT_SAMPLE__)
 
 /* EOF */
