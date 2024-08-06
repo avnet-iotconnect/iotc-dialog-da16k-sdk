@@ -58,7 +58,7 @@
 
 #include "iotc_http_request.h"
 #include "common_config.h"
-#include "ra_dynamic_ca.h"
+#include "iotc_da16k_dynamic_ca.h"
 
 // or specify as functions
 #define HTTP_DEBUG(...) do{ PRINTF(GREEN_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
@@ -193,7 +193,7 @@ static char *http_client_strdup(const char *other) {
 
 static void http_client_read_certs(httpc_secure_connection_t *settings) {
     int ret = 0;
-	const char *dynamic_http_ca = ra_dynamic_ca_http_get();
+	const char *dynamic_http_ca = iotc_da16k_dynamic_ca_http_get();
 
     // To read ca certificate
     

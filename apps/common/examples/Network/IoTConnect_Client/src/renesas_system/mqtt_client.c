@@ -42,7 +42,7 @@ Copyright (c) 2019-2022 Modified by Renesas Electronics.
 #include "mqtt_msg_tbl_presvd.h"
 #endif // __MQTT_CLEAN_SESSION_MODE_SUPPORT__
 #include "util_func.h"
-#include "ra_dynamic_ca.h"
+#include "iotc_da16k_dynamic_ca.h"
 
 extern bool confirm_dpm_init_done(char *);
 extern unsigned long da16x_get_wakeup_source(void);
@@ -432,7 +432,7 @@ int mqtt_client_cert_read(void)
     int cert_err = DA16X_CERT_ERR_OK;
     int format = DA16X_CERT_FORMAT_NONE;
 
-	const char *dynamic_mqtt_ca = ra_dynamic_ca_mqtt_get();
+	const char *dynamic_mqtt_ca = iotc_da16k_dynamic_ca_mqtt_get();
 
 	flash_handler = flash_image_open((sizeof(UINT32) * 8),
 									 (UINT32)SFLASH_ROOT_CA_ADDR1,
