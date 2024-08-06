@@ -61,7 +61,7 @@ static err_t network_ok(void) {
                 IOTC_ERROR("SNTP sync timed out - check Internet conenction. Reboot to start over \n");
             } else {
                 if (ret == -2) { // timeout
-                	IOTC_WARN("SNTP was disabled. Reboot to start over \n");
+                    IOTC_WARN("SNTP was disabled. Reboot to start over \n");
     
                     da16x_set_config_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
                 }
@@ -373,7 +373,7 @@ int iotconnect_basic_sample_main(void) {
         }
 
         if(network_ok() != ERR_OK) {
-        	IOTC_ERROR("Command ignored - Network interface is down!");
+            IOTC_ERROR("Command ignored - Network interface is down!");
             continue;
         }
 

@@ -742,7 +742,7 @@ typedef enum _atcmd_error_code {
     AT_CMD_ERR_NW_WSC_SESS_NOT_CONNECTED            = -696,
     AT_CMD_ERR_NW_WSC_UNKNOW_CMD                    = -697,
 
-	/// For OTA update
+    /// For OTA update
     AT_CMD_ERR_NW_OTA_WRONG_FW_TYPE                 = -700,
     AT_CMD_ERR_NW_OTA_DOWN_OK_AND_WAIT_RENEW        = -701,
     AT_CMD_ERR_NW_OTA_FLASH_READ_SIZE_TYPE          = -702,
@@ -922,7 +922,7 @@ int atcmd_standard(int argc, char *argv[]);
  * - Version\n
  ****************************************************************************************
  */
-int	atcmd_basic(int argc, char *argv[]);
+int atcmd_basic(int argc, char *argv[]);
 
 /**
  ****************************************************************************************
@@ -933,7 +933,7 @@ int	atcmd_basic(int argc, char *argv[]);
  * - DPM Parameters (DTIM, Keep-alive period, Wake-up count)\n
  ****************************************************************************************
  */
-int	atcmd_dpm(int argc, char *argv[]);
+int atcmd_dpm(int argc, char *argv[]);
 
 /**
  ****************************************************************************************
@@ -954,7 +954,7 @@ int atcmd_uartconf(int argc, char *argv[]);
  * - IEEE802.11i WPA-Enterprise (if defined)\n
  ****************************************************************************************
  */
-int	atcmd_wifi(int argc, char *argv[]);
+int atcmd_wifi(int argc, char *argv[]);
 
 /**
  ****************************************************************************************
@@ -968,7 +968,7 @@ int	atcmd_wifi(int argc, char *argv[]);
  * - TLS Setting
  ****************************************************************************************
  */
-int	atcmd_network(int argc, char *argv[]);
+int atcmd_network(int argc, char *argv[]);
 
 /**
  ****************************************************************************************
@@ -981,7 +981,7 @@ int	atcmd_network(int argc, char *argv[]);
  * - Sending TCP/UDP messages\n
  ****************************************************************************************
  */
-int	atcmd_transport(int argc, char *argv[]);
+int atcmd_transport(int argc, char *argv[]);
 
 #if defined (__SUPPORT_ATCMD_TLS__)
 /**
@@ -1160,7 +1160,7 @@ extern int combo_set_sleep2(char* context, int rtm, int seconds);
 
 #if defined ( __SUPPORT_MQTT__ )
 extern int mqtt_client_get_qos(void);
-#endif	// __SUPPORT_MQTT__
+#endif // __SUPPORT_MQTT__
 
 #if defined ( __SUPPORT_WIFI_CONCURRENT__ )
 extern int factory_reset_btn_onetouch(void);

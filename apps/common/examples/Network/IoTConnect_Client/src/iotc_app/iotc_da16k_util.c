@@ -156,11 +156,11 @@ void  iotc_da16k_reset_config(IotConnectClientConfig *c) {
 
 int iotc_da16k_set_nvcache_int(int key, int value) {
     int test_int;
-    if(da16x_get_config_int(key, &test_int) != CC_SUCCESS || test_int != value) {
-        if(da16x_set_nvcache_int(key, value) != CC_SUCCESS) {
+    if (da16x_get_config_int(key, &test_int) != CC_SUCCESS || test_int != value) {
+        if (da16x_set_nvcache_int(key, value) != CC_SUCCESS) {
             MQTT_ERROR("da16x_set_nvcache_int(%d, %d) failed\n", key, value);
-	}
-	return 1;
+        }
+        return 1;
     }
     return 0;
 }
@@ -168,16 +168,16 @@ int iotc_da16k_set_nvcache_int(int key, int value) {
 int iotc_da16k_set_nvcache_str(int key, const char *value) {
     if(value != NULL) {
         char test_str[MQTT_PASSWORD_MAX_LEN] = {0, }; // password has the max length in str type
-        if(da16x_get_config_str(key, test_str) != CC_SUCCESS || strcmp(test_str, value) != 0) {
-            if(da16x_set_nvcache_str(key, (char *) value) != CC_SUCCESS) {
+        if (da16x_get_config_str(key, test_str) != CC_SUCCESS || strcmp(test_str, value) != 0) {
+            if (da16x_set_nvcache_str(key, (char *) value) != CC_SUCCESS) {
                 MQTT_ERROR("da16x_set_nvcache_str(%d, %s) failed\n", key, value);
-	    }
+            }
             return 1;
         }
     } else {
         if(da16x_set_nvcache_str(key, NULL) != CC_SUCCESS) {
             MQTT_ERROR("da16x_set_nvcache_str(%d, NULL) failed\n", key);
-	}
+        }
         return 1;
     }
     return 0;
@@ -187,13 +187,11 @@ int platform_get_iotconnect_connection_type(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE, string);
-    if(status != CC_SUCCESS)
-    {
+    if (status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if (*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_CONNECTION_TYPE value is empty\n");
         return -1;
     }
@@ -207,13 +205,11 @@ int platform_get_iotconnect_use_cmdack(int *value) {
     *value = 0;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, string);
-    if(status != CC_SUCCESS)
-    {
+    if (status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if (*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK value is empty\n");
         return -1;
     }
@@ -224,8 +220,7 @@ int platform_get_iotconnect_use_cmdack(int *value) {
 
 int platform_set_iotconnect_use_cmdack(void) {
     int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK, "0");
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_CMD_ACK\n");
         return -1;
     }
@@ -240,13 +235,11 @@ int platform_get_iotconnect_use_otaack(int *value) {
     *value = 0;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK value is empty\n");
         return -1;
     }
@@ -257,8 +250,7 @@ int platform_get_iotconnect_use_otaack(int *value) {
 
 int platform_set_iotconnect_use_otaack(void) {
     int status = da16x_set_config_str(DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK, "0");
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to write DA16X_CONF_STR_IOTCONNECT_USE_OTA_ACK\n");
         return -1;
     }
@@ -270,13 +262,11 @@ int platform_get_iotconnect_cpid(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_CPID, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_CPID\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_CPID value is empty\n");
         return -1;
     }
@@ -287,13 +277,11 @@ int platform_get_iotconnect_env(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_ENV, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_ENV\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_ENV value is empty\n");
         return -1;
     }
@@ -304,13 +292,11 @@ int platform_get_iotconnect_duid(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_DUID, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_DUID\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_DUID value is empty\n");
         return -1;
     }
@@ -321,13 +307,11 @@ int platform_get_iotconnect_auth_type(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_AUTH_TYPE value is empty\n");
         return -1;
     }
@@ -338,13 +322,11 @@ int platform_get_iotconnect_symmetric_key(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_IOTCONNECT_SYMMETRIC_KEY value is empty\n");
         return -1;
     }
@@ -354,8 +336,7 @@ int platform_get_iotconnect_symmetric_key(char *string) {
 int platform_get_mqtt_qos(int *value) {
     int status;
     status = da16x_get_config_int(DA16X_CONF_INT_MQTT_QOS, value);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_INT_MQTT_QOS\n");
         return -1;
     }
@@ -366,13 +347,11 @@ int platform_get_mqtt_broker_ip(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_MQTT_BROKER_IP, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_BROKER_IP\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_MQTT_BROKER_IP value is empty\n");
         return -1;
     }
@@ -383,13 +362,11 @@ int platform_get_mqtt_broker_username(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_MQTT_USERNAME, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_USERNAME\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_MQTT_USERNAME value is empty\n");
         return -1;
     }
@@ -400,8 +377,7 @@ int platform_get_mqtt_broker_password(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_MQTT_PASSWORD, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_PASSWORD\n");
         return -1;
     }
@@ -418,14 +394,12 @@ int platform_get_mqtt_sub_topic0(char *string) {
     sprintf(topics, "%s%d", MQTT_NVRAM_CONFIG_SUB_TOPIC, 0);
     tmp_str = read_nvram_string(topics);
 
-    if(tmp_str == NULL)
-    {
+    if(tmp_str == NULL) {
         MQTT_ERROR("Failed to get %s\n", topics);
         return -1;
     }
 
-    if(*tmp_str == '\0')
-    {
+    if(*tmp_str == '\0') {
         MQTT_ERROR("Failed to get %s\n", topics);
         return -1;
     }
@@ -438,13 +412,11 @@ int platform_get_mqtt_pub_topic(char *string) {
     int status;
     *string = '\0';
     status = da16x_get_config_str(DA16X_CONF_STR_MQTT_PUB_TOPIC, string);
-    if(status != CC_SUCCESS)
-    {
+    if(status != CC_SUCCESS) {
         MQTT_ERROR("Failed to get DA16X_CONF_STR_MQTT_PUB_TOPIC\n");
         return -1;
     }
-    if(*string == '\0')
-    {
+    if(*string == '\0') {
         MQTT_ERROR("DA16X_CONF_STR_MQTT_PUB_TOPIC value is empty\n");
         return -1;
     }

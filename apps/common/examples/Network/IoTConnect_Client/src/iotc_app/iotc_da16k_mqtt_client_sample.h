@@ -27,13 +27,13 @@ bool mqtt_sample_client_is_running(void);
  * password can be NULL
  */
 void mqtt_sample_client_nvram_config(const char *broker,
-		              int port,
-			      const char *username,
-			      const char *password,
-			      const char *clientid, 
-			      const char *pub,
-			      const char *sub,
-                              int qos);
+                                int port,
+                                const char *username,
+                                const char *password,
+                                const char *clientid,
+                                const char *pub,
+                                const char *sub,
+                                int qos);
 
 #ifdef __cplusplus
 }

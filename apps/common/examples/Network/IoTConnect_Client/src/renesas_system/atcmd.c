@@ -530,7 +530,7 @@ static const command_t commands[] = {
 #if 1
   { (char *)"AT+NWICDUID",        atcmd_network,        1, (char *) "<set_iotconnect_duid>",                      "Set IoTConnect DUID"                                   },
   { (char *)"AT+NWICCPID",        atcmd_network,        1, (char *) "<set_iotconnect_cpid>",                      "Set IoTConnect CPID"                                   },
-/* 	You're not supposed to set this by hand - it is set via discovery/sync.
+/* You're not supposed to set this by hand - it is set via discovery/sync.
   { (char *)"AT+NWICCD",          atcmd_network,        1, (char *) "<set_iotconnect_cd>",                        "Set IoTConnect CD"                                     },
 */
   { (char *)"AT+NWICENV",         atcmd_network,        1, (char *) "<set_iotconnect_env>",                       "Set IoTConnect ENV"                                    },
@@ -1468,7 +1468,7 @@ read_remote_port:
                 if (strcasecmp(esc_cmd_cert_case, buf + 1) == 0) {
                     is_cert_cmd = pdTRUE;
                     break;
-				}
+                }
             }
         }
 
@@ -1603,22 +1603,22 @@ static int getchar_atcmd_uart(UINT32 mode)
 #if defined (__OTA_UPDATE_MCU_FW__)
 static int atcmd_hex2dec(char *src, int src_len)
 {
-	int base = 1;
-	int dec_val = 0;
+    int base = 1;
+    int dec_val = 0;
 
-	for (int idx = src_len - 1 ; idx >= 0; idx--) {
-		if (src[idx] >= '0' && src[idx] <= '9') {
-			dec_val += (src[idx] - '0') * base;
-			base = base * 10;
-		} else if (src[idx] >= 'A' && src[idx] <= 'F') {
-			dec_val += (src[idx] - 'A' + 10) * base;
-			base = base * 10;
-		} else if (src[idx] >= 'a' && src[idx] <= 'f') {
-			dec_val += (src[idx] - 'a' + 10) * base;
-			base = base * 10;
-		}
-	}
-	return dec_val;
+    for (int idx = src_len - 1 ; idx >= 0; idx--) {
+        if (src[idx] >= '0' && src[idx] <= '9') {
+            dec_val += (src[idx] - '0') * base;
+            base = base * 10;
+        } else if (src[idx] >= 'A' && src[idx] <= 'F') {
+            dec_val += (src[idx] - 'A' + 10) * base;
+            base = base * 10;
+        } else if (src[idx] >= 'a' && src[idx] <= 'f') {
+            dec_val += (src[idx] - 'a' + 10) * base;
+            base = base * 10;
+        }
+    }
+    return dec_val;
 }
 #endif // (__OTA_UPDATE_MCU_FW__)
 
@@ -3442,8 +3442,8 @@ int atcmd_wifi(int argc, char *argv[])
 #if defined ( __SUPPORT_PASSIVE_SCAN__ )
     // AT+WFPSCAN
     else if (strcasecmp(argv[0] + 5, "PSCAN") == 0) {
-    	extern int chk_channel_by_country(char *country, int set_channel, int mode, int *rec_channel);
-    	extern int i3ed11_ch_to_freq(int chan, int band);
+        extern int chk_channel_by_country(char *country, int set_channel, int mode, int *rec_channel);
+        extern int i3ed11_ch_to_freq(int chan, int band);
         char cmd[ATCMD_WIFI_STR_LEN + 1] = {0, };
         char isDuplicate[14] = {0, };
         char country[4] = {0, };
@@ -3960,7 +3960,7 @@ AT_WFPSCAN_RUN:
             if (psk_str != NULL) {
                 vPortFree(psk_str);
             }
-			
+
             if (is_ssid_hidden == pdTRUE) {
                 da16x_set_nvcache_int(DA16X_CONF_INT_HIDDEN_0, 1);
             }
@@ -4185,7 +4185,7 @@ AT_WFPSCAN_RUN:
             default:
                 break;
             }
-            da16x_nvcache2flash();	
+            da16x_nvcache2flash();
 
             ret = da16x_cli_reply("select_network 0", NULL, value_str);
             if (ret < 0 || strcmp(value_str, "FAIL") == 0) {
@@ -4507,7 +4507,7 @@ AT_WFPSCAN_RUN:
             case WPA_HIDDEN:
             case OWE_HIDDEN:
             case WPA3_HIDDEN:
-				da16x_set_nvcache_int(DA16X_CONF_INT_HIDDEN_0, 1);
+                da16x_set_nvcache_int(DA16X_CONF_INT_HIDDEN_0, 1);
                 break;
 
             default:
@@ -4726,7 +4726,7 @@ AT_WFPSCAN_RUN:
                     err_code = AT_CMD_ERR_WIFI_ENTAP_EAP_PHASE2;
                     goto atcmd_wifi_end;
                 }
-				
+
                 if (get_int_val_from_str(argv[6], &is_ssid_hidden, POL_1) != 0) {
                     err_code = AT_CMD_ERR_WIFI_ENTAP_WPA_HIDDEN_TYPE;
                     goto atcmd_wifi_end;
@@ -4758,7 +4758,7 @@ AT_WFPSCAN_RUN:
                 }   
             }
 
-            if (argc == 7) {											
+            if (argc == 7) {
                 if (p2 < CC_VAL_EAP_PHASE2_MIX || p2 > CC_VAL_EAP_GTC) {  // EAP Phase #2
                     err_code = AT_CMD_ERR_WIFI_ENTAP_EAP_PHASE2;
                     goto atcmd_wifi_end;
@@ -4795,11 +4795,11 @@ AT_WFPSCAN_RUN:
                 da16x_set_nvcache_int(DA16X_CONF_INT_EAP_PHASE2, p2);
             }
 
-			if (is_ssid_hidden == pdTRUE) {
+            if (is_ssid_hidden == pdTRUE) {
                 da16x_set_nvcache_int(DA16X_CONF_INT_HIDDEN_0, 1);
-			} else if (is_ssid_hidden == pdFALSE) {
+            } else if (is_ssid_hidden == pdFALSE) {
                 da16x_set_nvcache_int(DA16X_CONF_INT_HIDDEN_0, 0);
-			}
+            }
             da16x_nvcache2flash();
 
         }
@@ -16486,8 +16486,8 @@ void host_process_AT_command(UCHAR *buf)
         status = AT_CMD_ERR_CMD_OK;
     } else
 #endif //(__OTA_UPDATE_MCU_FW__)
-	if (strlen((char *)buf) > 0) {
-		if (buf[0] == ESCAPE_CODE) {
+    if (strlen((char *)buf) > 0) {
+        if (buf[0] == ESCAPE_CODE) {
 #if defined(__RUNTIME_CALCULATION__) && defined(XIP_CACHE_BOOT)
             printf_with_run_time("[host_process_AT_command] <ESC>");
 #endif  // __RUNTIME_CALCULATION__
@@ -16907,7 +16907,7 @@ static int atcmd_chk_wifi_conn(void)
     return result;
 }
 
-#define	EVT_WFJAP_CONN_SENT	0x01
+#define EVT_WFJAP_CONN_SENT 0x01
 static EventGroupHandle_t evt_grp_wfjap = NULL;
 
 static void atcmd_wfjap_conn_sent(void)
@@ -17242,31 +17242,31 @@ end:
 
 static int hex_2_num(char c)
 {
-	if (c >= '0' && c <= '9') {
-		return c - '0';
+    if (c >= '0' && c <= '9') {
+        return c - '0';
     } else if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
+        return c - 'a' + 10;
     } else if (c >= 'A' && c <= 'F') {
-		return c - 'A' + 10;
+        return c - 'A' + 10;
     }
 
-	return -1;
+    return -1;
 }
 
 static int hex_2_byte(const char *hex)
 {
-	int a, b;
+    int a, b;
 
-	a = hex_2_num(*hex++);
-	if (a < 0) {
-		return -1;
+    a = hex_2_num(*hex++);
+    if (a < 0) {
+        return -1;
     }
-	b = hex_2_num(*hex++);
-	if (b < 0) {
-		return -1;
+    b = hex_2_num(*hex++);
+    if (b < 0) {
+        return -1;
     }
 
-	return (a << 4) | b;
+    return (a << 4) | b;
 }
 
 static size_t str_decode(u8 *buf, size_t maxlen, const char *str)
