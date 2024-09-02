@@ -1,5 +1,6 @@
 This folder contains overrides to core SDK files to add 
-support for IoT Connect Console and AT Commands.
+support for IoT Connect Console and AT Commands, as well
+as new additional files related to them to support IoTC code.
 
 This is done to avoid shipping the SDK directory structure.
 
