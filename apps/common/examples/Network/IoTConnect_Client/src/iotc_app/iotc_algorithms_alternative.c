@@ -59,17 +59,17 @@ static void sha256_helper(const unsigned char *data1, unsigned int datalen1, con
 static void sha256_helper(const unsigned char *data1, unsigned int datalen1,
             const unsigned char *data2, unsigned int datalen2,
             unsigned char *result, unsigned int *resultlen) {
-	EVP_MD_CTX *c = EVP_MD_CTX_new();
+    EVP_MD_CTX *c = EVP_MD_CTX_new();
 
-	EVP_DigestInit_ex(c, EVP_sha256(), NULL);
-	if(data1 != NULL && datalen1 != 0) {
-            EVP_DigestUpdate(c, data1, datalen1);
-	}
-	if(data2 != NULL && datalen2 != 0) {
-            EVP_DigestUpdate(c, data2, datalen2);
-	}
-        EVP_DigestFinal_ex(c, result, resultlen);
-	EVP_MD_CTX_free(c);
+    EVP_DigestInit_ex(c, EVP_sha256(), NULL);
+    if(data1 != NULL && datalen1 != 0) {
+        EVP_DigestUpdate(c, data1, datalen1);
+    }
+    if(data2 != NULL && datalen2 != 0) {
+        EVP_DigestUpdate(c, data2, datalen2);
+    }
+    EVP_DigestFinal_ex(c, result, resultlen);
+    EVP_MD_CTX_free(c);
 }
 #endif // USE_OPENSSL_FOR_SHA_HELPER
 
@@ -169,7 +169,7 @@ static void iotc_hmac_sha256(const void *key, unsigned int keylen,
 
     memset(k_dash, 0, blockSize);
     if(keylen > blockSize) {
-	sha256_helper(key, keylen, NULL, 0, k_dash, &dummySize);
+        sha256_helper(key, keylen, NULL, 0, k_dash, &dummySize);
     } else {
         memcpy(k_dash, key, keylen);
     }

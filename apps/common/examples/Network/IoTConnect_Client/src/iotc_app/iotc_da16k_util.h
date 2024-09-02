@@ -36,8 +36,6 @@ int platform_get_mqtt_broker_password(char *string);
 int platform_get_mqtt_sub_topic0(char *string);
 int platform_get_mqtt_pub_topic(char *string);
 
-int mqtt_client_preinit_certs(IotConnectClientConfig *c);
-
 #ifdef __cplusplus
 }
 #endif

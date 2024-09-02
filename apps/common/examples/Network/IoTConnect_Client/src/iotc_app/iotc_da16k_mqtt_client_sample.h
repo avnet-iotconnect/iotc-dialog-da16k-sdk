@@ -27,19 +27,13 @@ bool mqtt_sample_client_is_running(void);
  * password can be NULL
  */
 void mqtt_sample_client_nvram_config(const char *broker,
-		              int port,
-			      const char *username,
-			      const char *password,
-			      const char *clientid, 
-			      const char *pub,
-			      const char *sub,
-                              int qos);
-
-void mqtt_broker_cert_config(const char *root_ca, unsigned int root_ca_len);
-
-void mqtt_device_cert_config(const char *device_cert, unsigned int device_cert_len,
-			     const char *device_private_key, unsigned int device_private_key_len);
-
+                                int port,
+                                const char *username,
+                                const char *password,
+                                const char *clientid,
+                                const char *pub,
+                                const char *sub,
+                                int qos);
 
 #ifdef __cplusplus
 }

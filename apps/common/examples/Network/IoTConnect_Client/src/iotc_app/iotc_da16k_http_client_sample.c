@@ -58,6 +58,7 @@
 
 #include "iotc_http_request.h"
 #include "common_config.h"
+#include "iotc_da16k_dynamic_ca.h"
 
 // or specify as functions
 #define HTTP_DEBUG(...) do{ PRINTF(GREEN_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
@@ -69,8 +70,6 @@ extern int iotconnect_basic_sample_main(void);
 #define    EVT_HTTP_COMPLETE     (1UL << 0x00)
 #define    EVT_HTTP_DATA     (1UL << 0x01)
 #define    EVT_HTTP_ERROR     (1UL << 0x02)
-
-#undef ENABLE_HTTPS_SERVER_VERIFY_REQUIRED
 
 #define HTTP_CLIENT_SAMPLE_TASK_NAME     "http_c_sample"
 #define HTTP_CLIENT_SAMPLE_STACK_SIZE    (1024 * 6) / 4
@@ -151,60 +150,86 @@ static void http_client_clear_https_conf(httpc_secure_connection_t *conf) {
     return;
 }
 
-static int http_client_read_cert(unsigned int addr, unsigned char **out, size_t *outlen) {
+static int http_client_read_cert(unsigned int addr, u8 **out, size_t *outlen) {
     int ret = 0;
-    unsigned char *buf = NULL;
+    u8 *buf = NULL;
     size_t buflen = CERT_MAX_LENGTH;
 
-    buf = pvPortMalloc(CERT_MAX_LENGTH);
+    buf = (u8 *) pvPortMalloc(buflen);
+
     if (!buf) {
         HTTP_ERROR("Failed to allocate memory(%x)\r\n", addr);
         return -1;
     }
 
-    memset(buf, 0x00, CERT_MAX_LENGTH);
+    memset(buf, 0x00, buflen);
 
-    ret = cert_flash_read(addr, buf, CERT_MAX_LENGTH);
+    ret = cert_flash_read(addr, (char *) buf, buflen);
     if (ret == 0 && buf[0] != 0xFF) {
         *out = buf;
-        *outlen = strlen(buf) + 1;
+        *outlen = strnlen((char *) buf, buflen) + 1;
         return 0;
     }
 
-    if (buf) {
-        vPortFree(buf);
-    }
+    vPortFree(buf);
 
-    return 0;
+    return -1;
+}
+
+static char *http_client_strdup(const char *other) {
+    char *dup = NULL;
+
+    if (!other)
+        return NULL;
+
+    dup = pvPortMalloc(strlen(other) + 1);
+
+    if (!dup) 
+        return NULL;
+
+    strcpy(dup, other);
+    return dup;
 }
 
 static void http_client_read_certs(httpc_secure_connection_t *settings) {
     int ret = 0;
+    const char *dynamic_http_ca = iotc_da16k_dynamic_ca_http_get();
 
     // To read ca certificate
-    ret = http_client_read_cert(SFLASH_ROOT_CA_ADDR2, &settings->ca, &settings->ca_len);
-    if (ret) {
-        HTTP_ERROR("failed to read CA cert\r\n");
-        goto err;
+    
+    // If we have a dynamically configured root CA, use that, else fall back to flash
+    if (dynamic_http_ca) {
+        settings->ca = (u8 *) http_client_strdup(dynamic_http_ca);
+        if (!settings->ca) {
+            HTTP_ERROR("Failed to allocate memory for CA cert\r\n");
+            goto err;
+        }
+        
+        HTTP_DEBUG("Using Dynamic HTTP CA.\r\n");
+        settings->ca_len = strlen((char *) settings->ca) + 1; // Includes the null terminator.
+    } else {
+        ret = http_client_read_cert(SFLASH_ROOT_CA_ADDR2, &settings->ca, &settings->ca_len);
+        if (ret) {
+            HTTP_ERROR("HTTP: failed to read CA cert\r\n");
+            goto err;
+        }
     }
 
     // To read certificate
     ret = http_client_read_cert(SFLASH_CERTIFICATE_ADDR2,
                                 &settings->cert, &settings->cert_len);
     if (ret) {
-        HTTP_ERROR("failed to read certificate\r\n");
-        goto err;
+        HTTP_WARN("HTTP: failed to read certificate\r\n");
     }
 
     // To read private key
     ret = http_client_read_cert(SFLASH_PRIVATE_KEY_ADDR2,
                                 &settings->privkey, &settings->privkey_len);
     if (ret) {
-        HTTP_ERROR("failed to read private key\r\n");
-        goto err;
+        HTTP_WARN("HTTP: failed to read private key\r\n");
     }
 
-    return ;
+    return;
 
 err:
 
@@ -258,8 +283,8 @@ static void httpc_cb_result_fn(void *arg, httpc_result_t httpc_result, u32_t rx_
         xEventGroupSetBits(my_app_event_group, EVT_HTTP_ERROR);
     } else if(rx_content_len != total_payload_len) {
         HTTP_WARN("\n[%s:%d] Received data doesn't match the total payload!! \r\n", __func__, __LINE__);
-	HTTP_WARN("rx_content_len = %s\r\n", rx_content_len);
-	HTTP_WARN("total_payload_len = %s\r\n", total_payload_len);
+        HTTP_WARN("rx_content_len = %s\r\n", rx_content_len);
+        HTTP_WARN("total_payload_len = %s\r\n", total_payload_len);
 
         xEventGroupSetBits(my_app_event_group, EVT_HTTP_ERROR);
     } else {

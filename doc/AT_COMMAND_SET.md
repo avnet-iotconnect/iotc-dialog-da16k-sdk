@@ -352,7 +352,6 @@ Note: values are treated as strings even if appear numeric – but shouldn’t a
 Successful completion should report, e.g.
 ```
 OK
-+NWMQMSGSND:1
 ```
 
 ## C2D commands

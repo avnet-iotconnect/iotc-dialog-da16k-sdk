@@ -2,50 +2,30 @@
 
 ## Requirements
 
-You require the following:
+You require the following IoTConnect configuration parameters:
 
-* The connection type
+* Connection type
 
   * **1** for AWS
   * **2** for Azure
 
-* MQTT Broker, Discovery and Sync certificates
+* Device **Certificate and Key** (or symmetric key if using symmetric key authentication)
 
-  * ***AWS***
-    AWS only requires a X509 certificate for the MQTT broker.
+* Device **DUID** (Key Vault)
 
-    At the time of writing, this is **Starfield Services Root Certificate Authority - G2**
-   
-    It can be acquired here: https://www.amazontrust.com/repository/SFC2CA-SFSRootCAG2.pem
-  
-  * ***AZURE***
+* Device **CPID** (Key Vault)
 
-    Azure requires:
+* Environment **ENV** (Key Vault)
 
-    * An appropriate X509 certificate for the MQTT broker. 
+## Configuration outside of the command line
 
-      Azure at the time of writing uses *DigiCert Global Root G2**
-   
-      It can be acquired here: https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem
+These parameters can be configured via [AT command set](./doc/AT_COMMAND_SET.md). 
 
-    * An appropriate IoTConnect Discovery / Sync Root CA
+The [ATCMD Library](https://github.com/avnet-iotconnect/iotc-freertos-da16k-atcmd-lib) - on supported platforms - provides structures and APIs to configure these parameters from the host devices (i.e. devices that this module is connected to) as well.
 
-      Examples (pick what suits your environment)
-  
-      * Microsoft ECC Root Certificate Authority 2017
-      * Microsoft RSA Root Certificate Authority 2017
+## Configuring via DA16K Serial Command Line
 
-      You can acquire these here: https://www.microsoft.com/pkiops/docs/repository.htm
-
-* IoTConnect Device **Certificate and Key** (or symmetric key if using symmetric key authentication)
-
-* IoTConnect Device **DUID**
-
-* IoTConnect Device **CPID** (Key Vault)
-
-* IoTConnect Environment **ENV** (Key Vault)
-
-## Certificate setup
+### Certificate setup
 
 At the command prompt, type `net` to get access to the network based commands (need to type up to get back to “normal” command prompt).
 
@@ -71,41 +51,9 @@ The `cert` command is used to write the certificate  and key data:
 (...)
 ```
 
-### MQTT Root CA
+#### MQTT device certificate and private key  
 
-Use `cert write ca1` to write the the AWS MQTT Root CA. Copy and paste it into the terminal, and terminate the input with `CTRL+C`.
-
-```
-[/DA16200/NET] # cert write ca1
-Typing data: (Certificate value)
-        Cancel - CTRL+D, End of Input - CTRL+C or CTRL+Z
------BEGIN CERTIFICATE-----
-...
------END CERTIFICATE-----
-
-ca1 Write success.
-```
-
-### (Azure only) IoTConnect HTTP Discovery/Sync Cert
-
-Skip this step if you are using AWS.
-
-Use `cert write ca2` to write the the MQTT Root CA. Copy and paste it into the terminal, and terminate the input with `CTRL+C`.
-
-```
-[/DA16200/NET] # cert write ca2
-Typing data: (Certificate value)
-        Cancel - CTRL+D, End of Input - CTRL+C or CTRL+Z
------BEGIN CERTIFICATE-----
-...
------END CERTIFICATE-----
-
-ca2 Write success.
-``` 
-
-### MQTT device certificate and private key  
-
-If the device is using an X509-style authentication scheme, then you will also have to write this data to the device in the same manner using `cert write cert1` and `cert write key1` respectively.
+If the device is using an X509-style authentication scheme, then you will have to write this data to the device in the same manner using `cert write cert1` and `cert write key1` respectively.
 
 #### MQTT device certificate
 
@@ -132,7 +80,7 @@ Typing data: (Certificate value)
 key1 Write success.
 ```
 
-## Verification of certificate setup
+### Verification of certificate setup
 
 Use `cert status` to check that the data has been written.
 
@@ -141,7 +89,7 @@ Use `cert status` to check that the data has been written.
 
 #1:
   For MQTT, CoAPs Client
-  - Root CA     : Found
+  - Root CA     : Empty
   - Certificate : Found
   - Private Key : Found
   - DH Parameter: Empty
@@ -151,7 +99,7 @@ Use `cert status` to check that the data has been written.
 [/DA16200/NET] #
 ```
 
-## Setting up IoTConnect configuration parameters
+### Setting up IoTConnect configuration parameters
 
 * Set up Connection Type
 * Set up Environment
@@ -176,7 +124,7 @@ Use the `iotconnect_config` command to accomplish this.
 
 The MQTT Broker configuration will be set automatically after a **Discovery/Sync** cycle.
 
-## Finalization
+### Finalization
 
 You can now run `iotconnect_client setup` and `iotconnect_client start` to start the IoTConnect client and send telemetry.
 

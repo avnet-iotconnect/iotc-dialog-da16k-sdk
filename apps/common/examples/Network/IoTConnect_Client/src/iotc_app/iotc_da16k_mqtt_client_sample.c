@@ -52,9 +52,9 @@
 #include "iotc_da16k_mqtt_client_sample.h"
 #include "iotc_da16k_util.h"
 
-#define	SAMPLE_MQTT_CLIENT		"MQTT_CLIENT"
-#define	NAME_MY_APP_EVENT_HANDLER	"MY_APP_EVENT_HANDLER"
-#define	NAME_MY_APP_Q_HANDLER		"MY_APP_Q_HANDLER"
+#define SAMPLE_MQTT_CLIENT          "MQTT_CLIENT"
+#define NAME_MY_APP_EVENT_HANDLER   "MY_APP_EVENT_HANDLER"
+#define NAME_MY_APP_Q_HANDLER       "MY_APP_Q_HANDLER"
 
 /// Wait count for mqtt send: in multiple of 100 ms
 #define MQTT_PUB_MAX_WAIT_CNT    100
@@ -95,7 +95,7 @@ static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool c
 
     if (!_mqtt_q) {
         MQTT_ERROR("[%s] Msg Q doesn't exist!", __func__);
-	return -1;
+        return -1;
     }
 
     if(copy) {
@@ -110,7 +110,7 @@ static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool c
 
     if (!item.topic || !item.message) {
         MQTT_ERROR("[%s] failed to allocate topic or message string!", __func__);
-    	return -1;
+        return -1;
     }
 
     MQTT_ERROR("[%s] topic %s, message %s!", __func__, item.topic ? item.topic : "NULL", item.message ? item.message : "NULL");
@@ -197,11 +197,11 @@ int mqtt_sample_client_send(const char *topic, const char *message, bool copy) {
     BaseType_t ret;
 
     if (!mqtt_client_is_running()) {
-	if(!is_mqtt_client_thd_alive()) {
+    if(!is_mqtt_client_thd_alive()) {
             MQTT_ERROR("[MQTT_SAMPLE] Mqtt_client is in terminated state, terminating my app ...\n");
 
             mqtt_sample_client_deinit();
-	} else {
+    } else {
             MQTT_WARN("[MQTT_SAMPLE] Mqtt_client may be trying to reconnect ... cancelling the job this time\n");
         }
 
@@ -257,7 +257,7 @@ static void _mqtt_q_handler(void *arg) {
     while (1) {
         if (!_mqtt_q) {
             MQTT_ERROR("[%s] Msg Q doesn't exist!", __func__);
-    	    break;
+            break;
         }
 
         xStatus = xQueueReceive(_mqtt_q, &item, portMAX_DELAY);
@@ -339,7 +339,7 @@ int mqtt_sample_client_init(msg_cb_t msg_cb, pub_cb_t pub_cb, conn_cb_t conn_cb,
     g_sub_cb = sub_cb;
     g_unsub_cb = unsub_cb;
 
-    BaseType_t	xRet;
+    BaseType_t xRet;
 
     // stop any MQTT client that might be running with "stale" info or callbacks
     if (mqtt_client_is_running() == TRUE) {
@@ -391,12 +391,12 @@ cleanup:
 }
 
 void mqtt_sample_client_nvram_config(const char *broker,
-		                             int port,
-			                         const char *username,
-			                         const char *password,
-			                         const char *clientid, 
-			                         const char *pub,
-			                         const char *sub,
+                                     int port,
+                                     const char *username,
+                                     const char *password,
+                                     const char *clientid,
+                                     const char *pub,
+                                     const char *sub,
                                      int qos)
 {
     int running_state = mqtt_client_is_running();
@@ -463,30 +463,6 @@ void mqtt_sample_client_nvram_config(const char *broker,
         if (_mqtt_chk_connection(100) == pdFALSE) {
             MQTT_ERROR("[%s] _mqtt_chk_connection failed\n", __func__);
         }
-    }
-}
-
-// Need certificate for MQTTS to talk to the broker
-//
-// I guess we could update SFLASH_ROOT_CA_ADDR1 in case connection doesn't work and try a different root CA, since Azure has 3 potential certs?
-//
-void mqtt_broker_cert_config(const char *root_ca, unsigned int root_ca_len)
-{
-    cert_flash_write(SFLASH_ROOT_CA_ADDR1, (char *) root_ca, root_ca_len);
-}
-
-/*
- * device_cert / device_private_key can be NULL
- */
-void mqtt_device_cert_config(const char *device_cert, unsigned int device_cert_len,
-			     const char *device_private_key, unsigned int device_private_key_len)
-{
-    if(device_cert && device_private_key) {
-        cert_flash_write(SFLASH_CERTIFICATE_ADDR1, (char *) device_cert, device_cert_len);
-        cert_flash_write(SFLASH_PRIVATE_KEY_ADDR1, (char *) device_private_key, device_private_key_len);
-    } else {
-        cert_flash_delete(SFLASH_CERTIFICATE_ADDR1);
-        cert_flash_delete(SFLASH_PRIVATE_KEY_ADDR1);
     }
 }
 
