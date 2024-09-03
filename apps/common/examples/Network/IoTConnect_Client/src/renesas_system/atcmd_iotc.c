@@ -46,6 +46,13 @@ static inline bool iotc_at_asciihex_byte_decode (uint8_t *out, const char *hex) 
     return endptr == &to_decode[2];
 }
 
+/*  Decode a hexadecimal ascii string
+    The DA16K is *Little endian* - The order will be reversed from the input string.
+
+    The output buffer for the input string "00deadbeef1234" would contain the bytes:
+
+        34 12 ef be ad de 00
+*/
 static bool iotc_at_decode_hex_string(void *out, const char *hex, size_t length) {
     uint8_t *dst = (uint8_t *) out + length - 1;
 
