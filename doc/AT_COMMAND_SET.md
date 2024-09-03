@@ -343,7 +343,7 @@ It is not possible to start IoTConnect once it has been reset – the configurat
 
 ### MESSAGE
 
-To send an “IoTConnect format” MQTT message semd AT+NWICMSG followed by a series of up to 7 name/value pairs, e.g.
+To send an “IoTConnect format” MQTT message send AT+NWICMSG followed by a series of up to 7 name/value pairs, e.g.
 ```
 AT+NWICMSG name1,value1,name2,value2
 ```
@@ -353,6 +353,51 @@ Successful completion should report, e.g.
 ```
 OK
 ```
+
+### EXTENDED MESSAGE
+
+To send an “IoTConnect format” MQTT message with proper data type specification and enhanced floating point precision, send AT+NWICMSG followed by a series of up to 4 name/value pairs, e.g.
+```
+AT+NWICEXMSG type1,name1,value1,type2,name2,value2
+```
+
+Values are treated with their proper types. The difference is that values of different types are represented differently. 
+
+* Strings are represented as usual.
+* Booleans and numeric types are represented in hexadecimal, big endian form. (see below).
+
+Successful completion should report, e.g.
+
+```
+OK
+```
+
+#### Extended Message Data Types
+
+| ID | Type     | Representation                                          |
+|----|----------|---------------------------------------------------------|
+|  0 | String   | String                                                  |
+|  1 | Bool     | 1 byte, 2 hex digits (00 or 01)                         |
+|  2 | C-Float  | 32-Bit IEE754 Float, 4 bytes, 8 hex digits, Big endian  |
+|  3 | C-Double | 64-Bit IEE754 Float, 8 bytes, 16 hex digits, Big endian |
+
+#### Examples
+
+* String value (*Hello World*)
+
+`AT+NWICEXMSG 0,s_hello,Hello World`
+
+* Boolean value (this represents the boolean value *True*)
+
+`AT+NWICEXMSG 1,b_am_i_a_crazy_person,01`
+
+* C-Float (this represents the decimal value *0.49182*)
+
+`AT+NWICEXMSG 2,f_chance_of_being_crazy,d5cffb3e` 
+
+* C-Double (this represents the decimal value *866.0*)
+
+`AT+NWICEXMSG 3,f_minimum_craziness_level,0000000000108b40`
 
 ## C2D commands
 
