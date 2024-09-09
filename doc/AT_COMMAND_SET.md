@@ -356,7 +356,7 @@ OK
 
 ### EXTENDED MESSAGE
 
-To send an “IoTConnect format” MQTT message with proper data type specification and enhanced floating point precision, send AT+NWICMSG followed by a series of up to 4 name/value pairs, e.g.
+To send an “IoTConnect format” MQTT message with proper data type specification and enhanced floating point precision, send AT+NWICMSG followed by a series of up to ***8*** type/name/value tuples, e.g.
 ```
 AT+NWICEXMSG type1,name1,value1,type2,name2,value2
 ```
