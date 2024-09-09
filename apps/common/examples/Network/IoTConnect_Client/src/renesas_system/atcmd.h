@@ -354,7 +354,7 @@ typedef enum _atcmd_sess_nvr_type {
 #if defined ( __ATCMD_IF_SDIO__ ) || defined ( __ATCMD_IF_SPI__ )
 #define SLAVE_CMD_SIZE              (8192 + 64)
 #else
-#define SLAVE_CMD_SIZE              (256)
+#define SLAVE_CMD_SIZE              (2048)  /* IoTConnect modification, original was 256 bytes but we want to support large chunks of telemetry */
 #endif // __ATCMD_IF_SDIO__ || __ATCMD_IF_SPI__
 
 

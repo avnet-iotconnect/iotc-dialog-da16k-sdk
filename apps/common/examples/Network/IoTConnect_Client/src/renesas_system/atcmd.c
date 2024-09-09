@@ -535,7 +535,7 @@ static const command_t commands[] = {
   { (char *)"AT+NWICSTOP",        iotc_at_nwicstop,     0, (char *) "<stop iotconnect connection>",               "Stop the IoTConnect connection"                        },
   { (char *)"AT+NWICRESET",       iotc_at_nwicreset,    0, (char *) "<stop iotconnect connection and reset>",     "Stop the IoTConnect connection and reset any configuration" },
   { (char *)"AT+NWICMSG",         iotc_at_nwicmsg,     15, (char *) "<name1>,<value1>,<name2>,<value2>,...",      "Send an IoTConnect format MQTT message, using name/value pairs" },
-  { (char *)"AT+NWICEXMSG",       iotc_at_nwicexmsg,   13, (char *) "<type1>,<name1>,<value1>,...",               "Send an IoTConnect format MQTT message, using type/name/value tuples" },
+  { (char *)"AT+NWICEXMSG",       iotc_at_nwicexmsg,   25, (char *) "<type1>,<name1>,<value1>,...",               "Send an IoTConnect format MQTT message, using type/name/value tuples" },
   { (char *)"AT+NWICVER",         iotc_at_nwicver,      0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
   { (char *)"AT+NWICGETCMD",      iotc_at_nwicgetcmd,   0, (char *) "",                                           "Get latest command sent by IoTConnect"                 },
 #endif
