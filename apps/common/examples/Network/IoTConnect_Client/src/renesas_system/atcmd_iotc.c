@@ -78,7 +78,7 @@ static void iotc_print_at_data(iotc_at_data_type type, iotc_at_data data) {
             PRINTF("%s: Type: %d, data: %u\n", __func__, (int) type, (unsigned) data.d_bool);
             break;
         case IOTC_AT_FLOAT32:
-            PRINTF("%s: Type: %d, data: %f\n", __func__, (int) type, data.d_float32);
+            PRINTF("%s: Type: %d, data: %f\n", __func__, (int) type, (double)data.d_float32);
             break;
         case IOTC_AT_FLOAT64:
             PRINTF("%s: Type: %d, data: %f\n", __func__, (int) type, data.d_float64);
