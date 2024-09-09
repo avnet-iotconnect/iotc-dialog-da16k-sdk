@@ -13,3 +13,11 @@ core/system/src/mqtt_client/mqtt_client.c
 core/system/include/mqtt_client/mqtt_client.h
 
 The header file includes the new limit (256 chars)
+
+There is a bug in the mosquitto client implementation for DA16K
+which causes the mosquitto main loop to miss message sends
+when DPM mode is disabled due to lack of synchronization between
+the send function and the loop. The send function won't wait
+for the main loop to catch up before queueing another message.
+So we provide overrides for mosquitto.c and sub_client.c 
+to fix this.
