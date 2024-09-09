@@ -45,11 +45,6 @@
 
 #include "da16x_compile_opt.h"
 
-#include "iotconnect.h"
-#include "iotcl.h"
-#include "iotcl_telemetry.h"
-#include "iotc_app.h"
-
 #pragma GCC diagnostic ignored "-Wrestrict"
 
 
@@ -788,7 +783,6 @@ void atcmd_wf_jap_dap_print_with_cause(int is_jap)
     }
 }
 
-
 void atcmd_wf_jap_print_with_cause(int cause)
 {
 #if defined (__SUPPORT_DPM_ABNORM_MSG__)
@@ -805,71 +799,6 @@ void atcmd_wf_jap_print_with_cause(int cause)
     DA16X_UNUSED_ARG(cause);
 #endif // __SUPPORT_DPM_ABNORM_MSG__
 }
-
-#if 1
-void atcmd_asynchony_event_for_iccmd(int type, const char *ack_id, const char *command)
-{
-    if (type == 0 || ack_id == NULL || command == NULL) {
-        PRINTF_ATCMD("\r\n+NWICCMDFAIL\r\n");
-    } else {
-        PRINTF_ATCMD("\r\n+NWICCMD:%d,%s,%s\r\n", type, ack_id, command);
-    }
-}
-
-void atcmd_asynchony_event_for_icota(const char *ack_id, const char *version, const char *url)
-{
-    if (ack_id == NULL || version == NULL || url == NULL) {
-        PRINTF_ATCMD("\r\n+NWICOTAFAIL\r\n");
-    } else {
-        PRINTF_ATCMD("\r\n+NWICOTA:%s,%s,%s\r\n", ack_id, version, url);
-    }
-}
-
-void atcmd_asynchony_event_for_icmqtt(int status)
-{
-    PRINTF_ATCMD("\r\n+NWICMQ:%d\r\n", status);
-}
-
-void atcmd_asynchony_event_for_icsetup_begin(void)
-{
-    PRINTF_ATCMD("\r\n+NWICSETUPBEGIN:\r\n");
-}
-
-void atcmd_asynchony_event_for_icsetup_end(int status)
-{
-    PRINTF_ATCMD("\r\n+NWICSETUPEND:%d\r\n", status);
-}
-
-void atcmd_asynchony_event_for_icstart_begin(void)
-{
-    PRINTF_ATCMD("\r\n+NWICSTARTBEGIN:\r\n");
-}
-
-void atcmd_asynchony_event_for_icstart_end(int status)
-{
-    PRINTF_ATCMD("\r\n+NWICSTARTEND:%d\r\n", status);
-}
-
-void atcmd_asynchony_event_for_icstop_begin(void)
-{
-    PRINTF_ATCMD("\r\n+NWICSTOPBEGIN:\r\n");
-}
-
-void atcmd_asynchony_event_for_icstop_end(int status)
-{
-    PRINTF_ATCMD("\r\n+NWICSTOPEND:%d\r\n", status);
-}
-
-void atcmd_asynchony_event_for_icreset_begin(void)
-{
-    PRINTF_ATCMD("\r\n+NWICRESETBEGIN:\r\n");
-}
-
-void atcmd_asynchony_event_for_icreset_end(int status)
-{
-    PRINTF_ATCMD("\r\n+NWICRESETEND:%d\r\n", status);
-}
-#endif
 
 #if defined (__SUPPORT_MQTT__)
 static int atcmd_wfjap_not_send_by_err;

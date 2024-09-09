@@ -307,3 +307,48 @@ int iotc_at_nwicgetcmd(int argc, char *argv[]) {
 
     return ret;
 }
+
+void atcmd_asynchony_event_for_icmqtt(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICMQ:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icsetup_begin(void)
+{
+    PRINTF_ATCMD("\r\n+NWICSETUPBEGIN:\r\n");
+}
+
+void atcmd_asynchony_event_for_icsetup_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICSETUPEND:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icstart_begin(void)
+{
+    PRINTF_ATCMD("\r\n+NWICSTARTBEGIN:\r\n");
+}
+
+void atcmd_asynchony_event_for_icstart_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICSTARTEND:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icstop_begin(void)
+{
+    PRINTF_ATCMD("\r\n+NWICSTOPBEGIN:\r\n");
+}
+
+void atcmd_asynchony_event_for_icstop_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICSTOPEND:%d\r\n", status);
+}
+
+void atcmd_asynchony_event_for_icreset_begin(void)
+{
+    PRINTF_ATCMD("\r\n+NWICRESETBEGIN:\r\n");
+}
+
+void atcmd_asynchony_event_for_icreset_end(int status)
+{
+    PRINTF_ATCMD("\r\n+NWICRESETEND:%d\r\n", status);
+}

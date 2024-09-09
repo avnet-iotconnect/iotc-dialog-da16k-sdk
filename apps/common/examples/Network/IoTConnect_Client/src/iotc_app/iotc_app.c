@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sdk_type.h"
+#include "da16x_network_common.h"
+#include "util_api.h"
+
 #include "iotcl.h"
 #include "iotcl_util.h"
 #include "iotconnect.h"
@@ -16,7 +20,7 @@
 #include "iotc_log.h"
 #include "iotc_da16k_dynamic_ca.h"
 
-#include "atcmd.h"
+#include "atcmd_iotc.h"
 
 #define EVT_IOTC_STOP      (1UL << 0x00)
 #define EVT_IOTC_SETUP     (1UL << 0x01)
@@ -32,7 +36,7 @@ static IotConnectClientConfig s_client_cfg = {0};
 
 static bool setupOK = false;
 
-static err_t network_ok(void) {
+static bool network_ok(void) {
     int iface = WLAN0_IFACE;
     int wait_cnt = 0;
 
@@ -42,7 +46,7 @@ static err_t network_ok(void) {
 
         if (wait_cnt == 100) {
             IOTC_ERROR("\r\n [%s] ERR : No network connection\r\n", __func__);
-            return ERR_UNKNOWN;
+            return false;
         }
     }
 
@@ -66,11 +70,11 @@ static err_t network_ok(void) {
                     da16x_set_config_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
                 }
             }
-            return ERR_UNKNOWN;
+            return false;
        }
    }
     
-    return ERR_OK;
+    return true;
 }
 
 void stop_iotconnect(void) {
@@ -372,7 +376,7 @@ int iotconnect_basic_sample_main(void) {
             continue;
         }
 
-        if(network_ok() != ERR_OK) {
+        if(network_ok() == false) {
             IOTC_ERROR("Command ignored - Network interface is down!");
             continue;
         }

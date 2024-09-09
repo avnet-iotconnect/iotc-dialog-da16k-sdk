@@ -1210,19 +1210,6 @@ extern UCHAR atcmd_esc_data_dump_flag;
 extern int   sntp_name_idx;
 extern mqttParamForRtm mqttParams;
 
-extern void atcmd_asynchony_event_for_iccmd(int type, const char *ack_id, const char *buffer);
-extern void atcmd_asynchony_event_for_icota(const char *ack_id, const char *version, const char *url);
-extern void atcmd_asynchony_event_for_icmqtt(int status);
-
-extern void atcmd_asynchony_event_for_icsetup_begin(void);
-extern void atcmd_asynchony_event_for_icsetup_end(int status);
-extern void atcmd_asynchony_event_for_icstart_begin(void);
-extern void atcmd_asynchony_event_for_icstart_end(int status);
-extern void atcmd_asynchony_event_for_icstop_begin(void);
-extern void atcmd_asynchony_event_for_icstop_end(int status);
-extern void atcmd_asynchony_event_for_icreset_begin(void);
-extern void atcmd_asynchony_event_for_icreset_end(int status);
-
 #endif    // __ATCMD_H__
 
 /* EOF */

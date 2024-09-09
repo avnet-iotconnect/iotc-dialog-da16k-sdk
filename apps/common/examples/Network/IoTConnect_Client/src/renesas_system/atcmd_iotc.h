@@ -39,4 +39,15 @@ int iotc_at_nwicver     (int argc, char *argv[]);
 /* NWICGETCMD:      Get next command from command queue */
 int iotc_at_nwicgetcmd  (int argc, char *argv[]);
 
+/* Asynchony events for IoTConnect status changes, called from iotc_app.c */
+void atcmd_asynchony_event_for_icmqtt           (int status);
+void atcmd_asynchony_event_for_icsetup_begin    (void);
+void atcmd_asynchony_event_for_icsetup_end      (int status);
+void atcmd_asynchony_event_for_icstart_begin    (void);
+void atcmd_asynchony_event_for_icstart_end      (int status);
+void atcmd_asynchony_event_for_icstop_begin     (void);
+void atcmd_asynchony_event_for_icstop_end       (int status);
+void atcmd_asynchony_event_for_icreset_begin    (void);
+void atcmd_asynchony_event_for_icreset_end      (int status);
+
 #endif
