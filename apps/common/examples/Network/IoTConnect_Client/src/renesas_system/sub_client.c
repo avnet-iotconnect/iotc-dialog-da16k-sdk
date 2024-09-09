@@ -65,6 +65,9 @@ static void sub_dummy_function(char *timer_name);
 extern void mqtt_client_user_cb_set(void);
 extern void atcmd_asynchony_event_for_mqttmsgpub(int result, int err_code);
 
+/* IoTConnect bugfix hack */
+bool sub_client_is_queueing = false;
+
 #if defined (__MQTT_CLEAN_SESSION_MODE_SUPPORT__)
 static int mqtt_connect_ind_sent;
 void mqtt_connect_ind_sent_set(int val)
@@ -524,6 +527,7 @@ restart:
 
     da16x_sys_watchdog_suspend(da16x_sys_wdog_id_get_MQTT_Sub());
 
+	sub_client_is_queueing = false;
 	rc = mosquitto_loop_forever(mosq_sub, -1, 1);
 
     da16x_sys_watchdog_notify_and_resume(da16x_sys_wdog_id_get_MQTT_Sub());
@@ -964,15 +968,26 @@ int mqtt_client_send_message(char *top, char *publish)
 
 	mpub_message_buf = _mosquitto_strdup(publish);
 
+
 	if (!dpm_mode_is_enabled()) {
+		/* hack: flag that we are queueing - callback mutex is held so no concurrency issue here */
+		sub_client_is_queueing = true;
 		xSemaphoreGiveRecursive(mosq_sub->callback_mutex.mutex_info);
+
+		MQTT_DBG_TEMP("[%s] Waiting for queueing to be acknowledged... Message='%s'\n", __func__, publish);
+
+		while (sub_client_is_queueing) {
+			vTaskDelay(1);
+		}
+
+		MQTT_DBG_TEMP("[%s] Main loop acked! \n", __func__);
 	}
-	
+
 	// In DPM mode only, mqtt_client_send_message() send a PUBLISH directly.
 	if (dpm_mode_is_enabled()) {
 		ret = my_publish(mosq_sub, NULL, 0);
 	}
-	
+
 	xSemaphoreGiveRecursive(mosq_sub->send_msg_mutex.mutex_info);
 
 	if (qos == 0)

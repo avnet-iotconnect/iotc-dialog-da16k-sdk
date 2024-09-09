@@ -67,6 +67,10 @@ extern int da16x_network_main_check_net_link_status(int iface);
 
 TaskHandle_t	mosquittoPingSubThread = NULL;
 
+
+/* IoTConnect bugfix hack: Introduce "is_queueing" flag - governed by callback mutex */
+extern bool sub_client_is_queueing;
+
 char	mqtt_conn_state(void)
 {
 #if defined ( __MQTT_CONN_STATUS__ )
@@ -881,7 +885,10 @@ int mosquitto_loop(struct mosquitto *mosq, int timeout, int max_packets)
 	// In non-DPM mode, mqtt_client sends a PUBLISH
 	if (!dpm_mode_is_enabled() && mosq->state == mosq_cs_connected) {
 		ut_mqtt_sem_take_recur(&(mosq->callback_mutex), portMAX_DELAY);
-		my_publish(mosq, NULL, 0);
+		if (sub_client_is_queueing) {
+			my_publish(mosq, NULL, 0);
+			sub_client_is_queueing = false;
+		}
 		xSemaphoreGiveRecursive(mosq->callback_mutex.mutex_info);
 	}
 
