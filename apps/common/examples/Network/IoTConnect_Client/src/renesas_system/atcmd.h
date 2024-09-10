@@ -126,7 +126,7 @@
 #define TX_PAYLOAD_MAX_SIZE              HTTPC_REQ_DATA_MAX_SIZE
 #define USER_ATCMD_BUF                   (TX_PAYLOAD_MAX_SIZE + 32)
 #define ATCMD_STACK_SIZE                 (1024 * 10)
-#define MAX_PARAMS                       20
+#define MAX_PARAMS                       26
 #define ESC_CMD_MAX_PARAMS               3
 #define ESCAPE_CODE                      0x1B
 
