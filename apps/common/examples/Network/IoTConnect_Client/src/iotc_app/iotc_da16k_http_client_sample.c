@@ -283,8 +283,8 @@ static void httpc_cb_result_fn(void *arg, httpc_result_t httpc_result, u32_t rx_
         xEventGroupSetBits(my_app_event_group, EVT_HTTP_ERROR);
     } else if(rx_content_len != total_payload_len) {
         HTTP_WARN("\n[%s:%d] Received data doesn't match the total payload!! \r\n", __func__, __LINE__);
-        HTTP_WARN("rx_content_len = %s\r\n", rx_content_len);
-        HTTP_WARN("total_payload_len = %s\r\n", total_payload_len);
+        HTTP_WARN("rx_content_len = %u\r\n", rx_content_len);
+        HTTP_WARN("total_payload_len = %u\r\n", total_payload_len);
 
         xEventGroupSetBits(my_app_event_group, EVT_HTTP_ERROR);
     } else {
