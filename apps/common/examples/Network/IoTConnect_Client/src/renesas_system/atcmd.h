@@ -126,7 +126,7 @@
 #define TX_PAYLOAD_MAX_SIZE              HTTPC_REQ_DATA_MAX_SIZE
 #define USER_ATCMD_BUF                   (TX_PAYLOAD_MAX_SIZE + 32)
 #define ATCMD_STACK_SIZE                 (1024 * 10)
-#define MAX_PARAMS                       20
+#define MAX_PARAMS                       26
 #define ESC_CMD_MAX_PARAMS               3
 #define ESCAPE_CODE                      0x1B
 
@@ -354,7 +354,7 @@ typedef enum _atcmd_sess_nvr_type {
 #if defined ( __ATCMD_IF_SDIO__ ) || defined ( __ATCMD_IF_SPI__ )
 #define SLAVE_CMD_SIZE              (8192 + 64)
 #else
-#define SLAVE_CMD_SIZE              (256)
+#define SLAVE_CMD_SIZE              (2048)  /* IoTConnect modification, original was 256 bytes but we want to support large chunks of telemetry */
 #endif // __ATCMD_IF_SDIO__ || __ATCMD_IF_SPI__
 
 
@@ -1209,19 +1209,6 @@ extern UCHAR atcmd_esc_data_echo_flag;
 extern UCHAR atcmd_esc_data_dump_flag;
 extern int   sntp_name_idx;
 extern mqttParamForRtm mqttParams;
-
-extern void atcmd_asynchony_event_for_iccmd(int type, const char *ack_id, const char *buffer);
-extern void atcmd_asynchony_event_for_icota(const char *ack_id, const char *version, const char *url);
-extern void atcmd_asynchony_event_for_icmqtt(int status);
-
-extern void atcmd_asynchony_event_for_icsetup_begin(void);
-extern void atcmd_asynchony_event_for_icsetup_end(int status);
-extern void atcmd_asynchony_event_for_icstart_begin(void);
-extern void atcmd_asynchony_event_for_icstart_end(int status);
-extern void atcmd_asynchony_event_for_icstop_begin(void);
-extern void atcmd_asynchony_event_for_icstop_end(int status);
-extern void atcmd_asynchony_event_for_icreset_begin(void);
-extern void atcmd_asynchony_event_for_icreset_end(int status);
 
 #endif    // __ATCMD_H__
 
