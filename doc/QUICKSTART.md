@@ -14,7 +14,7 @@ The device is able to configure the DA16K module and send out telemetry to IoTCo
 
 The interactions are as such:
 
-**Embedded client** &larr; *Serial/PMOD* &rarr; **DA16xxx** &larr; *WiFi* &rarr; **IoTConect**
+**Embedded client** &larr; *Serial/PMOD* &rarr; **DA16xxx** &larr; *WiFi* &rarr; **IoTConnect**
 
 The supported **AT interface command set** is documented in the [AT Command Set Documentation](AT_COMMAND_SET.md).
 
