@@ -1,16 +1,14 @@
-# DA16xxx AT Interface Quickstart Guide
+# DA16xxx AT Interface QuickStart Guide
 
-This is the Quickstart Guide for the DA16K IoTConnect AT Command Interface Firmware.
-
-This document will guide you through the setup process.
+This document will walk through the setup process for the DA16K IoTConnect AT Command Interface Firmware.
 
 ## Introduction
 
-The firmware you are about to run on your DA16xxx device provides a serial UART interface that allows you to communicate with IoTConnect and its cloud services using [AT commands](https://en.wikipedia.org/wiki/Hayes_AT_command_set).
+The firmware provides a serial UART interface that allows for communication with IoTConnect and its cloud services using [AT commands](https://en.wikipedia.org/wiki/Hayes_AT_command_set).
 
-This means that the DA16xxx acts as a gateway to IoTConnect for any embedded device that does *not* have a network interface or the resources to run a dedicated IoTConnect/MQTT client using nothing but an UART connection.
+The DA16xxx acts as a gateway to IoTConnect for any embedded device with a UART connectionthat does *not* have a network interface or the resources to run a dedicated IoTConnect/MQTT client.
 
-The device is able to configure the DA16K module and send out telemetry to IoTConnect using this serial interface.
+The device is able to configure the DA16K module and send telemetry to IoTConnect using this serial interface.
 
 The interactions are as such:
 
