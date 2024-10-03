@@ -13,7 +13,7 @@
 #include "iotcl_certs.h"
 #include "iotc_da16k_dynamic_ca.h"
 
-static const char s_mqtt_ca_aws[]       = IOTCL_CERT_STARFIELD_ROOT_G2;
+static const char s_mqtt_ca_aws[]       = IOTCL_AMAZON_ROOT_CA1;
 static const char s_mqtt_ca_azure[]     = IOTCL_CERT_DIGICERT_GLOBAL_ROOT_G2;
 static const char s_http_ca_aws_azure[] = IOTCL_CERT_GODADDY_SECURE_SERVER_CERTIFICATE_G2;
 

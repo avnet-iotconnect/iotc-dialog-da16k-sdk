@@ -276,6 +276,8 @@ int user_set_str(int name, char *value, int cache)
     case DA16X_CONF_STR_MQTT_SUB_TOPIC_ADD:
         if (mqtt_client_add_sub_topic(value, cache)) {
             result = CC_FAILURE_INVALID;
+        } else {
+        	result = CC_SUCCESS;
         }
 
         break;
@@ -283,6 +285,8 @@ int user_set_str(int name, char *value, int cache)
     case DA16X_CONF_STR_MQTT_SUB_TOPIC_DEL:
         if (mqtt_client_del_sub_topic(value, cache)) {
             result = CC_FAILURE_INVALID;
+        } else {
+        	result = CC_SUCCESS;
         }
 
         break;

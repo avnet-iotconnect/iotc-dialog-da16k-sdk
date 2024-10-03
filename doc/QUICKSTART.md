@@ -40,7 +40,7 @@ The supported **AT interface command set** is documented in the [AT Command Set 
         ![](assets/flasherdownload.png)
 
 
-If you are running Linux, use the **Developers Guide** to set up the firmware and image instead.
+If you are running Linux, use the **Developer Guide** to set up the firmware and image instead.
 
 
 ## DA16xxx Hardware
@@ -126,11 +126,11 @@ Both the EVK boards and the PMOD modules will show up as **USB Serial Device** i
 
 Before you can use the IoTConnect AT Command functions, you must flash the firmware.
 
-You can either build it yourself (see the [Developers Guide](DEVELOPERS_GUIDE.md)) or use the pre-built firmware images in the `/images/` directory at the root of the repository.
+You can either build it yourself (see the [Developer Guide](DEVELOPER_GUIDE)) or use the pre-built firmware images in the `/images/` directory at the root of the repository.
 
 This assumes that the device has an intact *BOOT* partition, as it would have from the factory or if another working firmware image was deployed before.
 
-In the unlikely event that your device does *not* have an intact *BOOT* partition, follow the [Developers Guide](DEVELOPERS_GUIDE.md) to build and flash one.
+In the unlikely event that your device does *not* have an intact *BOOT* partition, follow the [Developer Guide](DEVELOPER_GUIDE) to build and flash one.
 
 To flash the IoTConnect firmware, follow these steps:
 

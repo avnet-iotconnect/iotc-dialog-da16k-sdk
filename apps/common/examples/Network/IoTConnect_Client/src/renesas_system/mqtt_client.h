@@ -147,11 +147,11 @@ Copyright (c) 2019-2022 Modified by Renesas Electronics.
 #define MQTT_CONFIG_VER311_DEF          0
 
 #if defined (__SUPPORT_ATCMD__)
-#define MQTT_CONFIG_TLS_INCOMING_DEF    (1024 * 6)
+#define MQTT_CONFIG_TLS_INCOMING_DEF    (1024 * 8) // (1024 * 6) does not pass AWS large cert qualification test
 #else
-#define MQTT_CONFIG_TLS_INCOMING_DEF    (1024 * 4)
+#define MQTT_CONFIG_TLS_INCOMING_DEF    (1024 * 8) // (1024 * 4) does not pass AWS large cert qualification test
 #endif // __SUPPORT_ATCMD__
-#define MQTT_CONFIG_TLS_OUTGOING_DEF    (1024 * 4)
+#define MQTT_CONFIG_TLS_OUTGOING_DEF    (1024 * 8) // (1024 * 4) does not pass AWS large cert qualification test
 #define MQTT_CONFIG_TLS_AUTHMODE_DEF    1
 #define MQTT_CONFIG_TLS_NO_TIME_CHK_DEF 0
 

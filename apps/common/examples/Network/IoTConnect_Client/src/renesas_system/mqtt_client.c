@@ -964,7 +964,7 @@ static int mqtt_client_read_from_nvram(void)
     }
     else
     {
-        paramsPtr->tls_authmode = MBEDTLS_SSL_VERIFY_OPTIONAL;  //Default authmode
+        paramsPtr->tls_authmode = MBEDTLS_SSL_VERIFY_REQUIRED;  //Default authmode
     }
 
     if (!da16x_get_config_str(DA16X_CONF_STR_MQTT_SUB_CLIENT_ID, ret_str))
@@ -1372,7 +1372,7 @@ UINT mqtt_client_add_sub_topic(char *topic, int cache)
     UINT status = CC_SUCCESS;
 
     char *nvram_read_topic;
-    char nvram_tag[16] = {0, };
+    char nvram_tag[33] = {0, };
     int sub_topic_num = 0;
 
     if ((topic == NULL) || (strlen(topic) <= 0) || (strlen(topic) > MQTT_TOPIC_MAX_LEN))

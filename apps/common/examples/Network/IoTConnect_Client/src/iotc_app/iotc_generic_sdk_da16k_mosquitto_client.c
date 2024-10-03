@@ -16,6 +16,7 @@
 
 #include "common_def.h"
 
+#include "iotcl_util.h"
 #include "iotc_da16k_mqtt_client_sample.h"
 #include "iotc_device_client.h"
 #include "iotc_algorithms.h"
@@ -53,16 +54,16 @@ static void __mqtt_on_message(const char *buf, int len, const char *topic)
 
 static void __mqtt_on_disconnected(void)
 {
-    IOTC_INFO("[%s] MQTT disconnection callback!\n\n" CLEAR_COLOR, __func__);
+    IOTC_INFO("[%s] MQTT disconnection callback!" CLEAR_COLOR, __func__);
 
     if (status_cb) {
         status_cb(IOTC_CS_MQTT_DISCONNECTED);
     }
-    iotc_device_deinit();
+    is_connected = false;
 }
 
 int iotc_device_client_disconnect(void) {
-    mqtt_sample_client_deinit();
+	iotc_device_deinit();
     return 0;
 }
 
@@ -131,11 +132,26 @@ int iotc_device_client_connect(IotConnectDeviceClientConfig *c) {
     if (!mc) {
         return IOTCL_ERR_CONFIG_MISSING; // caled function will print the error
     }
+#if 1
+	iotcl_free(iotcl_mqtt_get_config()->host);
+	iotcl_free(iotcl_mqtt_get_config()->pub_rpt);
+	iotcl_free(iotcl_mqtt_get_config()->pub_ack);
+	iotcl_free(iotcl_mqtt_get_config()->sub_c2d);
+	iotcl_mqtt_get_config()->host = iotcl_strdup("t2wlntge8x69qa.deviceadvisor.iot.eu-west-1.amazonaws.com"); // get the command argument
+	iotcl_mqtt_get_config()->pub_rpt = iotcl_strdup("qualification");
+	iotcl_mqtt_get_config()->pub_ack = iotcl_strdup("qualification");
+	iotcl_mqtt_get_config()->sub_c2d = iotcl_strdup("qualification");
+#endif
 
-    mqtt_sample_client_nvram_config(mc->host,
+#if 0
+	iotcl_free(iotcl_mqtt_get_config()->host);
+	iotcl_mqtt_get_config()->host = iotcl_strdup("a2tz930267bcnl-ats.iot.eu-west-1.amazonaws.com"); // get the command argument
+#endif
+
+	mqtt_sample_client_nvram_config(mc->host,
             8883,
-            mc->username,
-            "dummy",
+            NULL,
+            NULL,
             mc->client_id,
             mc->pub_rpt,
             mc->sub_c2d,

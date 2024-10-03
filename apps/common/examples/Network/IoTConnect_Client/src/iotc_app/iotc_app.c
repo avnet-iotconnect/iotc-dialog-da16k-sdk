@@ -230,6 +230,20 @@ cleanup:
     atcmd_asynchony_event_for_icsetup_end(false);
     return -1;
 }
+static void send_qualification_telemetery(void) {
+    IotclMessageHandle msg = iotcl_telemetry_create();
+
+    bool success = iotcl_telemetry_set_string(msg, "qualification", "true") == IOTCL_SUCCESS;
+    if (!success) {
+        PRINTF("ERROR in iotcl_telemetry_set_string!\n");
+    } else {
+        if (iotcl_mqtt_send_telemetry(msg, false) != IOTCL_SUCCESS) {
+            PRINTF("ERROR in iotcl_mqtt_send_telemetry!}\n");
+        }
+    }
+    iotcl_telemetry_destroy(msg);
+
+}
 
 //
 // a wrapper to send +NWICSTARTBEGIN / +NWICSTARTEND messages
@@ -248,6 +262,9 @@ int start_wrapper(void)
         // Run discovery/sync
         // Startup mqtt_client with new MQTT_XXXX values
         //
+#if 1
+    	s_client_cfg.qos = 1; //needed for qualification
+#endif
         ret = iotconnect_sdk_init(&s_client_cfg);
         if (ret == 0) {
             ret = iotconnect_sdk_connect();
@@ -259,16 +276,44 @@ int start_wrapper(void)
         } else {            
             IOTC_ERROR("iotconnect_sdk_init failed: %d", ret);
         }
-
+#if 1
+        vTaskDelay(3000/portTICK_PERIOD_MS);
+#else
         vTaskDelay(1000/portTICK_PERIOD_MS);
+#endif
     }
+#if 1
+    TickType_t last_connected = 0;
+    while (true) {
+    	if (!iotconnect_sdk_is_connected()) {
+    		vTaskDelay(5000/portTICK_PERIOD_MS);
+    		iotconnect_sdk_disconnect();
+    		ret = iotconnect_sdk_connect();
+    		if (ret != 0) {
+        		last_connected = xTaskGetTickCount();
+    	        vTaskDelay(3000/portTICK_PERIOD_MS);
+    			continue;
+    		}
 
+    	} else {
+    	}
+        send_qualification_telemetery();
+        if (((xTaskGetTickCount() - last_connected) * portTICK_PERIOD_MS) > 60000) {
+        	PRINTF("----------\nWARNING: Connection lingered for too long. Restarting the connection\n----------\n");
+            iotconnect_sdk_disconnect();
+        }
+        vTaskDelay(5000/portTICK_PERIOD_MS);
+    }
+    return ret;
+#else
     if (ret != 0) {
         IOTC_ERROR("start_wrapper() failed: %d", ret);
+        iotconnect_sdk_deinit();
     }
 
     atcmd_asynchony_event_for_icstart_end(ret == 0);
     return ret;
+#endif
 }
 
 //

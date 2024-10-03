@@ -197,14 +197,12 @@ int mqtt_sample_client_send(const char *topic, const char *message, bool copy) {
     BaseType_t ret;
 
     if (!mqtt_client_is_running()) {
-    if(!is_mqtt_client_thd_alive()) {
-            MQTT_ERROR("[MQTT_SAMPLE] Mqtt_client is in terminated state, terminating my app ...\n");
-
-            mqtt_sample_client_deinit();
-    } else {
+		if(!is_mqtt_client_thd_alive()) {
+				MQTT_ERROR("[MQTT_SAMPLE] Mqtt_client is in terminated state, terminating my app ...\n");
+				mqtt_sample_client_deinit();
+		} else {
             MQTT_WARN("[MQTT_SAMPLE] Mqtt_client may be trying to reconnect ... cancelling the job this time\n");
         }
-
         return -1;
     } 
 
@@ -422,11 +420,17 @@ void mqtt_sample_client_nvram_config(const char *broker,
     iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_SUB_CLIENT_ID, clientid);
 
     iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_TOPIC,     pub);
-    // set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_CID,       clientid);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_QOS,           qos);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_TLS,           1);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_PING_PERIOD,   60);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_VER311,        1);
+
+    // Needed to for AWS Device Qualification and general security
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_TLS_AUTHMODE,  MBEDTLS_SSL_VERIFY_REQUIRED);
+
+    // Needed to for AWS Device Qualification and ability to connect to shared IoTCores
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_TLS_SNI,       broker);
+
 
     //
     // Generally "nuke" any subscriptions.
