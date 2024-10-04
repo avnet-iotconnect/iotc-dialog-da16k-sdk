@@ -49,3 +49,5 @@ apps/**/projects/**/Release
 apps/**/projects/**/img
 apps/**/projects/**/*.launch
 apps/**/projects/**/.settings
+apps/**/projects/**/*.jlink
+apps/**/projects/**/JLinkLog.log
