@@ -22,20 +22,21 @@ echo "Preparing the Avnet IoTConnect Dialog DA16K SDK..."
 echo "Updating submodules..."
 git submodule update --init --recursive
 
+rm -rf "${da_sdk_path}"
 mkdir -p "${da_sdk_path}"
 pushd "${da_sdk_path}" >/dev/null
   echo "Extracting the ${da_sdk_zip}..."
   unzip -q "../${da_sdk_zip}"
 popd >/dev/null
 
-if [ ! -f "${da_sdk_path}/utility/cfg_generator/da16x_gencfg" ] || [ ! -f "da_sdk_path/tools/util/set_linux_perm.sh" ] || [ ! -d "${da_sdk_path}/apps" ]; then
+if [ ! -f "${da_sdk_path}/utility/cfg_generator/da16x_gencfg" ] || [ ! -f "${da_sdk_path}/tools/util/set_linux_perm.sh" ] || [ ! -d "${da_sdk_path}/apps" ]; then
     echo "Error: The SDK does not seem to contain the neccessary files."
     exit 1
 fi
 
 # Copy files from the given path to the script's path whilst *not* overwriting the files in this repo.
 echo "Copying SDK files..."
-cp -r --update=none "${da_sdk_path}/*" .
+cp -r --update=none "${da_sdk_path}"/* .
 
 # Setup permissions for the SDK's script files
 echo "Setting up SDK script permissions..."

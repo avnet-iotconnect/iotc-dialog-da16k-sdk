@@ -158,7 +158,7 @@ static void on_command_receive(IotclC2dEventData data) {
         }
 
         if (pdTRUE == xQueueSendToBack(command_queue, &queue_entry, 0)) {
-            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_SUCCESS, "Command added to local queue");
+            iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_SUCCESS_WITH_ACK, "Command added to local queue");
         } else {
             IOTC_ERROR("Command queue full!\n");    
             iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Command queue full");
