@@ -269,6 +269,9 @@ static void send_qualification_telemetery(void) {
 
 static int periodic_event_wrapper(void) {
 	int ret = -1;
+	if (!is_initialized) {
+		return ret; // Client is stopped. Ignore silently
+	}
 	if (aws_qualification_host) {
 		// while in qualification mode, keep trying to re-connect
 		ensure_qualilification_mode();
