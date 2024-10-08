@@ -191,8 +191,8 @@ Copyright (c) 2019-2022 Modified by Renesas Electronics.
 #define MQTT_CONN_MAX_RETRY             6
 /// Max number of MQTT reconnection without DPM sleep in DPM mode
 #define MQTT_RESTART_MAX_RETRY          3
-/// MQTT Reconnection cycle (sec.)
-#define MQTT_CONN_RETRY_PERIOD          5
+/// When connecting, we will backoff between 1 and 6 seconds
+#define MQTT_CONN_RETRY_PERIOD_MAX     	5
 /// Awaiting PINGRESP timeout (sec.)
 #define MQTT_WAIT_COUNT_PING            6
 /// Max waiting time of MQTT DPM sleep
