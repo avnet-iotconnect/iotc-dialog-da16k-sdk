@@ -132,21 +132,6 @@ int iotc_device_client_connect(IotConnectDeviceClientConfig *c) {
     if (!mc) {
         return IOTCL_ERR_CONFIG_MISSING; // caled function will print the error
     }
-#if 1
-	iotcl_free(iotcl_mqtt_get_config()->host);
-	iotcl_free(iotcl_mqtt_get_config()->pub_rpt);
-	iotcl_free(iotcl_mqtt_get_config()->pub_ack);
-	iotcl_free(iotcl_mqtt_get_config()->sub_c2d);
-	iotcl_mqtt_get_config()->host = iotcl_strdup("t2wlntge8x69qa.deviceadvisor.iot.eu-west-1.amazonaws.com"); // get the command argument
-	iotcl_mqtt_get_config()->pub_rpt = iotcl_strdup("qualification");
-	iotcl_mqtt_get_config()->pub_ack = iotcl_strdup("qualification");
-	iotcl_mqtt_get_config()->sub_c2d = iotcl_strdup("qualification");
-#endif
-
-#if 0
-	iotcl_free(iotcl_mqtt_get_config()->host);
-	iotcl_mqtt_get_config()->host = iotcl_strdup("a2tz930267bcnl-ats.iot.eu-west-1.amazonaws.com"); // get the command argument
-#endif
 
 	mqtt_sample_client_nvram_config(mc->host,
             8883,

@@ -22,10 +22,11 @@
 
 #include "atcmd_iotc.h"
 
-#define EVT_IOTC_STOP      (1UL << 0x00)
-#define EVT_IOTC_SETUP     (1UL << 0x01)
-#define EVT_IOTC_START     (1UL << 0x02)
-#define EVT_IOTC_RESET     (1UL << 0x03)
+#define EVT_IOTC_STOP      		(1UL << 0x00)
+#define EVT_IOTC_SETUP     		(1UL << 0x01)
+#define EVT_IOTC_START     		(1UL << 0x02)
+#define EVT_IOTC_RESET     		(1UL << 0x03)
+#define EVT_IOTC_DISCONNECT		(1UL << 0x04)
 
 #define COMMAND_QUEUE_SIZE (16)
 
@@ -34,7 +35,20 @@ static QueueHandle_t        command_queue       = NULL;
 
 static IotConnectClientConfig s_client_cfg = {0};
 
-static bool setupOK = false;
+static bool is_initialized = false;
+
+// AWS Qualification ---
+// we use this as a flag AND keep the string forever until restart
+#ifndef AWS_QALIFICATION_HOST // define this at compile time if you want to force this qualification mode
+static char* aws_qualification_host = NULL;
+#else
+static char* aws_qualification_host = AWS_QALIFICATION_HOST;
+#endif
+
+// AWS Qualification ---
+// when we connected successfully last. Some qualification tests are
+// not robust enough and we need to force a reconnect after staying connected too long.
+static TickType_t 			last_connect_time = 0;
 
 static bool network_ok(void) {
     int iface = WLAN0_IFACE;
@@ -105,6 +119,13 @@ void reset_iotconnect(void) {
     xEventGroupSetBits(my_app_event_group, EVT_IOTC_RESET);
 }
 
+void disconnect_iotconnect(void) {
+    if(my_app_event_group == NULL) {
+        return;
+    }
+    xEventGroupSetBits(my_app_event_group, EVT_IOTC_DISCONNECT);
+}
+
 static void on_connection_status(IotConnectMqttStatus status) {
     // Add your own status handling
     switch (status) {
@@ -139,7 +160,23 @@ static void on_command_receive(IotclC2dEventData data) {
     iotc_command_queue_item   queue_entry     = {0}; 
 
     if (command) {
+
+// This behavior is disabled in the project by default, as it can be a security risk
+// Enable this #define to enable the trigger and ensure that it is disabled in production
+#ifdef AWS_QUALFICIATION_CMD_TRIGGER
         IOTC_INFO("Command %s received with %s ACK ID\n", command, ack_id ? ack_id : "no");
+
+        // check if we got the qualification command
+        const char * const QUALIFICATION_START_PREFIX_CMD = "aws-qualification-start "; // with a space
+        if (command && (0 == strncmp(QUALIFICATION_START_PREFIX_CMD, command, strlen(QUALIFICATION_START_PREFIX_CMD)))) {
+        	const char* qual_host = &command[strlen(QUALIFICATION_START_PREFIX_CMD)];
+        	aws_qualification_host = iotcl_strdup(qual_host); // this value is permanent until reboot. No need to free it.
+        	disconnect_iotconnect(); // trigger a disconnect on the main application thread. It will then attempt to reconnect
+            IOTC_INFO("AWS Device Qualification will start after a wait period...");
+        	return;
+        }
+
+#endif
 
         queue_entry.command = iotcl_strdup(command);
 
@@ -195,6 +232,64 @@ bool iotc_command_queue_item_get(iotc_command_queue_item *dst_item) {
     }
 }
 
+// call this function before attempting to reconnect
+static void ensure_qualilification_mode(void) {
+    IotclMqttConfig *mc = iotcl_mqtt_get_config();
+    if (!mc) {
+        PRINTF("ERROR  ensure_qualilification_mode called, but not initialized?\n");
+    	return;
+    }
+    const char* qualification_topic = "qualification";
+    if (0 != strcmp("qualification", mc->pub_rpt)) {
+    	// we need to override
+    	iotcl_free(mc->host);
+    	iotcl_free(mc->pub_rpt);
+    	iotcl_free(mc->pub_ack);
+    	iotcl_free(mc->sub_c2d);
+    	mc->host = iotcl_strdup(aws_qualification_host);
+    	mc->pub_rpt = iotcl_strdup(qualification_topic);
+    	mc->pub_ack = iotcl_strdup(qualification_topic);
+    	mc->sub_c2d = iotcl_strdup(qualification_topic);
+    }
+}
+
+static void send_qualification_telemetery(void) {
+    IotclMessageHandle msg = iotcl_telemetry_create();
+
+    bool success = iotcl_telemetry_set_string(msg, "qualification", "true") == IOTCL_SUCCESS;
+    if (!success) {
+        PRINTF("ERROR in iotcl_telemetry_set_string!\n");
+    } else {
+        if (iotcl_mqtt_send_telemetry(msg, false) != IOTCL_SUCCESS) {
+            PRINTF("ERROR in iotcl_mqtt_send_telemetry!}\n");
+        }
+    }
+    iotcl_telemetry_destroy(msg);
+}
+
+static int periodic_event_wrapper(void) {
+	int ret = -1;
+	if (aws_qualification_host) {
+		// while in qualification mode, keep trying to re-connect
+		ensure_qualilification_mode();
+		if (!iotconnect_sdk_is_connected()) {
+			iotconnect_sdk_disconnect();
+			ret = iotconnect_sdk_connect();
+			if (ret != 0) {
+				return 0;
+			} else {
+	    		last_connect_time = xTaskGetTickCount();
+			}
+		}
+        send_qualification_telemetery();
+        if (((xTaskGetTickCount() - last_connect_time) * portTICK_PERIOD_MS) > 60000) {
+        	PRINTF("----------\nWARNING: Connection lingered for too long. Restarting the connection\n----------\n");
+            iotconnect_sdk_disconnect();
+        }
+	}
+	return ret;
+}
+
 //
 // a wrapper to send +NWICSETUPBEGIN / +NWICSETUPEND messages
 //
@@ -221,6 +316,7 @@ int setup_wrapper(void) {
     s_client_cfg.status_cb = on_connection_status;
     s_client_cfg.ota_cb = NULL;
     s_client_cfg.cmd_cb = on_command_receive;
+    s_client_cfg.qos = 1;
 
     atcmd_asynchony_event_for_icsetup_end(true);
     return 0;
@@ -229,20 +325,6 @@ cleanup:
     iotc_da16k_reset_config(&s_client_cfg);
     atcmd_asynchony_event_for_icsetup_end(false);
     return -1;
-}
-static void send_qualification_telemetery(void) {
-    IotclMessageHandle msg = iotcl_telemetry_create();
-
-    bool success = iotcl_telemetry_set_string(msg, "qualification", "true") == IOTCL_SUCCESS;
-    if (!success) {
-        PRINTF("ERROR in iotcl_telemetry_set_string!\n");
-    } else {
-        if (iotcl_mqtt_send_telemetry(msg, false) != IOTCL_SUCCESS) {
-            PRINTF("ERROR in iotcl_mqtt_send_telemetry!}\n");
-        }
-    }
-    iotcl_telemetry_destroy(msg);
-
 }
 
 //
@@ -262,13 +344,16 @@ int start_wrapper(void)
         // Run discovery/sync
         // Startup mqtt_client with new MQTT_XXXX values
         //
-#if 1
-    	s_client_cfg.qos = 1; //needed for qualification
-#endif
+
+    	// NOTE: Calling iotconnect_sdk_init will denint first
         ret = iotconnect_sdk_init(&s_client_cfg);
         if (ret == 0) {
+        	if (aws_qualification_host) {
+        		ensure_qualilification_mode();
+        	}
             ret = iotconnect_sdk_connect();
             if (ret == 0) {
+            	last_connect_time = xTaskGetTickCount();
                 break;
             } else {
                 IOTC_ERROR("iotconnect_sdk_connect failed: %d", ret);
@@ -276,44 +361,13 @@ int start_wrapper(void)
         } else {            
             IOTC_ERROR("iotconnect_sdk_init failed: %d", ret);
         }
-#if 1
-        vTaskDelay(3000/portTICK_PERIOD_MS);
-#else
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-#endif
     }
-#if 1
-    TickType_t last_connected = 0;
-    while (true) {
-    	if (!iotconnect_sdk_is_connected()) {
-    		vTaskDelay(5000/portTICK_PERIOD_MS);
-    		iotconnect_sdk_disconnect();
-    		ret = iotconnect_sdk_connect();
-    		if (ret != 0) {
-        		last_connected = xTaskGetTickCount();
-    	        vTaskDelay(3000/portTICK_PERIOD_MS);
-    			continue;
-    		}
-
-    	} else {
-    	}
-        send_qualification_telemetery();
-        if (((xTaskGetTickCount() - last_connected) * portTICK_PERIOD_MS) > 60000) {
-        	PRINTF("----------\nWARNING: Connection lingered for too long. Restarting the connection\n----------\n");
-            iotconnect_sdk_disconnect();
-        }
-        vTaskDelay(5000/portTICK_PERIOD_MS);
-    }
-    return ret;
-#else
     if (ret != 0) {
         IOTC_ERROR("start_wrapper() failed: %d", ret);
-        iotconnect_sdk_deinit();
     }
 
     atcmd_asynchony_event_for_icstart_end(ret == 0);
     return ret;
-#endif
 }
 
 //
@@ -343,6 +397,7 @@ static void reset_wrapper(void) {
     if(iotconnect_sdk_is_connected() == true) {
         iotconnect_sdk_disconnect();
     }
+    iotconnect_sdk_deinit();
 
     iotc_da16k_dynamic_ca_clear();
 
@@ -407,18 +462,28 @@ int iotconnect_basic_sample_main(void) {
                                      (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET),
                                      pdFALSE,
                                      pdFALSE,
-                                     30000 / portTICK_PERIOD_MS);
+                                     10000 / portTICK_PERIOD_MS);
 
         bool reset = events & EVT_IOTC_RESET;
         bool start = events & EVT_IOTC_START;
         bool setup = events & EVT_IOTC_SETUP;
         bool stop = events & EVT_IOTC_STOP;
+        bool disconnect = events & EVT_IOTC_DISCONNECT;
+        // ignore EVT_IOTC_PERIODIC_EVENT, as we will always run the handler
 
-        xEventGroupClearBits( my_app_event_group, (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET) );
+        xEventGroupClearBits( my_app_event_group, (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET | EVT_IOTC_DISCONNECT) );
 
-        if(start == false && setup == false && stop == false && reset == false) {
-            // just timed out
+
+        if(!start && !setup && !stop && !reset && !disconnect) {
+        	// will execute once every 10 seconds (per xEventGroupWaitBits delay)
+            periodic_event_wrapper();
             continue;
+        }
+
+        if (disconnect) {
+        	if (is_initialized) {
+            	iotconnect_sdk_disconnect();
+        	}
         }
 
         if(network_ok() == false) {
@@ -432,7 +497,7 @@ int iotconnect_basic_sample_main(void) {
         //
         if(reset) {
             reset_wrapper();
-            setupOK = false;
+            is_initialized = false;
             continue;
         }
 
@@ -445,11 +510,11 @@ int iotconnect_basic_sample_main(void) {
         }
 
         if(setup) {
-            setupOK = (0 == setup_wrapper());
+            is_initialized = (0 == setup_wrapper());
         }
 
         if(start) {
-            if (setupOK == false) {
+            if (is_initialized == false) {
                 IOTC_ERROR("Cannot start wrapper - config setup failed.\n");
                 IOTC_INFO("Did you run: iotconnect_client setup?\n");
             } else {
