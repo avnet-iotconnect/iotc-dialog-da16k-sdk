@@ -35,7 +35,9 @@ static QueueHandle_t        command_queue       = NULL;
 
 static IotConnectClientConfig s_client_cfg = {0};
 
-static bool is_initialized = false;
+static bool is_setup_ok	   = false;		// configuration loaded from NVRAM
+static bool is_initialized = false;		// SDK is initialized and it ran HTTP discovery/identity successfully.
+static bool is_autoconnect = false;		// If start() is successful, autoconnect will be on by default unless stop() is called.
 
 // AWS Qualification ---
 // we use this as a flag AND keep the string forever until restart
@@ -269,21 +271,21 @@ static void send_qualification_telemetery(void) {
 
 static int periodic_event_wrapper(void) {
 	int ret = -1;
-	if (!is_initialized) {
+	if (!is_initialized || !is_autoconnect) {
 		return ret; // Client is stopped. Ignore silently
 	}
-	if (aws_qualification_host) {
-		// while in qualification mode, keep trying to re-connect
-		ensure_qualilification_mode();
-		if (!iotconnect_sdk_is_connected()) {
-			iotconnect_sdk_disconnect();
-			ret = iotconnect_sdk_connect();
-			if (ret != 0) {
-				return 0;
-			} else {
-	    		last_connect_time = xTaskGetTickCount();
-			}
+	// keep trying to re-connect if in autoconnect mode
+	if (!iotconnect_sdk_is_connected()) {
+		iotconnect_sdk_disconnect();
+		ret = iotconnect_sdk_connect();
+		if (ret != 0) {
+			return 0;
+		} else {
+    		last_connect_time = xTaskGetTickCount(); // only needed to stop stuck sessions for AWS qual
 		}
+	}
+	if (aws_qualification_host) {
+		// if in qualification mode...
         send_qualification_telemetery();
         if (((xTaskGetTickCount() - last_connect_time) * portTICK_PERIOD_MS) > 60000) {
         	PRINTF("----------\nWARNING: Connection lingered for too long. Restarting the connection\n----------\n");
@@ -337,6 +339,7 @@ int start_wrapper(void)
 {
     int ret = -1;
 
+    IOTC_INFO("IOTC: Client Starting...");
     atcmd_asynchony_event_for_icstart_begin();
 
     //
@@ -345,30 +348,31 @@ int start_wrapper(void)
     for(int i = 0; i < 5; i++) {
         //
         // Run discovery/sync
-        // Startup mqtt_client with new MQTT_XXXX values
-        //
-
-    	// NOTE: Calling iotconnect_sdk_init will denint first
+    	// NOTE: For retries, calling iotconnect_sdk_init will denint first, so no need to call it
         ret = iotconnect_sdk_init(&s_client_cfg);
         if (ret == 0) {
+        	is_initialized = true;
         	if (aws_qualification_host) {
         		ensure_qualilification_mode();
         	}
-            ret = iotconnect_sdk_connect();
-            if (ret == 0) {
-            	last_connect_time = xTaskGetTickCount();
-                break;
-            } else {
-                IOTC_ERROR("iotconnect_sdk_connect failed: %d", ret);
-            }
-        } else {            
+        	break;
+        } else {
+        	is_initialized = false;
             IOTC_ERROR("iotconnect_sdk_init failed: %d", ret);
         }
     }
-    if (ret != 0) {
+
+    // assuming that we initialized, we can keep trying to connect even if failed as long as is_initialized
+    is_autoconnect = is_initialized;
+
+	if (ret != 0) {
         IOTC_ERROR("start_wrapper() failed: %d", ret);
     }
-
+#ifdef AWS_QUALFICIATION_CMD_TRIGGER
+	// Warn about security risks
+	IOTC_WARN("AWS Qualification Command Trigger is enabled for this build.");
+	IOTC_WARN("When making a production build, please make sure that the AWS_QUALFICIATION_CMD_TRIGGER is not enabled.");
+#endif
     atcmd_asynchony_event_for_icstart_end(ret == 0);
     return ret;
 }
@@ -378,23 +382,28 @@ int start_wrapper(void)
 //
 static void stop_wrapper(void)
 {
+    is_autoconnect = false;
+
     atcmd_asynchony_event_for_icstop_begin();
     if(iotconnect_sdk_is_connected() == true) {
         iotconnect_sdk_disconnect();
     }
 
-    iotc_da16k_dynamic_ca_clear();
-
     // Reset so we don't start next session with leftover commands, and don't serve pending commands to connected clients inquiring.
     xQueueReset(command_queue);
 
     atcmd_asynchony_event_for_icstop_end(true);
+    IOTC_INFO("IOTC: Client Stopped.");
 }
 
 //
 // a wrapper to send +NWICRESETBEGIN / +NWICRESETEND messages
 //
 static void reset_wrapper(void) {
+
+    is_initialized = false;
+    is_autoconnect = false;
+
     atcmd_asynchony_event_for_icreset_begin();
         
     if(iotconnect_sdk_is_connected() == true) {
@@ -411,6 +420,7 @@ static void reset_wrapper(void) {
     xQueueReset(command_queue);
 
     atcmd_asynchony_event_for_icreset_end(true);
+    IOTC_INFO("IOTC: Client configuration is Reset.");
 }
 
 //
@@ -431,7 +441,7 @@ static void reset_wrapper(void) {
 // AT commands to set the HTTP / MQQT certificates [and, if required, to set the device certificate / private key] need to be sent.
 //
 int iotconnect_basic_sample_main(void) {
-    IOTC_WARN("\n\n\nRunning in AT command mode\n\n\n");
+    IOTC_WARN("\n\n\nInitializing the IoTConnect Client\n\n\n");
 
     /* Create queue to store commands in */
     command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item));
@@ -487,6 +497,7 @@ int iotconnect_basic_sample_main(void) {
         	if (is_initialized) {
             	iotconnect_sdk_disconnect();
         	}
+        	is_autoconnect = false;
         }
 
         if(network_ok() == false) {
@@ -500,6 +511,7 @@ int iotconnect_basic_sample_main(void) {
         //
         if(reset) {
             reset_wrapper();
+            is_setup_ok = false;
             is_initialized = false;
             continue;
         }
@@ -513,11 +525,11 @@ int iotconnect_basic_sample_main(void) {
         }
 
         if(setup) {
-            is_initialized = (0 == setup_wrapper());
+            is_setup_ok = (0 == setup_wrapper());
         }
 
         if(start) {
-            if (is_initialized == false) {
+            if (is_setup_ok == false) {
                 IOTC_ERROR("Cannot start wrapper - config setup failed.\n");
                 IOTC_INFO("Did you run: iotconnect_client setup?\n");
             } else {
