@@ -61,7 +61,7 @@ static bool network_ok(void) {
         wait_cnt++;
 
         if (wait_cnt == 100) {
-            IOTC_ERROR("\r\n [%s] ERR : No network connection\r\n", __func__);
+            IOTC_ERROR("[%s] ERR : No network connection", __func__);
             return false;
         }
     }
@@ -78,10 +78,10 @@ static bool network_ok(void) {
         ret = sntp_wait_sync(10);
         if (ret != 0) {
             if (ret == -1) { // timeout
-                IOTC_ERROR("SNTP sync timed out - check Internet conenction. Reboot to start over \n");
+                IOTC_ERROR("SNTP sync timed out - check Internet connection. Reboot to start over.");
             } else {
                 if (ret == -2) { // timeout
-                    IOTC_WARN("SNTP was disabled. Reboot to start over \n");
+                    IOTC_WARN("SNTP was disabled. Reboot to start over.");
     
                     da16x_set_config_int(DA16X_CONF_INT_SNTP_CLIENT, 1);
                 }
@@ -132,13 +132,13 @@ static void on_connection_status(IotConnectMqttStatus status) {
     // Add your own status handling
     switch (status) {
         case IOTC_CS_MQTT_CONNECTED:
-            IOTC_INFO("IoTConnect Client Connected\n");
+            IOTC_INFO("IoTConnect Client Connected");
             break;
         case IOTC_CS_MQTT_DISCONNECTED:
-            IOTC_INFO("IoTConnect Client Disconnected\n");
+            IOTC_INFO("IoTConnect Client Disconnected");
             break;
         default:
-            IOTC_INFO("IoTConnect Client ERROR\n");
+            IOTC_INFO("IoTConnect Client ERROR");
             break;
     }
 
@@ -155,6 +155,33 @@ void iotc_command_queue_item_destroy(iotc_command_queue_item item) {
     free((void*)item.ack_id);
 }
 
+// call this function before attempting to reconnect
+static void set_up_qualilification_mode(const char * host) {
+    IotclMqttConfig *mc = iotcl_mqtt_get_config();
+    if (!mc) {
+        IOTC_ERROR("set_up_qualilification_mode called, but not initialized?");
+    	return;
+    }
+    // This value is permanent until reboot. No need to free it.
+    // This one copy is to be kept around and second below in case it is freed
+    if (!aws_qualification_host) {
+        aws_qualification_host = iotcl_strdup(host);
+    }
+    const char* qualification_topic = "qualification";
+    if (0 != strcmp("qualification", mc->pub_rpt)) {
+    	// we need to override
+    	iotcl_free(mc->host);
+    	iotcl_free(mc->pub_rpt);
+    	iotcl_free(mc->pub_ack);
+    	iotcl_free(mc->sub_c2d);
+    	mc->host = iotcl_strdup(host);
+    	mc->pub_rpt = iotcl_strdup(qualification_topic);
+    	mc->pub_ack = iotcl_strdup(qualification_topic);
+    	mc->sub_c2d = iotcl_strdup(qualification_topic);
+    }
+}
+
+
 /* Callback for received IoTC device commands */
 static void on_command_receive(IotclC2dEventData data) {
     const char                  *command        = iotcl_c2d_get_command(data);
@@ -166,13 +193,14 @@ static void on_command_receive(IotclC2dEventData data) {
 // This behavior is disabled in the project by default, as it can be a security risk
 // Enable this #define to enable the trigger and ensure that it is disabled in production
 #ifdef AWS_QUALFICIATION_CMD_TRIGGER
-        IOTC_INFO("Command %s received with %s ACK ID\n", command, ack_id ? ack_id : "no");
+        IOTC_INFO("Command %s received with %s ACK ID", command, ack_id ? ack_id : "no");
 
         // check if we got the qualification command
         const char * const QUALIFICATION_START_PREFIX_CMD = "aws-qualification-start "; // with a space
         if (command && (0 == strncmp(QUALIFICATION_START_PREFIX_CMD, command, strlen(QUALIFICATION_START_PREFIX_CMD)))) {
         	const char* qual_host = &command[strlen(QUALIFICATION_START_PREFIX_CMD)];
-        	aws_qualification_host = iotcl_strdup(qual_host); // this value is permanent until reboot. No need to free it.
+        	set_up_qualilification_mode(qual_host);
+        	// ensure that we always set up the host FIRST
         	disconnect_iotconnect(); // trigger a disconnect on the main application thread. It will then attempt to reconnect
             IOTC_INFO("AWS Device Qualification will start after a wait period...");
         	return;
@@ -199,12 +227,12 @@ static void on_command_receive(IotclC2dEventData data) {
         if (pdTRUE == xQueueSendToBack(command_queue, &queue_entry, 0)) {
             iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_SUCCESS_WITH_ACK, "Command added to local queue");
         } else {
-            IOTC_ERROR("Command queue full!\n");    
+            IOTC_ERROR("Command queue full!");
             iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Command queue full");
             goto cleanup;
         }        
     } else {
-        IOTC_ERROR("Failed to parse command\n");
+        IOTC_ERROR("Failed to parse command");
         iotcl_mqtt_send_cmd_ack(ack_id, IOTCL_C2D_EVT_CMD_FAILED, "Internal error");
         goto cleanup;
     }
@@ -218,12 +246,12 @@ cleanup:
 bool iotc_command_queue_item_get(iotc_command_queue_item *dst_item) {
 
     if (command_queue == NULL) {
-        IOTC_ERROR("Queue does not exist!\n");
+        IOTC_ERROR("Queue does not exist!");
         return false;
     }
 
     if (dst_item == NULL) {
-        IOTC_ERROR("Target item is NULL\n");
+        IOTC_ERROR("Target item is NULL");
         return false;
     }
 
@@ -234,36 +262,15 @@ bool iotc_command_queue_item_get(iotc_command_queue_item *dst_item) {
     }
 }
 
-// call this function before attempting to reconnect
-static void ensure_qualilification_mode(void) {
-    IotclMqttConfig *mc = iotcl_mqtt_get_config();
-    if (!mc) {
-        PRINTF("ERROR  ensure_qualilification_mode called, but not initialized?\n");
-    	return;
-    }
-    const char* qualification_topic = "qualification";
-    if (0 != strcmp("qualification", mc->pub_rpt)) {
-    	// we need to override
-    	iotcl_free(mc->host);
-    	iotcl_free(mc->pub_rpt);
-    	iotcl_free(mc->pub_ack);
-    	iotcl_free(mc->sub_c2d);
-    	mc->host = iotcl_strdup(aws_qualification_host);
-    	mc->pub_rpt = iotcl_strdup(qualification_topic);
-    	mc->pub_ack = iotcl_strdup(qualification_topic);
-    	mc->sub_c2d = iotcl_strdup(qualification_topic);
-    }
-}
-
 static void send_qualification_telemetery(void) {
     IotclMessageHandle msg = iotcl_telemetry_create();
 
     bool success = iotcl_telemetry_set_string(msg, "qualification", "true") == IOTCL_SUCCESS;
     if (!success) {
-        PRINTF("ERROR in iotcl_telemetry_set_string!\n");
+        IOTC_ERROR("ERROR in iotcl_telemetry_set_string!");
     } else {
         if (iotcl_mqtt_send_telemetry(msg, false) != IOTCL_SUCCESS) {
-            PRINTF("ERROR in iotcl_mqtt_send_telemetry!}\n");
+        	IOTC_ERROR("ERROR in iotcl_mqtt_send_telemetry!");
         }
     }
     iotcl_telemetry_destroy(msg);
@@ -279,8 +286,9 @@ static int periodic_event_wrapper(void) {
 		iotconnect_sdk_disconnect();
 		ret = iotconnect_sdk_connect();
 		if (ret != 0) {
-			return 0;
+			return ret;
 		} else {
+        	IOTC_INFO("Connected.");
     		last_connect_time = xTaskGetTickCount(); // only needed to stop stuck sessions for AWS qual
 		}
 	}
@@ -288,7 +296,7 @@ static int periodic_event_wrapper(void) {
 		// if in qualification mode...
         send_qualification_telemetery();
         if (((xTaskGetTickCount() - last_connect_time) * portTICK_PERIOD_MS) > 60000) {
-        	PRINTF("----------\nWARNING: Connection lingered for too long. Restarting the connection\n----------\n");
+        	IOTC_WARN("----------\nWARNING: Connection lingered for too long. Restarting the connection\n----------");
             iotconnect_sdk_disconnect();
         }
 	}
@@ -304,24 +312,25 @@ int setup_wrapper(void) {
     iotconnect_sdk_init_config(&s_client_cfg);
 
     if (iotc_da16k_read_config(&s_client_cfg) != 0) {
-        IOTC_ERROR("Failed to get configuration values from nvram\n");
+        IOTC_ERROR("Failed to get configuration values from nvram");
         goto cleanup;
     }
 
     // Set MQTT & HTTP Certs for this connection type
     iotc_da16k_dynamic_ca_set(s_client_cfg.connection_type);
 
-    IOTC_INFO("IOTC_CONNECTION_TYPE = %s\n", s_client_cfg.connection_type == IOTC_CT_AWS ? "AWS" : "AZURE");
-    IOTC_INFO("IOTC_ENV = %s\n", s_client_cfg.env);
-    IOTC_INFO("IOTC_CPID = %s\n", s_client_cfg.cpid);
-    IOTC_INFO("IOTC_DUID = %s\n", s_client_cfg.duid);
-    IOTC_INFO("IOTC_AUTH_TYPE = %d\n", s_client_cfg.auth_info.type);
-    IOTC_INFO("IOTC_AUTH_SYMMETRIC_KEY = %s\n", s_client_cfg.auth_info.data.symmetric_key ? s_client_cfg.auth_info.data.symmetric_key : "(null)");
+    IOTC_INFO("IOTC_CONNECTION_TYPE = %s", s_client_cfg.connection_type == IOTC_CT_AWS ? "AWS" : "AZURE");
+    IOTC_INFO("IOTC_ENV = %s", s_client_cfg.env);
+    IOTC_INFO("IOTC_CPID = %s", s_client_cfg.cpid);
+    IOTC_INFO("IOTC_DUID = %s", s_client_cfg.duid);
+    IOTC_INFO("IOTC_AUTH_TYPE = %d", s_client_cfg.auth_info.type);
+    IOTC_INFO("IOTC_AUTH_SYMMETRIC_KEY = %s", s_client_cfg.auth_info.data.symmetric_key ? s_client_cfg.auth_info.data.symmetric_key : "(null)");
 
     s_client_cfg.status_cb = on_connection_status;
     s_client_cfg.ota_cb = NULL;
     s_client_cfg.cmd_cb = on_command_receive;
     s_client_cfg.qos = 1;
+    s_client_cfg.verbose = true;
 
     atcmd_asynchony_event_for_icsetup_end(true);
     return 0;
@@ -353,7 +362,7 @@ int start_wrapper(void)
         if (ret == 0) {
         	is_initialized = true;
         	if (aws_qualification_host) {
-        		ensure_qualilification_mode();
+        		set_up_qualilification_mode(aws_qualification_host);
         	}
         	break;
         } else {
@@ -382,7 +391,8 @@ int start_wrapper(void)
 //
 static void stop_wrapper(void)
 {
-    is_autoconnect = false;
+	// only disable autoconnect when not in qualification mode
+	is_autoconnect = false;
 
     atcmd_asynchony_event_for_icstop_begin();
     if(iotconnect_sdk_is_connected() == true) {
@@ -441,7 +451,7 @@ static void reset_wrapper(void) {
 // AT commands to set the HTTP / MQQT certificates [and, if required, to set the device certificate / private key] need to be sent.
 //
 int iotconnect_basic_sample_main(void) {
-    IOTC_WARN("\n\n\nInitializing the IoTConnect Client\n\n\n");
+    IOTC_INFO("\n\n\nInitializing the IoTConnect Client\n\n\n");
 
     /* Create queue to store commands in */
     command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item));
@@ -497,7 +507,9 @@ int iotconnect_basic_sample_main(void) {
         	if (is_initialized) {
             	iotconnect_sdk_disconnect();
         	}
-        	is_autoconnect = false;
+        	if (!aws_qualification_host) {
+            	is_autoconnect = false; // only if not in qualification mode
+        	}
         }
 
         if(network_ok() == false) {
@@ -530,8 +542,8 @@ int iotconnect_basic_sample_main(void) {
 
         if(start) {
             if (is_setup_ok == false) {
-                IOTC_ERROR("Cannot start wrapper - config setup failed.\n");
-                IOTC_INFO("Did you run: iotconnect_client setup?\n");
+                IOTC_ERROR("Cannot start wrapper - config setup failed.");
+                IOTC_INFO("Did you run: iotconnect_client setup?");
             } else {
                 start_wrapper();
             }
@@ -552,6 +564,6 @@ cleanup:
     
     iotc_da16k_reset_config(&s_client_cfg);
     
-    IOTC_INFO("exiting basic_sample()\n" );
+    IOTC_INFO("Exiting IotConnect service.");
     return 0;
 }
