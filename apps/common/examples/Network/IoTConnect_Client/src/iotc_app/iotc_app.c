@@ -377,11 +377,13 @@ int start_wrapper(void)
 	if (ret != 0) {
         IOTC_ERROR("start_wrapper() failed: %d", ret);
     }
-#ifdef AWS_QUALFICIATION_CMD_TRIGGER
+
+#ifndef NO_AWS_QUALFICIATION_CMD_TRIGGER
 	// Warn about security risks
 	IOTC_WARN("AWS Qualification Command Trigger is enabled for this build.");
 	IOTC_WARN("When making a production build, please make sure that the AWS_QUALFICIATION_CMD_TRIGGER is not enabled.");
 #endif
+
     atcmd_asynchony_event_for_icstart_end(ret == 0);
     return ret;
 }
