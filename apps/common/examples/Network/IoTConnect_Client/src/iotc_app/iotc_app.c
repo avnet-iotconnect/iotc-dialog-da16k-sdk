@@ -283,12 +283,11 @@ static int periodic_event_wrapper(void) {
 	}
 	// keep trying to re-connect if in autoconnect mode
 	if (!iotconnect_sdk_is_connected()) {
-		iotconnect_sdk_disconnect();
 		ret = iotconnect_sdk_connect();
 		if (ret != 0) {
 			return ret;
 		} else {
-        	IOTC_INFO("Connected.");
+        	IOTC_INFO("IoTConnect Service task connected.");
     		last_connect_time = xTaskGetTickCount(); // only needed to stop stuck sessions for AWS qual
 		}
 	}
@@ -329,8 +328,8 @@ int setup_wrapper(void) {
     s_client_cfg.status_cb = on_connection_status;
     s_client_cfg.ota_cb = NULL;
     s_client_cfg.cmd_cb = on_command_receive;
-    s_client_cfg.qos = 1;
-    s_client_cfg.verbose = true;
+    s_client_cfg.qos = 1; // force QOS to 1, regardless of what is stored in NVRAM
+    s_client_cfg.verbose = true; // change this if you don't want to see inbound and outbound MQTT messages
 
     atcmd_asynchony_event_for_icsetup_end(true);
     return 0;
@@ -378,10 +377,9 @@ int start_wrapper(void)
         IOTC_ERROR("start_wrapper() failed: %d", ret);
     }
 
-#ifndef NO_AWS_QUALFICIATION_CMD_TRIGGER
-	// Warn about security risks
-	IOTC_WARN("AWS Qualification Command Trigger is enabled for this build.");
-	IOTC_WARN("When making a production build, please make sure that the AWS_QUALFICIATION_CMD_TRIGGER is not enabled.");
+#ifndef IOTC_DISABLE_AWS_QUALFICIATION_CMD
+	// This command could be a security rish. Add this #define to your compiler settings in order to disable it.
+	IOTC_INFO("AWS Device Qualification Command Trigger is enabled for this build. This should be disabled in production builds.");
 #endif
 
     atcmd_asynchony_event_for_icstart_end(ret == 0);
