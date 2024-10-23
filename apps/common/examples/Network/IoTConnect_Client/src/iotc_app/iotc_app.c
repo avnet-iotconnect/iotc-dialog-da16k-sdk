@@ -492,7 +492,6 @@ int iotconnect_basic_sample_main(void) {
         bool setup = events & EVT_IOTC_SETUP;
         bool stop = events & EVT_IOTC_STOP;
         bool disconnect = events & EVT_IOTC_DISCONNECT;
-        // ignore EVT_IOTC_PERIODIC_EVENT, as we will always run the handler
 
         xEventGroupClearBits( my_app_event_group, (EVT_IOTC_STOP | EVT_IOTC_SETUP | EVT_IOTC_START | EVT_IOTC_RESET | EVT_IOTC_DISCONNECT) );
 
