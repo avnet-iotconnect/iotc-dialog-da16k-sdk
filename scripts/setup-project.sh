@@ -36,7 +36,7 @@ fi
 
 # Copy files from the given path to the script's path whilst *not* overwriting the files in this repo.
 echo "Copying SDK files..."
-cp -r --update=none "${da_sdk_path}"/* .
+cp -rn "${da_sdk_path}"/* .
 
 # Setup permissions for the SDK's script files
 echo "Setting up SDK script permissions..."
