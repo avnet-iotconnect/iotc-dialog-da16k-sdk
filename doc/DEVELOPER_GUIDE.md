@@ -41,6 +41,11 @@ but mind the following notes and exceptions:
 SFLASH:ef601615
 Density:01ffffff
 ```
+| Board       | Flash type         |
+|-------------|--------------------|
+| DA16200PMOD | W25Q32JW (Winbond) |
+| DA16600PMOD | AT25SL321 (Adesto) |
+
 
 ## Compiling The IoTConnect Application
 
