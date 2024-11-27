@@ -6,9 +6,8 @@ The IoTConnect application is based on the DA16200/DA16600 FreeRTOS SDK version 
 so you must use that specific version in the next steps.
 
 * Clone this git repository into an arbitrary directory.
-* Download and unzip the Renesas Dialog [DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip, available here](https://www.renesas.com/us/en/document/sws/da16200-da16600-freertos-sdk-v3281?language=en&r=1600096) 
-to [DA16K_SDK_FreeRTOS](/DA16K_SDK_FreeRTOS) subdirectory of this repo in a way that the ```apps```, ```core`` 
-and other SDK directories appear here at the root of this directory.
+* Download the Renesas Dialog [DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip, available here](https://www.renesas.com/us/en/document/sws/da16200-da16600-freertos-sdk-v3281?language=en&r=1600096) 
+to the root directory of this repo.
 * ***Run the setup script:*** `./scripts/setup-project.sh`
 
 ## Development Environment Setup
@@ -29,7 +28,7 @@ but mind the following notes and exceptions:
       You will however ultimately need import and run [The IoTConnect Application](#compiling-the-iotconnect-application) section
       instead of importing the default project.
   * Determining the flash type for your board may be a bit confusing. 
-      The boards that we have tested all came with W25Q32JW flash, which corresponds to the following
+      The boards that we have tested are listed in the table below, which corresponds to the following
       bootloader output:
 ```
 [/DA16200] # reset
@@ -41,10 +40,10 @@ but mind the following notes and exceptions:
 SFLASH:ef601615
 Density:01ffffff
 ```
-| Board       | Flash type         |
-|-------------|--------------------|
-| DA16200PMOD | W25Q32JW (Winbond) |
-| DA16600PMOD | AT25SL321 (Adesto) |
+| Board       | Flash type        | SFlash ID |
+|-------------|-------------------|----------|
+| DA16200PMOD | W25Q32JW (Winbond) | ef601615 |
+| DA16600PMOD | AT25SL321 (Adesto) |1f421615  |
 
 
 ## Compiling The IoTConnect Application

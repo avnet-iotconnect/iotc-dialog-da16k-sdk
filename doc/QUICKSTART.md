@@ -1,20 +1,18 @@
-# DA16xxx AT Interface Quickstart Guide
+# DA16xxx AT Interface QuickStart Guide
 
-This is the Quickstart Guide for the DA16K IoTConnect AT Command Interface Firmware.
-
-This document will guide you through the setup process.
+This document will walk through the setup process for the DA16K IoTConnect AT Command Interface Firmware.
 
 ## Introduction
 
-The firmware you are about to run on your DA16xxx device provides a serial UART interface that allows you to communicate with IoTConnect and its cloud services using [AT commands](https://en.wikipedia.org/wiki/Hayes_AT_command_set).
+The firmware provides a serial UART interface that allows for communication with IoTConnect and its cloud services using [AT commands](https://en.wikipedia.org/wiki/Hayes_AT_command_set).
 
-This means that the DA16xxx acts as a gateway to IoTConnect for any embedded device that does *not* have a network interface or the resources to run a dedicated IoTConnect/MQTT client using nothing but an UART connection.
+The DA16xxx acts as a gateway to IoTConnect for any embedded device with a UART connectionthat does *not* have a network interface or the resources to run a dedicated IoTConnect/MQTT client.
 
-The device is able to configure the DA16K module and send out telemetry to IoTConnect using this serial interface.
+The device is able to configure the DA16K module and send telemetry to IoTConnect using this serial interface.
 
 The interactions are as such:
 
-**Embedded client** &larr; *Serial/PMOD* &rarr; **DA16xxx** &larr; *WiFi* &rarr; **IoTConect**
+**Embedded client** &larr; *Serial/PMOD* &rarr; **DA16xxx** &larr; *WiFi* &rarr; **IoTConnect**
 
 The supported **AT interface command set** is documented in the [AT Command Set Documentation](AT_COMMAND_SET.md).
 
@@ -40,7 +38,7 @@ The supported **AT interface command set** is documented in the [AT Command Set 
         ![](assets/flasherdownload.png)
 
 
-If you are running Linux, use the **Developer Guide** to set up the firmware and image instead.
+If you are running Linux, use the **Developers Guide** to set up the firmware and image instead.
 
 
 ## DA16xxx Hardware
@@ -126,11 +124,11 @@ Both the EVK boards and the PMOD modules will show up as **USB Serial Device** i
 
 Before you can use the IoTConnect AT Command functions, you must flash the firmware.
 
-You can either build it yourself (see the [Developer Guide](DEVELOPER_GUIDE)) or use the pre-built firmware images in the `/images/` directory at the root of the repository.
+You can either build it yourself (see the [Developers Guide](DEVELOPERS_GUIDE.md)) or use the pre-built firmware images in the `/images/` directory at the root of the repository.
 
 This assumes that the device has an intact *BOOT* partition, as it would have from the factory or if another working firmware image was deployed before.
 
-In the unlikely event that your device does *not* have an intact *BOOT* partition, follow the [Developer Guide](DEVELOPER_GUIDE) to build and flash one.
+In the unlikely event that your device does *not* have an intact *BOOT* partition, follow the [Developers Guide](DEVELOPERS_GUIDE.md) to build and flash one.
 
 To flash the IoTConnect firmware, follow these steps:
 
