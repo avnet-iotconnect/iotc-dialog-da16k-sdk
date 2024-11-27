@@ -28,8 +28,8 @@ but mind the following notes and exceptions:
       You will however ultimately need import and run [The IoTConnect Application](#compiling-the-iotconnect-application) section
       instead of importing the default project.
   * Determining the flash type for your board may be a bit confusing. 
-      The boards that we have tested are listed in the table below, which corresponds to the following
-      bootloader output:
+      The boards that we have tested are listed in the table below. 
+      The bootloader output below is an example of DA16200PMOD:
 ```
 [/DA16200] # reset
 	*********************************************
@@ -40,10 +40,10 @@ but mind the following notes and exceptions:
 SFLASH:ef601615
 Density:01ffffff
 ```
-| Board       | Flash type        | SFlash ID |
-|-------------|-------------------|----------|
-| DA16200PMOD | W25Q32JW (Winbond) | ef601615 |
-| DA16600PMOD | AT25SL321 (Adesto) |1f421615  |
+| Board       | Part Number       | SFlash ID | Flash type         |
+|-------------|-------------------|-----------|--------------------|
+| DA16200PMOD | US159-DA16200MEVZ | ef601615  | W25Q32JW (Winbond) |
+| DA16600PMOD | US159-DA16600EVZ  | 1f421615  | AT25SL321 (Adesto) |
 
 
 ## Compiling The IoTConnect Application
