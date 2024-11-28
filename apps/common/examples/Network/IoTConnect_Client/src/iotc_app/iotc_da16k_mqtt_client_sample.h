@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 
-#define MQTT_DEBUG(...) do{ PRINTF(GREEN_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
+// #define MQTT_DEBUG(...) do{ PRINTF(GREEN_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
+#define MQTT_DEBUG(...) do{;} while(0)
 #define MQTT_WARN(...) do{ PRINTF(YELLOW_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
 #define MQTT_ERROR(...) do{ PRINTF(RED_COLOR );PRINTF(__VA_ARGS__);PRINTF(CLEAR_COLOR);}while(0)
 

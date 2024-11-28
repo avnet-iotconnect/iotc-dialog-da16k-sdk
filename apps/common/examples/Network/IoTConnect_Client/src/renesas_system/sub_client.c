@@ -647,7 +647,7 @@ end_of_func:
             BaseType_t ret_tmp;
             if (++mqttParams.sub_connect_retry_count <= MQTT_CONN_MAX_RETRY)
             {
-                rtc_register_timer(MQTT_CONN_RETRY_PERIOD * 1000, APP_MQTT_SUB, 0, 0, sub_dummy_function); //msec
+                rtc_register_timer(MQTT_CONN_RETRY_PERIOD_MAX * 1000, APP_MQTT_SUB, 0, 0, sub_dummy_function); //msec
             }
             else
             {
@@ -685,7 +685,14 @@ end_of_func:
         {
             if (++subRetryCount < MQTT_CONN_MAX_RETRY)
             {
-                MQTT_DBG_ERR(" [SUB] REQ mqtt_restart (count=%d)\n", subRetryCount);
+                // suspend the watchdog while we wait to back off a few seconds
+                da16x_sys_watchdog_suspend(da16x_sys_wdog_id_get_MQTT_Sub());
+
+                int backoff_ms = (rand() % (MQTT_CONN_RETRY_PERIOD_MAX * 1000)) + 1000;
+            	MQTT_DBG_ERR(" [SUB] Request mqtt_restart (cnt=%d). Backing off %d ms.\n", subRetryCount, backoff_ms);
+            	vTaskDelay( backoff_ms / portTICK_PERIOD_MS );
+                da16x_sys_watchdog_notify_and_resume(da16x_sys_wdog_id_get_MQTT_Sub());
+
             }
             else
             {

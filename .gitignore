@@ -1,3 +1,11 @@
+# IntelliJ based IDE project files, like PyCharm, CLion etc.
+/.idea
+
+# the SDK zip package that needs to be placed in the root
+# and the resulting dir
+/*.zip
+/DA16K_SDK_FreeRTOS
+
 docs/
 library/
 tools/
@@ -41,3 +49,5 @@ apps/**/projects/**/Release
 apps/**/projects/**/img
 apps/**/projects/**/*.launch
 apps/**/projects/**/.settings
+apps/**/projects/**/*.jlink
+apps/**/projects/**/JLinkLog.log

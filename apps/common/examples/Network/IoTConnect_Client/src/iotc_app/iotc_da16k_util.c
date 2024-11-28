@@ -26,12 +26,12 @@ int iotc_da16k_read_config(IotConnectClientConfig *c) {
 
     if(platform_get_iotconnect_connection_type(temp_str) != 0)
     {
-        PRINTF("platform_get_iotconnect_connection_type() failed\n");
+    	MQTT_ERROR("platform_get_iotconnect_connection_type() failed\n");
         goto cleanup;
     }
     if(sscanf(temp_str, "%d", &temp_int) != 1)
     {
-        PRINTF("Failed to sscanf IoTC Connection Type \"%s\"\n", temp_str);
+    	MQTT_ERROR("Failed to sscanf IoTC Connection Type \"%s\"\n", temp_str);
         goto cleanup;
     }
     c->connection_type = temp_int;
@@ -46,49 +46,49 @@ int iotc_da16k_read_config(IotConnectClientConfig *c) {
 
     if(platform_get_iotconnect_env(temp_str) != 0)
     {
-        PRINTF("platform_get_env() failed\n");
+    	MQTT_ERROR("platform_get_env() failed\n");
         goto cleanup;
     }
 
     c->env = iotcl_strdup(temp_str);
     if(c->env == NULL)
     {
-        PRINTF("iotcl_strdup() failed\n");
+    	MQTT_ERROR("iotcl_strdup() failed\n");
         goto cleanup;
     }
 
     if(platform_get_iotconnect_cpid(temp_str) != 0)
     {
-        PRINTF("platform_get_iotconnect_cpid() failed\n");
+    	MQTT_ERROR("platform_get_iotconnect_cpid() failed\n");
         goto cleanup;
     }
     c->cpid = iotcl_strdup(temp_str);
     if(c->cpid == NULL)
     {
-        PRINTF("iotcl_strdup() failed\n");
+    	MQTT_ERROR("iotcl_strdup() failed\n");
         goto cleanup;
     }
 
     if(platform_get_iotconnect_duid(temp_str) != 0)
     {
-        PRINTF("platform_get_iotconnect_duid() failed\n");
+    	MQTT_ERROR("platform_get_iotconnect_duid() failed\n");
         goto cleanup;
     }
     c->duid = iotcl_strdup(temp_str);
     if(c->duid == NULL)
     {
-        PRINTF("iotcl_strdup() failed\n");
+    	MQTT_ERROR("iotcl_strdup() failed\n");
         goto cleanup;
     }
 
     if(platform_get_iotconnect_auth_type(temp_str) != 0)
     {
-        PRINTF("platform_get_iotconnect_auth_type() failed\n");
+    	MQTT_ERROR("platform_get_iotconnect_auth_type() failed\n");
         goto cleanup;
     }
     if(sscanf(temp_str, "%d", &temp_int) != 1)
     {
-        PRINTF("Failed to sscanf IOTC_AUTH_TYPE \"%s\"\n", temp_str);
+    	MQTT_ERROR("Failed to sscanf IOTC_AUTH_TYPE \"%s\"\n", temp_str);
         goto cleanup;
     }
     c->auth_info.type = temp_int;
@@ -97,20 +97,20 @@ int iotc_da16k_read_config(IotConnectClientConfig *c) {
     {
         if(platform_get_iotconnect_symmetric_key(temp_str) != 0)
         {
-            PRINTF("platform_get_iotconnect_symmetric_key() failed\n");
+        	MQTT_ERROR("platform_get_iotconnect_symmetric_key() failed\n");
             goto cleanup;
         }
         c->auth_info.data.symmetric_key = iotcl_strdup(temp_str);
         if(c->auth_info.data.symmetric_key == NULL)
         {
-            PRINTF("iotcl_strdup() failed\n");
+        	MQTT_ERROR("iotcl_strdup() failed\n");
             goto cleanup;
         }
     }
 
     if (platform_get_mqtt_qos(&c->qos) != 0)
     {
-        PRINTF("platform_get_iotconnect_mqtt_qos() failed\n");
+    	MQTT_ERROR("platform_get_iotconnect_mqtt_qos() failed\n");
         goto cleanup;
     }
 

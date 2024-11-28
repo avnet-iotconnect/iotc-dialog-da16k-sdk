@@ -2,42 +2,49 @@
 
 set -e
 
-echo "Avnet IoTConnect Dialog DA16K AT SDK"
+scripts_dir=$(dirname "${0}")
+repo_root="${scripts_dir}/../"
+cd "${repo_root}"
 
-if [ "$#" -ne 1 ]; then
-    echo "Source path not given!"
-    echo "Usage: $0 <da16k_sdk_path>"
-    echo "Where <da16k_sdk_path> is the path to a DA16K FreeRTOS SDK. Example:"
-    echo "$0 ~/DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1"
-    exit 1
-fi
+da_sdk_path="./DA16K_SDK_FreeRTOS"
+da_sdk_zip="DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip"
 
-source_path="$1"
 
 # Check if given path exists
-if [ ! -d "$source_path" ]; then
-    echo "Invalid source path! Does it exist?"
+if [ ! -f "${da_sdk_zip}" ]; then
+    echo "${da_sdk_zip} appears to be missing."
+    echo "You must download it and place it into the root of this repo."
     exit 1
 fi
 
-if [ ! -f "$source_path/utility/cfg_generator/da16x_gencfg" ] || [ ! -f "$source_path/tools/util/set_linux_perm.sh" ] || [ ! -d "$source_path/apps" ]; then
-    echo "Error: The specified path does not seem to contain a DA16K FreeRTOS SDK."
-    exit 1
-fi
-
+echo "Preparing the Avnet IoTConnect Dialog DA16K SDK..."
 # Make sure submodules are pulled and up to date.
 echo "Updating submodules..."
 git submodule update --init --recursive
 
+rm -rf "${da_sdk_path}"
+mkdir -p "${da_sdk_path}"
+pushd "${da_sdk_path}" >/dev/null
+  echo "Extracting the ${da_sdk_zip}..."
+  unzip -q "../${da_sdk_zip}"
+popd >/dev/null
+
+if [ ! -f "${da_sdk_path}/utility/cfg_generator/da16x_gencfg" ] || [ ! -f "${da_sdk_path}/tools/util/set_linux_perm.sh" ] || [ ! -d "${da_sdk_path}/apps" ]; then
+    echo "Error: The SDK does not seem to contain the neccessary files."
+    exit 1
+fi
+
 # Copy files from the given path to the script's path whilst *not* overwriting the files in this repo.
 echo "Copying SDK files..."
-cp -n -r "$source_path"/* .
+cp -rn "${da_sdk_path}"/* .
 
 # Setup permissions for the SDK's script files
 echo "Setting up SDK script permissions..."
-pushd "$source_path"/tools/util
-chmod +x set_linux_perm.sh
-./set_linux_perm.sh
-popd
+pushd "./tools/util" >/dev/null
+  bash ./set_linux_perm.sh
+popd >/dev/null
+
+echo "Cleaning up..."
+rm -rf "${da_sdk_path}"
 
 echo "Done."

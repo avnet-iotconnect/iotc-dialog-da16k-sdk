@@ -94,7 +94,7 @@ static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool c
     MqttQueueItem item = { NULL, NULL };
 
     if (!_mqtt_q) {
-        MQTT_ERROR("[%s] Msg Q doesn't exist!", __func__);
+        MQTT_ERROR("[%s] Msg Q doesn't exist!\n", __func__);
         return -1;
     }
 
@@ -109,17 +109,17 @@ static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool c
     }
 
     if (!item.topic || !item.message) {
-        MQTT_ERROR("[%s] failed to allocate topic or message string!", __func__);
+        MQTT_ERROR("[%s] failed to allocate topic or message string!\n", __func__);
         return -1;
     }
 
-    MQTT_ERROR("[%s] topic %s, message %s!", __func__, item.topic ? item.topic : "NULL", item.message ? item.message : "NULL");
+    MQTT_DEBUG("[%s] topic %s, message %s!\n", __func__, item.topic ? item.topic : "NULL", item.message ? item.message : "NULL");
     tx_publish++;
 
     status = xQueueSendToBack(_mqtt_q, &item, 10);
 
     if(status != pdTRUE) {
-        MQTT_ERROR("[%s] failed to enqueue message!", __func__);
+        MQTT_ERROR("[%s] failed to enqueue message!\n", __func__);
         if (copy) {
             free((void*) item.topic);
             free((void*) item.message);
@@ -139,7 +139,7 @@ static BaseType_t _mqtt_send_to_q(const char *topic, const char *message, bool c
  ****************************************************************************************
  */
 static void _mqtt_msg_cb(const char *buf, int len, const char *topic) {
-    MQTT_DEBUG("\n\n[MQTT_SAMPLE] Msg Recv: topic=%s, msg=%s, len = %d\n\n", topic, buf, len);
+    MQTT_DEBUG("Msg Recv: topic=%s, msg=%s, len = %d\n", topic, buf, len);
 
     if(g_msg_cb) {
         g_msg_cb(buf, len, topic);
@@ -147,10 +147,10 @@ static void _mqtt_msg_cb(const char *buf, int len, const char *topic) {
 }
 
 static void _mqtt_pub_cb(int mid) {
-    MQTT_DEBUG("\n\n[%s] message id %d is being published!\n\n", __func__, mid);
+    MQTT_DEBUG("\n[%s] message id %d is being published!\n", __func__, mid);
 
     if (tx_publish > 0) {
-        MQTT_DEBUG("[MQTT_SAMPLE] Sending a message complete.\n");
+        MQTT_DEBUG("Sending a message complete.\n");
         tx_publish--;
     } else {
         MQTT_WARN("Tx PUB_COMPLETE source unknown, debug needed\n");
@@ -162,7 +162,7 @@ static void _mqtt_pub_cb(int mid) {
 }
 
 static void _mqtt_conn_cb(void) {
-    MQTT_DEBUG("\n\n[%s] MQTT connection callback!\n\n", __func__);
+    MQTT_DEBUG("[%s] MQTT connection callback!\n", __func__);
 
     if(g_conn_cb) {
         g_conn_cb();
@@ -170,7 +170,7 @@ static void _mqtt_conn_cb(void) {
 }
 
 static void _mqtt_disconn_cb(void) {
-    MQTT_DEBUG("\n\n[%s] MQTT disconnection callback!\n\n", __func__);
+    MQTT_DEBUG("[%s] MQTT disconnection callback!\n", __func__);
 
     if(g_disconn_cb) {
         g_disconn_cb();
@@ -178,7 +178,7 @@ static void _mqtt_disconn_cb(void) {
 }
 
 static void _mqtt_sub_cb(void) {
-    MQTT_DEBUG("\n\n[%s] topic subscribed!\n\n", __func__);
+    MQTT_DEBUG("[%s] topic subscribed!\n", __func__);
 
     if(g_sub_cb) {
         g_sub_cb();
@@ -186,7 +186,7 @@ static void _mqtt_sub_cb(void) {
 }
 
 static void _mqtt_unsub_cb(void) {
-    MQTT_DEBUG("\n\n[%s] topic unsubscribed!\n\n", __func__);
+    MQTT_DEBUG("[%s] topic unsubscribed!\n", __func__);
 
     if(g_unsub_cb) {
         g_unsub_cb();
@@ -197,19 +197,17 @@ int mqtt_sample_client_send(const char *topic, const char *message, bool copy) {
     BaseType_t ret;
 
     if (!mqtt_client_is_running()) {
-    if(!is_mqtt_client_thd_alive()) {
-            MQTT_ERROR("[MQTT_SAMPLE] Mqtt_client is in terminated state, terminating my app ...\n");
-
-            mqtt_sample_client_deinit();
-    } else {
-            MQTT_WARN("[MQTT_SAMPLE] Mqtt_client may be trying to reconnect ... cancelling the job this time\n");
+		if(!is_mqtt_client_thd_alive()) {
+				MQTT_ERROR("Mqtt_client is in terminated state, terminating my app ...\n");
+				mqtt_sample_client_deinit();
+		} else {
+            MQTT_WARN("Mqtt_client may be trying to reconnect ... cancelling the job this time\n");
         }
-
         return -1;
     } 
 
     if ((ret = _mqtt_send_to_q(topic, message, copy)) != pdPASS ) {
-        MQTT_ERROR("[%s] Failed to add a message to Q (%d)\r\n", __func__, ret);
+        MQTT_ERROR("[%s] Failed to add a message to Q (%d)\n", __func__, ret);
         return -1;
     }
 
@@ -229,7 +227,7 @@ LBL_SEND_RETRY:
 
             wait_cnt++;
             if (wait_cnt == MQTT_PUB_MAX_WAIT_CNT) {
-                MQTT_WARN("[MQTT_SAMPLE] System is busy (max wait=%d), try next time\n", MQTT_PUB_MAX_WAIT_CNT);
+                MQTT_WARN("System is busy (max wait=%d), try next time\n", MQTT_PUB_MAX_WAIT_CNT);
             } else {
                 goto LBL_SEND_RETRY;
             }
@@ -239,7 +237,7 @@ LBL_SEND_RETRY:
     ret = mqtt_client_send_message_with_qos((char *) topic, (char *) buffer, MQTT_PUB_MAX_WAIT_CNT);
     if (ret != 0) {
         if (ret == -2) {
-            MQTT_ERROR("[MQTT_SAMPLE] Mqtt send not successfully delivered, timtout=%d\n", MQTT_PUB_MAX_WAIT_CNT);
+            MQTT_ERROR("Mqtt send not successfully delivered, timtout=%d\n", MQTT_PUB_MAX_WAIT_CNT);
         }
     }
 #endif
@@ -256,13 +254,13 @@ static void _mqtt_q_handler(void *arg) {
     // message queue init
     while (1) {
         if (!_mqtt_q) {
-            MQTT_ERROR("[%s] Msg Q doesn't exist!", __func__);
+            MQTT_ERROR("[%s] Msg Q doesn't exist!\n", __func__);
             break;
         }
 
         xStatus = xQueueReceive(_mqtt_q, &item, portMAX_DELAY);
         if (xStatus != pdPASS) {
-            MQTT_ERROR("[%s] Q recv error (%d)\r\n", __func__, xStatus);
+            MQTT_ERROR("[%s] Q recv error (%d)\n", __func__, xStatus);
             vTaskDelete(NULL);
             break;
         }
@@ -271,13 +269,13 @@ static void _mqtt_q_handler(void *arg) {
             ret = _mqtt_pub_msg(item.topic, item.message);
             if (ret != 0) {
 #if !defined (USE_MQTT_SEND_WITH_QOS_API)
-                MQTT_ERROR("[MQTT_SAMPLE] Sending a message failed, refer to mqtt_client_send_message()\n");
+                MQTT_ERROR("Sending a message failed, refer to mqtt_client_send_message()\n");
 #else
-                MQTT_ERROR("[MQTT_SAMPLE] Sending a message failed, refer to mqtt_client_send_message_with_qos()\n");
+                MQTT_ERROR("Sending a message failed, refer to mqtt_client_send_message_with_qos()\n");
 #endif
             }
         } else {
-            MQTT_ERROR("[%s] Queue message or topic is NULL!\r\n", __func__);
+            MQTT_ERROR("[%s] Queue message or topic is NULL!\n", __func__);
         }
 
         // allocated in _mqtt_send_to_q()
@@ -317,7 +315,7 @@ static int _mqtt_chk_connection(int timeout) {
     }
     
     if (wait_cnt == timeout) {
-        MQTT_WARN("[%s] mqtt connection timeout!, check your configuration\r\n", __func__);
+        MQTT_WARN("[%s] mqtt connection timeout!, check your configuration\n", __func__);
         return pdFALSE;
     }
 
@@ -350,7 +348,7 @@ int mqtt_sample_client_init(msg_cb_t msg_cb, pub_cb_t pub_cb, conn_cb_t conn_cb,
     // message queue init
     _mqtt_q = xQueueCreate(MSG_Q_SIZE, sizeof(MqttQueueItem ));
     if (_mqtt_q == NULL) {
-        MQTT_ERROR("[%s] Msg Q Create Error!", __func__);
+        MQTT_ERROR("[%s] Msg Q Create Error!\n", __func__);
         goto cleanup;
     }
 
@@ -422,11 +420,17 @@ void mqtt_sample_client_nvram_config(const char *broker,
     iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_SUB_CLIENT_ID, clientid);
 
     iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_TOPIC,     pub);
-    // set_nvcache_str(DA16X_CONF_STR_MQTT_PUB_CID,       clientid);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_QOS,           qos);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_TLS,           1);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_PING_PERIOD,   60);
     iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_VER311,        1);
+
+    // Needed to for AWS Device Qualification and general security
+    iotc_da16k_set_nvcache_int(DA16X_CONF_INT_MQTT_TLS_AUTHMODE,  MBEDTLS_SSL_VERIFY_REQUIRED);
+
+    // Needed to for AWS Device Qualification and ability to connect to shared IoTCores
+    iotc_da16k_set_nvcache_str(DA16X_CONF_STR_MQTT_TLS_SNI,       broker);
+
 
     //
     // Generally "nuke" any subscriptions.

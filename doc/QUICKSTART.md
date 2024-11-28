@@ -332,6 +332,10 @@ The following is a rough summary of the steps to be taken.
              Renewal Time    : 12h 00m 00s
     ```
 
+> [!NOTE]
+> 
+> ***[/DA16200/NVRAM]clearenv*** This command can erase all the settings in NVRAM and you can re-write settings again.
+
 # Setting up IoTConnect
 
 ## Configuring Certificates & IoTConnect Application Config
