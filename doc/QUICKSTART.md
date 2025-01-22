@@ -1,6 +1,7 @@
 # DA16xxx AT Interface QuickStart Guide
 
 This document will walk through the setup process for the DA16K IoTConnect AT Command Interface Firmware.
+
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
    * [Introduction](#introduction)
@@ -11,12 +12,11 @@ This document will walk through the setup process for the DA16K IoTConnect AT Co
    * [Flashing the IoTConnect DA16K AT Image](#flashing-the-iotconnect-da16k-at-image)
    * [DA16xxx Configuration via the command console](#da16xxx-configuration-via-the-command-console)
    * [Setting up IoTConnect](#setting-up-iotconnect)
-   * [Configuring Certificates & IoTConnect Application Config](#configuring-certificates--iotconnect-application-config)
-   * [Running `iotconnect_client`](#running-iotconnect_client)
+   * [Running iotconnect_client](#running-iotconnect_client)
+   * [OTA](#ota)
    * [AT Command Console](#at-command-console)
 
 <!-- TOC end -->
-
 ## Introduction
 
 The firmware provides a serial UART interface that allows for communication with IoTConnect and its cloud services using [AT commands](https://en.wikipedia.org/wiki/Hayes_AT_command_set).
@@ -358,7 +358,7 @@ The following is a rough summary of the steps to be taken.
 
 ## Setting up IoTConnect
 
-## Configuring Certificates & IoTConnect Application Config
+### Configuring Certificates & IoTConnect Application Config
 
 Refer to the [Application Setup Guide](SETUP_APP.md).
 
@@ -425,7 +425,7 @@ Verify in the dashboard that the device is shown as connected and that the messa
 
 Commands are automatically acknowledged and stored in a queue upon reception. They must be fetched using an AT Command and processed by the connected device.
 
-### OTA
+## OTA
 
 **OTA is not yet supported.**
 
