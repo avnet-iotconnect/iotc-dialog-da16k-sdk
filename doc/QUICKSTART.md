@@ -1,3 +1,8 @@
+### Revision Info
+
+- **Last Commit Hash**: 9e2e28b103abc251e046be4015f52d641d196c4b
+- **Last Commit Date**: 2025-01-21 20:42:46
+
 # DA16xxx AT Interface QuickStart Guide
 
 This document will walk through the setup process for the DA16K IoTConnect AT Command Interface Firmware.
