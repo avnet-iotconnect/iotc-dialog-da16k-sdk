@@ -266,7 +266,7 @@ The following is a rough summary of the steps to be taken.
     
         **At this point in time, DPM modes are unsupported.**
 
-        Therefore, you *must* answer this question with `No`
+        Therefore, you *must* answer this question with <kbd>No</kbd>
 
 * The following is an example log of this configuration process:
 
@@ -421,7 +421,6 @@ Ensure all certificates are in place, and that iotconnect_config has been used t
 If the configuration stage is missed, then there will be no valid values to setup.
 
 To setup /IOTCONNECT values, run:
-`
 ```
 iotconnect_client setup
 ```
