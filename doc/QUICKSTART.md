@@ -10,7 +10,7 @@ This document will walk through the setup process for the DA16K IoTConnect AT Co
    * [Finding the correct COM port for the command console](#finding-the-correct-com-port-for-the-command-console)
    * [Flashing the IoTConnect DA16K AT Image](#flashing-the-iotconnect-da16k-at-image)
    * [DA16xxx Configuration via the command console](#da16xxx-configuration-via-the-command-console)
-- [Setting up IoTConnect](#setting-up-iotconnect)
+   * [Setting up IoTConnect](#setting-up-iotconnect)
    * [Configuring Certificates & IoTConnect Application Config](#configuring-certificates--iotconnect-application-config)
    * [Running `iotconnect_client`](#running-iotconnect_client)
    * [AT Command Console](#at-command-console)
@@ -356,7 +356,7 @@ The following is a rough summary of the steps to be taken.
 > 
 > ***[/DA16200/NVRAM]clearenv*** This command can erase all the settings in NVRAM and you can re-write settings again.
 
-# Setting up IoTConnect
+## Setting up IoTConnect
 
 ## Configuring Certificates & IoTConnect Application Config
 
@@ -364,7 +364,7 @@ Refer to the [Application Setup Guide](SETUP_APP.md).
 
 ***NOTE***: It is impossible for the  DA16xxx to process multiple possible certificates for a Root CA – all testing has used a single certificate. Obviously, if a certificate doesn’t allow a connection, then it may be required to manually swap to an alternative certificate.
 
-## Running `iotconnect_client`
+## Running iotconnect_client
 
 ### Setup - read IOTC values from NVRAM
 
