@@ -1,11 +1,12 @@
-### Revision Info
-
-- **Last Commit Hash**: 9e2e28b103abc251e046be4015f52d641d196c4b
-- **Last Commit Date**: 2025-01-21 20:42:46
-
 # DA16xxx AT Interface QuickStart Guide
 
 This document will walk through the setup process for the DA16K IoTConnect AT Command Interface Firmware.
+
+## Revision Info
+![GitHub last commit](https://img.shields.io/github/last-commit/avnet-iotconnect/iotc-stm32-n6-demos?label=Last%20Commit)
+- View the complete [Commit History](https://github.com/avnet-iotconnect/iotc-stm32-n6-demos/commits/main) for this repository.
+- View changes to this document: [QUICKSTART.md History](https://github.com/avnet-iotconnect/iotc-stm32-n6-demos/commits/main/doc/QUICKSTART.md).
+
 
 ## Introduction
 
