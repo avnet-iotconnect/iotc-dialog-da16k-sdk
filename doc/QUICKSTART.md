@@ -1,6 +1,6 @@
 # DA16xxx AT Interface QuickStart Guide
 
-This document will walk through the setup process for the DA16K /IOTCONNECT AT Command Interface Firmware.
+This document will walk through the setup process for the DA16K /IOTCONNECT AT Command Interface Firmware. You can also follow along with this [walkthrough on YouTube](https://www.youtube.com/watch?v=LN11hYSNGR4).
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
