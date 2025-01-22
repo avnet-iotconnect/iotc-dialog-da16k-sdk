@@ -1,12 +1,21 @@
 # DA16xxx AT Interface QuickStart Guide
 
 This document will walk through the setup process for the DA16K IoTConnect AT Command Interface Firmware.
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
-## Revision Info
-![GitHub last commit](https://img.shields.io/github/last-commit/avnet-iotconnect/iotc-dialog-da16k-sdk?label=Last%20Commit)
-- View the complete [Commit History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main) for this repository.
-- View changes to this document: [QUICKSTART.md History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main/doc/QUICKSTART.md).
+   * [Introduction](#introduction)
+   * [Revision Info](#revision-info)
+   * [Requirements](#requirements)
+   * [DA16xxx Hardware](#da16xxx-hardware)
+   * [Finding the correct COM port for the command console](#finding-the-correct-com-port-for-the-command-console)
+   * [Flashing the IoTConnect DA16K AT Image](#flashing-the-iotconnect-da16k-at-image)
+   * [DA16xxx Configuration via the command console](#da16xxx-configuration-via-the-command-console)
+- [Setting up IoTConnect](#setting-up-iotconnect)
+   * [Configuring Certificates & IoTConnect Application Config](#configuring-certificates--iotconnect-application-config)
+   * [Running `iotconnect_client`](#running-iotconnect_client)
+   * [AT Command Console](#at-command-console)
 
+<!-- TOC end -->
 
 ## Introduction
 
@@ -21,6 +30,11 @@ The interactions are as such:
 **Embedded client** &larr; *Serial/PMOD* &rarr; **DA16xxx** &larr; *WiFi* &rarr; **IoTConnect**
 
 The supported **AT interface command set** is documented in the [AT Command Set Documentation](AT_COMMAND_SET.md).
+
+## Revision Info
+![GitHub last commit](https://img.shields.io/github/last-commit/avnet-iotconnect/iotc-dialog-da16k-sdk?label=Last%20Commit)
+- View the complete [Commit History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main) for this repository.
+- View changes to this document: [QUICKSTART.md History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main/doc/QUICKSTART.md).
 
 ## Requirements
 
