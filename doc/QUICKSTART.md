@@ -5,7 +5,7 @@ This document will walk through the setup process for the DA16K /IOTCONNECT AT C
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
    * [Introduction](#introduction)
-   * [Revision Info](#revision-info)
+   * [Video Walk-Through](#video-walk-through)
    * [Requirements](#requirements)
    * [DA16xxx Hardware](#da16xxx-hardware)
    * [Finding the correct COM port for the command console](#finding-the-correct-com-port-for-the-command-console)
@@ -15,6 +15,7 @@ This document will walk through the setup process for the DA16K /IOTCONNECT AT C
    * [Running /IOTCONNECT_client](#running-iotconnect_client)
    * [OTA](#ota)
    * [AT Command Console](#at-command-console)
+   * [Revision Info](#revision-info)
 
 <!-- TOC end -->
 
@@ -51,11 +52,8 @@ The DA16xxx devices use an **AT interface command set** to enable communication 
 
 This guide will help you quickly set up and connect the DA16200 and DA16600 to /IOTCONNECT, enabling you to leverage their full potential for your IoT applications.
 
-
-## Revision Info
-![GitHub last commit](https://img.shields.io/github/last-commit/avnet-iotconnect/iotc-dialog-da16k-sdk?label=Last%20Commit)
-- View the complete [Commit History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main) for this repository.
-- View changes to this document: [QUICKSTART.md History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main/doc/QUICKSTART.md).
+## Video Walk-Through
+[![Watch the video](https://img.youtube.com/vi/LN11hYSNGR4/0.jpg)](https://www.youtube.com/watch?v=LN11hYSNGR4?si=UXRyw4cOcXMkcYOk)
 
 ## Requirements
 
@@ -482,3 +480,7 @@ You may now wish to access the AT Command serial interface (for example, to send
 
 Continue with the [AT Console documentation](AT_COMMAND_SET.md) to access and use it.
 
+## Revision Info
+![GitHub last commit](https://img.shields.io/github/last-commit/avnet-iotconnect/iotc-dialog-da16k-sdk?label=Last%20Commit)
+- View the complete [Commit History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main) for this repository.
+- View changes to this document: [QUICKSTART.md History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main/doc/QUICKSTART.md).
