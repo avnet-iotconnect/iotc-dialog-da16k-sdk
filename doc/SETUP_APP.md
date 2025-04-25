@@ -19,7 +19,7 @@ You require the following IoTConnect configuration parameters:
 
 ## Configuration outside of the command line
 
-These parameters can be configured via the [AT command set](./doc/AT_COMMAND_SET.md). 
+These parameters can be configured via the [AT command set](./AT_COMMAND_SET.md). 
 
 The [ATCMD Library](https://github.com/avnet-iotconnect/iotc-freertos-da16k-atcmd-lib) - on supported platforms - provides structures and APIs to configure these parameters from the host devices (i.e. devices that this module is connected to) as well.
 
