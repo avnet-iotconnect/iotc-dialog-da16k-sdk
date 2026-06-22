@@ -13,6 +13,7 @@
 #include "iotcl.h"
 #include "iotcl_telemetry.h"
 #include "iotc_app.h"
+#include "da16x_cert.h"
 
 // Just to give some scope for "expansion" -- update this if AT commands get added/updated
 #define IOTC_AT_VERSION "1.1.0"
@@ -351,4 +352,24 @@ void atcmd_asynchony_event_for_icreset_begin(void)
 void atcmd_asynchony_event_for_icreset_end(int status)
 {
     PRINTF_ATCMD("\r\n+NWICRESETEND:%d\r\n", status);
+}
+
+int iotc_at_nwicreadcrt(int argc, char *argv[]) {
+    DA16X_UNUSED_ARG(argc);
+    DA16X_UNUSED_ARG(argv);
+
+    char buffer[CERT_MAX_LENGTH] = {0};
+    int status = cert_flash_read(SFLASH_CERTIFICATE_ADDR1, buffer, CERT_MAX_LENGTH);
+
+    if (status != 0) {
+        return AT_CMD_ERR_NO_RESULT;
+    }
+
+    /* cert_flash_read fills buffer with 0xFF if the certificate slot is empty */
+    if ((unsigned char)buffer[0] == 0xFF) {
+        return AT_CMD_ERR_NO_RESULT;
+    }
+
+    PRINTF_ATCMD("\r\n+NWICREADCRT:%s\r\n", buffer);
+    return AT_CMD_ERR_CMD_OK;
 }

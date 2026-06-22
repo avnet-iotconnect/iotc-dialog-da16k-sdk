@@ -116,6 +116,7 @@ extern void cmd_asd(int argc, char *argv[]);
 #endif  // __SUPPORT_ASD__
 
 extern void cmd_debug_ch_tx_level(int argc, char *argv[]);
+extern void cmd_debug_ch_tx_dsss_level(int argc, char *argv[]);
 extern void cmd_txpwr_ctl_same_idx_table(int argc, char *argv[]);
 extern void cmd_rssi(int argc, char *argv[]);
 extern void cmd_chk_rssi(int argc, char *argv[]);

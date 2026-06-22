@@ -38,6 +38,8 @@ int iotc_at_nwicexmsg   (int argc, char *argv[]);
 int iotc_at_nwicver     (int argc, char *argv[]);
 /* NWICGETCMD:      Get next command from command queue */
 int iotc_at_nwicgetcmd  (int argc, char *argv[]);
+/* NWICREADCRT:     Read device certificate (CLIENT_CERT1) */
+int iotc_at_nwicreadcrt (int argc, char *argv[]);
 
 /* Asynchony events for IoTConnect status changes, called from iotc_app.c */
 void atcmd_asynchony_event_for_icmqtt           (int status);

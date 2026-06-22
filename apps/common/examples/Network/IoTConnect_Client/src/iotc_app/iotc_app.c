@@ -451,7 +451,7 @@ static void reset_wrapper(void) {
 // AT commands to set the HTTP / MQQT certificates [and, if required, to set the device certificate / private key] need to be sent.
 //
 int iotconnect_basic_sample_main(void) {
-    IOTC_INFO("\n\n\nInitializing the IoTConnect Client\n\n\n");
+    IOTC_INFO("\n\n\nInitializing the IoTConnect Client!!!\n\n\n");
 
     /* Create queue to store commands in */
     command_queue = xQueueCreate(COMMAND_QUEUE_SIZE, sizeof(iotc_command_queue_item));

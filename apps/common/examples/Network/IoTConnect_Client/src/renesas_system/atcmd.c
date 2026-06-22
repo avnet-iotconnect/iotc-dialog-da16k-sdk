@@ -538,6 +538,7 @@ static const command_t commands[] = {
   { (char *)"AT+NWICEXMSG",       iotc_at_nwicexmsg,   25, (char *) "<type1>,<name1>,<value1>,...",               "Send an IoTConnect format MQTT message, using type/name/value tuples" },
   { (char *)"AT+NWICVER",         iotc_at_nwicver,      0, (char *) "<get_iotconnect_at_cmd_version>",            "Get IoTConnect AT command version"                     },
   { (char *)"AT+NWICGETCMD",      iotc_at_nwicgetcmd,   0, (char *) "",                                           "Get latest command sent by IoTConnect"                 },
+  { (char *)"AT+NWICREADCRT",    iotc_at_nwicreadcrt,  0, (char *) "",                                           "Read device certificate (CLIENT_CERT1)"                },
 #endif
 
 #if defined ( __SUPPORT_WPA_ENTERPRISE__ )
