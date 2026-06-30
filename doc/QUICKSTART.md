@@ -210,7 +210,7 @@ To flash the /IOTCONNECT firmware, follow these steps:
 
     * Add the firmware image by double-clicking the grey field to the right of `RTOS1` and navigating to it.
 
-    * Set the destination address to `0x23000`
+    * Set the destination address to `23000`
 
     * The window should now look similar to the following graphic:
     
