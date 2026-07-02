@@ -39,7 +39,7 @@ The SDK is intended for and tested with the following platforms:
     * DA16600MOD
 
 <details>
-<summary>Programming/Debug interface hardware connection</summary>
+<summary><b>*Programming/Debug interface hardware connection*</b></summary>
 <br>
 
 You will be guided through the setup process below. Please refer to the Renesas guide 
