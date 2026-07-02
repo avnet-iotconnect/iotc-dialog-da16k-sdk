@@ -1,7 +1,7 @@
 # DA16x00 PMOD QuickStart Guide
 ## Introduction
 
-The **Dialog DA16200** and **DA16600** are ultra-low-power Wi-Fi SoCs designed to enable reliable and long-lasting connectivity for battery-powered IoT devices. Both SoCs are optimized for IoT applications, with the **DA16200** providing single-band Wi-Fi connectivity and the **DA16600** integrating both Wi-Fi and Bluetooth Low Energy (BLE) for dual-connectivity use cases. These features make the DA16xxx family ideal for applications like smart home devices, healthcare monitors, industrial IoT, and asset tracking.
+The **Dialog DA16200** and **DA16600** are ultra-low-power Wi-Fi SoCs designed to enable reliable and long-lasting connectivity for battery-powered IoT devices. Both SoCs are optimized for IoT applications, with the **DA16200** providing single-band Wi-Fi connectivity and the **DA16600** integrating both Wi-Fi and Bluetooth Low Energy (BLE) for dual-connectivity use cases. These features make the DA16x00 family ideal for applications like smart home devices, healthcare monitors, industrial IoT, and asset tracking.
 
 This quickstart guide demonstrates how to integrate the DA16200 and DA16600 modules with **/IOTCONNECT**, Avnet’s robust IoT platform. /IOTCONNECT simplifies cloud integration by providing features such as secure device onboarding, real-time telemetry, advanced data visualization, and over-the-air (OTA) updates.
 
@@ -41,7 +41,10 @@ The SDK is intended for and tested with the following platforms:
 <details>
 <summary>Programming/Debug interface hardware connection</summary>
 <br>
-You will be guided through the setup process below. Please refer to the Renesas guide “[User Manual, DA16200 DA16600 FreeRTOS Getting Started Guide, UM-WI-056](LINK_TO_USER_MANUAL)” in case there are changes in the future.
+
+You will be guided through the setup process below. Please refer to the Renesas guide 
+[DA16200 DA16600 FreeRTOS Getting Started Guide](https://www.renesas.com/en/document/qsg/um-wi-056-da16200-da16600-freertos-getting-started-guide) 
+in case there are changes in the future.
 
 ### DA16200MOD / DA16600MOD PMOD Dongle
 
@@ -359,6 +362,10 @@ Commands are automatically acknowledged and stored in a queue upon reception. Th
 ## OTA
 
 **OTA is not yet supported.**
+
+## Video walk-through
+
+This [video](https://www.youtube.com/watch?v=LN11hYSNGR4) will walk through the setup process for the DA16x00 firmware.
 
 ## AT Command interface
 
