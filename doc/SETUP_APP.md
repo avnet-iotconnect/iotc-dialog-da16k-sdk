@@ -27,6 +27,9 @@ The [ATCMD Library](https://github.com/avnet-iotconnect/iotc-freertos-da16k-atcm
 
 ### Certificate setup
 
+> [!NOTE]
+> **Ensure that the terminal's serial port setup is baud rate 230400, Receive:LF and Transmit: LF.**
+
 At the command prompt, type <kbd>net</kbd> to get access to the network based commands (need to type <kbd>up</kbd> to get back to main prompt menu).
 ```
 net

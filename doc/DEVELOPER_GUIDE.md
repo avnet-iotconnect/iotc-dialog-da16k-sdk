@@ -115,6 +115,10 @@ Note: the uart_program_da16200 is part of the DA16200_DA16600_SDK_FreeRTOS_v3.2.
 - utility/j-link/scripts/qspi/linux/uart_program_da16200
 - utility/j-link/scripts/qspi/win/uart_program_da16200.exe
 
+## AT Command interface
+
+If you wish to access the AT Command serial interface, continue with the [AT Console documentation](AT_COMMAND_SET.md) to access and use it.
+
 ## Setting up the IoTConnect application
 
 See [QUICKSTART](./QUICKSTART.md) for details on how to flash the images and setup IoTConnect.

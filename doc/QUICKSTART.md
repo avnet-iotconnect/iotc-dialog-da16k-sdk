@@ -17,29 +17,32 @@ This quickstart guide demonstrates how to integrate the DA16200 and DA16600 modu
         ![](assets/flasherdownload.png)
 
 ## DA16x00 Hardware
+### DA16x00 hardware interfaces
 
 The DA16x00 hardware platforms used here broadly speaking provide two usable serial ports for this project:
 
 * The **programming/debug interface**
-    * Runs at 230400 Baud (Receive:AUTO; Transmit:LF)
+    * Runs at 230400 baud rate.(Receive:LF; Transmit:LF; No flow control)
     * Used to configure the device and flash the firmware.
 * The **AT command interface**
-    * Runs at 115200 Baud
+    * Runs at 115200 baud rate.
     * This is the serial interface that will be used by the embedded client to send data to the DA16x00 for transmission to /IOTCONNECT.
 
 ### Supported Boards
 
 The SDK is intended for and tested with the following platforms:
 
-* EVK Boards
-    * DA16200MOD EVK
-    * DA16600MOD EVK
 * PMOD Dongles
     * DA16200MOD
     * DA16600MOD
 
+* EVK Boards
+    * DA16200MOD EVK
+    * DA16600MOD EVK
+
+### Programming/Debug interface wire connection
 <details>
-<summary><b>*Programming/Debug interface hardware connection*</b></summary>
+<summary><b>*Programming/Debug interface wire connection*</b></summary>
 <br>
 
 You will be guided through the setup process below. Please refer to the Renesas guide 
@@ -79,7 +82,7 @@ The EVK boards provide the serial connections using the debug interface.
 
 </details>
 
-## Flashing the /IOTCONNECT DA16x00 Image
+## Flashing the /IOTCONNECT DA16x00 Image via the programming/debug interface
 
 You can either build it yourself (see the [Developers Guide](DEVELOPER_GUIDE.md)) or use the pre-built firmware images in the `/images/` directory at the root of the repository.
 
@@ -107,7 +110,7 @@ To flash the /IOTCONNECT firmware, follow these steps:
 
 * Close the `Settings` window.
 
-* Select the COM port corresponding to the debug console terminal (you may have to experiment to find it) and click **Download**.
+* Select the COM port corresponding to the programming/debug interface (you may have to experiment to find it) and click **Download**.
 
     ![](assets/winflash3.png)
 
@@ -121,24 +124,13 @@ To flash the /IOTCONNECT firmware, follow these steps:
 
 ## DA16x00 Configuration via the programming/debug interface
 
-Before setting upthe /IOTCONNECT specific options, you must set up the device according to the *User Manual DA16200 DA16600 FreeRTOS Getting Started Guide UM-WI-056* from **Renesas**.
-
-Currently the document can be found linked at:
-[Renesas DA16200 page](https://www.renesas.com/us/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16200mod-devkt-da16200-ultra-low-power-wi-fi-modules-development-kit?gclid=EAIaIQobChMIxKyz4qHcgAMV1oFQBh3eWQsQEAAYASAAEgLqnvD_BwE#document)
-or
-[Renesas DA16600 page](https://www.renesas.com/eu/en/products/wireless-connectivity/wi-fi/low-power-wi-fi/da16600mod-devkt-da16600-ultra-low-power-wi-fi-bluetooth-low-energy-modules-development-kit#document).
-
-
 The following is a rough summary of the steps to be taken.
 
-* Connect to the command console (the same COM port used for flashing the firmware) using a serial terminal program of your choice.
+* Connect to the programming/debug interface (the same COM port used for flashing the firmware) using a serial terminal program of your choice.
 
-    **Note: It is recommended that you disable Flow Control, if your application permits it**.
+    **Note: 230400 baud rate.(Receive:LF; Transmit:LF; No flow control)**.
 
-    After establishing the serial connection, boot the device.
-
-
-* You should see a command prompt:
+* You should see a command prompt by hitting "ENTER" on the keyboard:
 
 <pre><samp>[/DA16200] #</samp></pre>
 
@@ -288,8 +280,9 @@ The following is a rough summary of the steps to be taken.
 </samp></pre>
 
 > [!NOTE]
-> 
-> ***[/DA16200/NVRAM]clearenv*** This command can erase all the settings in NVRAM and you can re-write settings again.
+> 1. SNTP sync may fail occationally, and you can type "reboot" on the terminal to restart the application/board.
+> 2. Ensure that the terminal's serial port setup is baud rate 230400, Receive:LF and Transmit: LF.
+> 3. ***[/DA16200/NVRAM]clearenv*** This command can erase all the settings in NVRAM and you can re-write settings again.
 
 ## Setting up /IOTCONNECT
 
@@ -297,7 +290,8 @@ The following is a rough summary of the steps to be taken.
 
 Refer to the [Application Setup Guide](SETUP_APP.md).
 
-***NOTE***: It is impossible for the  DA16x00 to process multiple possible certificates for a Root CA – all testing has used a single certificate. Obviously, if a certificate doesn’t allow a connection, then it may be required to manually swap to an alternative certificate.
+***NOTE***: Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(did)" when setting up the
+/IOTCONNECT configuration. They can be obtained on /IOTCONNECT webpage after successfully creating the IoT device. 
 
 ## Running iotconnect_client
 
@@ -324,56 +318,6 @@ Check that the device is shown as connected on the /IOTCONNECT dashboard.
 
 **Note:** must have been setup before starting. You could also use the command "reboot" to start the *iotconnect_client* if everything metioned above is set up.
 
-### Stop
-
-To disconnect from /IOTCONNECT but leave the runtime configuration intact
-```
-iotconnect_client stop
-```
-Check that the device is shown as disconnected on the /IOTCONNECT dashboard.
-
-**Note:** After stopping, there is no necessitgy to perform another setup before the next start. The previously determined values will be re-used.
-
-### Reset
-
-To disconnect from /IOTCONNECT and **reset the entire runtime configuration**, run:
-
-```
-iotconnect_client reset
-```
-Check that the device is shown as disconnected on the /IOTCONNECT dashboard.
-
-**Note:** After resetting, another setup *must* be performed before the next start.
-
-### Message
-
-To send an /IOTCONNECT message with up to **7** key/value pairs, run
-
-```
-iotconnect_client msg [name1] [value1] [name2] [value2] (...)
-```
-
-Verify in the dashboard that the device is shown as connected and that the message data can be seen.
-
-### Commands
-
-Commands are automatically acknowledged and stored in a queue upon reception. They must be fetched using an AT Command and processed by the connected device.
-
-## OTA
-
-**OTA is not yet supported.**
-
 ## Video walk-through
 
 This [video](https://www.youtube.com/watch?v=LN11hYSNGR4) will walk through the setup process for the DA16x00 firmware.
-
-## AT Command interface
-
-You may now wish to access the AT Command serial interface (for example, to send out telemetry).
-
-Continue with the [AT Console documentation](AT_COMMAND_SET.md) to access and use it.
-
-## Revision Info
-![GitHub last commit](https://img.shields.io/github/last-commit/avnet-iotconnect/iotc-dialog-da16k-sdk?label=Last%20Commit)
-- View the complete [Commit History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main) for this repository.
-- View changes to this document: [QUICKSTART.md History](https://github.com/avnet-iotconnect/iotc-dialog-da16k-sdk/commits/main/doc/QUICKSTART.md).
