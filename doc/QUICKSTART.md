@@ -21,10 +21,10 @@ This quickstart guide demonstrates how to integrate the DA16200 and DA16600 modu
 
 The DA16x00 hardware platforms used here broadly speaking provide two usable serial ports for this project:
 
-* The **programming/debug interface**
+* The **programming/debug serial interface**
     * Runs at 230400 baud rate.(Receive:LF; Transmit:LF; No flow control)
     * Used to configure the device and flash the firmware.
-* The **AT command interface**
+* The **AT command serial interface**
     * Runs at 115200 baud rate.
     * This is the serial interface that will be used by the embedded client to send data to the DA16x00 for transmission to /IOTCONNECT.
 
@@ -127,8 +127,6 @@ To flash the /IOTCONNECT firmware, follow these steps:
 The following is a rough summary of the steps to be taken.
 
 * Connect to the programming/debug interface (the same COM port used for flashing the firmware) using a serial terminal program of your choice.
-
-    **Note: 230400 baud rate.(Receive:LF; Transmit:LF; No flow control)**.
 
 * You should see a command prompt by hitting "ENTER" on the keyboard:
 
@@ -290,8 +288,10 @@ The following is a rough summary of the steps to be taken.
 
 Refer to the [Application Setup Guide](SETUP_APP.md).
 
-***NOTE***: Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(did)" when setting up the
-/IOTCONNECT configuration. They can be obtained on /IOTCONNECT webpage after successfully creating the IoT device. 
+> [!NOTE]
+>
+> Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(did)" when setting up the
+> /IOTCONNECT configuration. They can be obtained on /IOTCONNECT webpage after successfully creating the IoT device. 
 
 ## Running iotconnect_client
 
