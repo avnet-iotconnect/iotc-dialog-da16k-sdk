@@ -365,11 +365,8 @@ static void http_client_sample(void *arg) {
     g_conn_settings.insecure = g_request.insecure;
 
     if(strlen(g_post_data) != 0) {
-        error = httpc_insert_send_data("POST", g_post_data, strlen(g_post_data));
-        if (error != ERR_OK) {
-            HTTP_ERROR("Failed to insert POST data\n");
-            goto finish;
-        }
+        strncpy((char*)g_conn_settings.input_method, "POST", sizeof(g_conn_settings.input_method) - 1);
+        strncpy((char*)g_conn_settings.post_msg, g_post_data, sizeof(g_conn_settings.post_msg) - 1);
     }
 
     if (g_conn_settings.insecure) {

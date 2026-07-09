@@ -741,6 +741,7 @@ typedef enum _atcmd_error_code {
     AT_CMD_ERR_NW_WSC_CLOSE_FAIL                    = -695,
     AT_CMD_ERR_NW_WSC_SESS_NOT_CONNECTED            = -696,
     AT_CMD_ERR_NW_WSC_UNKNOW_CMD                    = -697,
+    AT_CMD_ERR_NW_WSC_INVALID_VALUE                 = -698,
 
     /// For OTA update
     AT_CMD_ERR_NW_OTA_WRONG_FW_TYPE                 = -700,

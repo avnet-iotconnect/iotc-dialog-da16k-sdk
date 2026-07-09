@@ -11,21 +11,24 @@ You require the following IoTConnect configuration parameters:
 
 * Device **Certificate and Key** (or symmetric key if using symmetric key authentication)
 
-* Device `DUID` (Key Vault)
+* Device `DUID (did)`
 
-* Device `CPID` (Key Vault)
+* Device `CPID`
 
-* Environment `ENV` (Key Vault)
+* Environment `ENV`
 
-## Configuration outside of the command line
+> [!NOTE]
+>
+> Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(did)" when setting up the
+> /IOTCONNECT configuration. They can be obtained on /IOTCONNECT webpage after successfully creating the IoT device. 
 
-These parameters can be configured via the [AT command set](./AT_COMMAND_SET.md). 
 
-The [ATCMD Library](https://github.com/avnet-iotconnect/iotc-freertos-da16k-atcmd-lib) - on supported platforms - provides structures and APIs to configure these parameters from the host devices (i.e. devices that this module is connected to) as well.
-
-## Configuring via DA16K Serial Command Line
+## Configuring via DA16x00 Programming/Debug Interface Command Line
 
 ### Certificate setup
+
+> [!NOTE]
+> **Ensure that the terminal's serial port setup is baud rate 230400, Receive:LF and Transmit: LF.**
 
 At the command prompt, type <kbd>net</kbd> to get access to the network based commands (need to type <kbd>up</kbd> to get back to main prompt menu).
 ```
@@ -149,3 +152,10 @@ iotconnect_client start
 to start the /IOTCONNECT client and send telemetry.
 
 You can also simply reboot the device to apply the settings.
+
+
+## Configuration outside of the Command Line
+
+These parameters can be configured via the [AT command set](./AT_COMMAND_SET.md). 
+
+The [ATCMD Library](https://github.com/avnet-iotconnect/iotc-freertos-da16k-atcmd-lib) - on supported platforms - provides structures and APIs to configure these parameters from the host devices (i.e. devices that this module is connected to) as well.

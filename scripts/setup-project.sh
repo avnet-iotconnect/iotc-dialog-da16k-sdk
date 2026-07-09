@@ -7,7 +7,7 @@ repo_root="${scripts_dir}/../"
 cd "${repo_root}"
 
 da_sdk_path="./DA16K_SDK_FreeRTOS"
-da_sdk_zip="DA16200_DA16600_SDK_FreeRTOS_v3.2.8.1.zip"
+da_sdk_zip="DA16200_DA16600_FreeRTOS_SDK_v3.3.0.0_2.zip"
 
 
 # Check if given path exists
@@ -36,7 +36,7 @@ fi
 
 # Copy files from the given path to the script's path whilst *not* overwriting the files in this repo.
 echo "Copying SDK files..."
-cp -rn "${da_sdk_path}"/* .
+cp -rn "${da_sdk_path}"/* . 2>/dev/null || true
 
 # Setup permissions for the SDK's script files
 echo "Setting up SDK script permissions..."
