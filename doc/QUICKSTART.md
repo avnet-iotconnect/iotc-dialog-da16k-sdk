@@ -278,7 +278,7 @@ The following is a rough summary of the steps to be taken.
 </samp></pre>
 
 > [!NOTE]
-> 1. SNTP sync may fail occationally, and you can type "reboot" on the terminal to restart the application/board.
+> 1. SNTP sync may fail occasionally, and you can type "reboot" on the terminal to restart the application/board.
 > 2. Ensure that the terminal's serial port setup is baud rate 230400, Receive:LF and Transmit: LF.
 > 3. ***[/DA16200/NVRAM]clearenv*** This command can erase all the settings in NVRAM and you can re-write settings again.
 
