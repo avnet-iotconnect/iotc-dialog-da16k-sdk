@@ -358,7 +358,7 @@ int iotc_at_nwicreadcrt(int argc, char *argv[]) {
     DA16X_UNUSED_ARG(argc);
     DA16X_UNUSED_ARG(argv);
 
-    char buffer[CERT_MAX_LENGTH] = {0};
+    char buffer[CERT_MAX_LENGTH + 1] = {0};
     int status = cert_flash_read(SFLASH_CERTIFICATE_ADDR1, buffer, CERT_MAX_LENGTH);
 
     if (status != 0) {
