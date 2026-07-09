@@ -308,7 +308,7 @@ iotconnect_client setup
 
 ### Start (Discovery/Sync & MQTT Setup)
 
-Ensure that all certificates are in place, that iotconnect_config has been used to save the configuration, and that "iotconnect_client setup" has been run, and the device has been successfully created on /IOTCONNECT.-- before initiating "iotconnect_client start".
+Ensure that all certificates are in place, that iotconnect_config has been used to save the configuration, that "iotconnect_client setup" has been run, and that the device has been successfully created on /IOTCONNECT -- before initiating "iotconnect_client start".
 
 To run /IOTCONNECT discovery/sync and update MQTT values and start mqtt_client, run
 ```
