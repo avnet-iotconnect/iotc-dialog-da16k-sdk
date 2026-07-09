@@ -290,7 +290,7 @@ Refer to the [Application Setup Guide](SETUP_APP.md).
 
 > [!NOTE]
 >
-> Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(did)" when setting up the
+> Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(uid)" when setting up the
 > /IOTCONNECT configuration. They can be obtained on /IOTCONNECT webpage after successfully creating the IoT device. 
 
 ## Running iotconnect_client

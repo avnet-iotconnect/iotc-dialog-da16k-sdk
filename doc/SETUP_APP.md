@@ -11,7 +11,7 @@ You require the following IoTConnect configuration parameters:
 
 * Device **Certificate and Key** (or symmetric key if using symmetric key authentication)
 
-* Device `DUID (did)`
+* Device `DUID (uid)`
 
 * Device `CPID`
 
@@ -19,7 +19,7 @@ You require the following IoTConnect configuration parameters:
 
 > [!NOTE]
 >
-> Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(did)" when setting up the
+> Ensure that you use the correct "device certificate", "device key", "cpid", "env", "duid(uid)" when setting up the
 > /IOTCONNECT configuration. They can be obtained on /IOTCONNECT webpage after successfully creating the IoT device. 
 
 
