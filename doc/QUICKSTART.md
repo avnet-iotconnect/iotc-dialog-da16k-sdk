@@ -316,7 +316,7 @@ iotconnect_client start
 ```
 Check that the device is shown as connected on the /IOTCONNECT dashboard.
 
-**Note:** must have been setup before starting. You could also use the command "reboot" to start the *iotconnect_client* if everything metioned above is set up.
+**Note:** must have been setup before starting. You could also use the command "reboot" to start the *iotconnect_client* if everything mentioned above is set up.
 
 ## Video walk-through
 
